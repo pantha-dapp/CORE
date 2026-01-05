@@ -1,0 +1,19 @@
+{
+	"name": "@pantha/shared",
+	"version": "0.1.0",
+	"exports": {
+		".": {
+			"default": "./index.ts"
+		},
+		"./zod": {
+			"default": "./helpers/zod.ts"
+		}
+	},
+	"scripts": {},
+	"dependencies": {
+		"fast-json-stable-stringify": "^2.1.0"
+	},
+	"peerDependencies": {
+		"zod": "*"
+	}
+}
