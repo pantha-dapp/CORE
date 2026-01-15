@@ -12,9 +12,9 @@ import { jsonParse, jsonStringify } from "@pantha/shared";
 import { customType, timestamp } from "drizzle-orm/pg-core";
 
 export const timestamps = {
-	createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-	updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-	deletedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp({ withTimezone: true }),
 };
 
 // export const tEvmAddress = customType<{
@@ -37,18 +37,18 @@ export const timestamps = {
 
 // TODO please remove
 export const tJsonString = customType<{
-	data: Record<string, unknown>;
-	driverData: string;
+    data: Record<string, unknown>;
+    driverData: string;
 }>({
-	dataType() {
-		return "text";
-	},
-	toDriver(value) {
-		return jsonStringify(value);
-	},
-	fromDriver(value) {
-		return jsonParse(value);
-	},
+    dataType() {
+        return "text";
+    },
+    toDriver(value) {
+        return jsonStringify(value);
+    },
+    fromDriver(value) {
+        return jsonParse(value);
+    },
 });
 
 // export const tBytes32 = customType<{
@@ -96,16 +96,16 @@ export const tJsonString = customType<{
 // TODO please reconsider
 
 export const tBigInt = customType<{
-	data: bigint;
-	driverData: string;
+    data: bigint;
+    driverData: string;
 }>({
-	dataType() {
-		return "text";
-	},
-	toDriver(value) {
-		return value.toString();
-	},
-	fromDriver(value) {
-		return BigInt(value);
-	},
+    dataType() {
+        return "text";
+    },
+    toDriver(value) {
+        return value.toString();
+    },
+    fromDriver(value) {
+        return BigInt(value);
+    },
 });
