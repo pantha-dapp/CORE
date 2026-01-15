@@ -1,5 +1,4 @@
 import { chat } from "@tanstack/ai";
-import { createOllamaChat } from "@tanstack/ai-ollama";
 import { createOpenaiChat } from "@tanstack/ai-openai";
 import { type ZodObject, z } from "zod";
 
@@ -13,8 +12,6 @@ const aiAdapter = createOpenaiChat(
         baseURL: "https://api.groq.com/openai/v1",
     },
 );
-
-// const aiAdapter = createOllamaChat("gemma3:12b", HOST)
 
 export function createAiGenerateFunction<
     T extends ZodObject,
