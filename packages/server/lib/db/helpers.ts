@@ -8,6 +8,7 @@
 // 	isHash,
 // 	isHex,
 // } from "viem";
+import * as t from "drizzle-orm/sqlite-core";
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { customType, int } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
@@ -17,6 +18,8 @@ export const timestamps = {
     updatedAt: int("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
     deletedAt: int("deleted_at", { mode: "timestamp" }),
 };
+
+export const tUuid = (columnName?: string) => t.text(columnName).$defaultFn(() => Bun.randomUUIDv7())
 
 // export const tEvmAddress = customType<{
 // 	data: Address;
