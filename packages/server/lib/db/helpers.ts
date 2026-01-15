@@ -9,12 +9,13 @@
 // 	isHex,
 // } from "viem";
 import { jsonParse, jsonStringify } from "@pantha/shared";
-import { customType, timestamp } from "drizzle-orm/pg-core";
+import { customType, int } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 export const timestamps = {
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp({ withTimezone: true }),
+    createdAt: int("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    updatedAt: int("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    deletedAt: int("deleted_at", { mode: "timestamp" }),
 };
 
 // export const tEvmAddress = customType<{
