@@ -1,5 +1,4 @@
 import readline from "readline";
-import { generateEmbeddings } from "./ai/engine";
 import {
     clarificationQuestionGenerator,
     courseSelectionEvaluator,
