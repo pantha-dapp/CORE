@@ -1,4 +1,5 @@
 const envKeys = [
+    "OLLAMA_HOST",
     "FRONTEND_URL",
     "GROQ_API_KEY",
     "SQLITE_FILE_PATH",

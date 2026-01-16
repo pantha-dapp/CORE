@@ -1,13 +1,12 @@
 import { chat } from "@tanstack/ai";
 import { createOpenaiChat } from "@tanstack/ai-openai";
 import { type ZodObject, z } from "zod";
-
-const HOST = "http://192.168.1.49:11434";
-// const HOST = "http://localhost:11434";
+import env from "../../env";
 
 const aiAdapter = createOpenaiChat(
+    //@ts-expect-error
     "openai/gpt-oss-120b",
-    "",
+    env.GROQ_API_KEY,
     {
         baseURL: "https://api.groq.com/openai/v1",
     },
@@ -25,8 +24,6 @@ export function createAiGenerateFunction<
 ) {
     async function aiGenerate(input: z.infer<T>, prompt?: string) {
         schemas.input.parse(input);
-
-        console.log("Awaiting ai response...\n\n");
 
         const response = await chat({
             adapter: aiAdapter,
@@ -47,7 +44,7 @@ export function createAiGenerateFunction<
 export async function generateEmbeddings(
     input: string | Record<string, unknown>,
 ) {
-    const payload = await fetch(`${HOST}/v1/embeddings`, {
+    const payload = await fetch(`${env.OLLAMA_HOST}/v1/embeddings`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
