@@ -112,7 +112,6 @@ export default new Hono()
 				);
 			}
 
-			// Validate action type against current state
 			if (
 				action.type === "major_category_choice" &&
 				ongoingSession.state !== "major_category_choice"
@@ -188,7 +187,6 @@ export default new Hono()
 					courses: ongoingSession.candidateCourses,
 				});
 
-				// Add questions to session
 				questions.forEach((q) => {
 					ongoingSession.questions.push({
 						question: q.text,
@@ -209,7 +207,6 @@ export default new Hono()
 			}
 
 			if (action.type === "answer_question") {
-				// Update answers for pending questions
 				const pendingQuestions = ongoingSession.questions.filter(
 					(q) => q.answer === undefined,
 				);
@@ -221,7 +218,6 @@ export default new Hono()
 					}
 				});
 
-				// Evaluate what to do next
 				const evaluation = await courseSelectionEvaluator({
 					previous: ongoingSession.questions.filter(
 						(q) => q.answer !== undefined,
