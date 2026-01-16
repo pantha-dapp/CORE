@@ -1,15 +1,15 @@
 import { Hono } from "hono";
 import z from "zod";
-import { respond } from "../../../../lib/utils/respond";
-import { authenticated } from "../../../middleware/auth";
-import { validator } from "../../../middleware/validator";
+import { categories } from "../../../../data/categories";
 import {
 	clarificationQuestionGenerator,
 	courseSelectionEvaluator,
 	generateNewCourseSkeleton,
 	intentClarification,
 } from "../../../../lib/ai/tasks/courses";
-import { categories } from "../../../../data/categories";
+import { respond } from "../../../../lib/utils/respond";
+import { authenticated } from "../../../middleware/auth";
+import { validator } from "../../../middleware/validator";
 
 const DEFAULT_QUESTIONS_BUDGET = 20;
 
