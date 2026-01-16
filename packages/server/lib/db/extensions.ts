@@ -1,11 +1,9 @@
-import { and, desc, eq } from "drizzle-orm";
 // import type { Address } from "viem";
 import type dbClient from "./client";
-import schema from "./schema";
 
 type DbClient = typeof dbClient;
 
-export function dbExtensionHelpers(db: DbClient) {
+export function dbExtensionHelpers(_db: DbClient) {
 	// async function canSendTo(args: { sender: Address; recipient: Address }) {
 	// 	const { sender, recipient } = args;
 

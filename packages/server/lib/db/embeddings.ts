@@ -1,3 +1,3 @@
 import dbClient from "./client";
 
-dbClient.execute(``)
+dbClient.execute(``);

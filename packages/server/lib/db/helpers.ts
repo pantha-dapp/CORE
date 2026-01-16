@@ -8,18 +8,24 @@
 // 	isHash,
 // 	isHex,
 // } from "viem";
-import * as t from "drizzle-orm/sqlite-core";
+
 import { jsonParse, jsonStringify } from "@pantha/shared";
-import { customType, int } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import * as t from "drizzle-orm/sqlite-core";
+import { customType, int } from "drizzle-orm/sqlite-core";
 
 export const timestamps = {
-    createdAt: int("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: int("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    deletedAt: int("deleted_at", { mode: "timestamp" }),
+	createdAt: int("created_at", { mode: "timestamp" })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: int("updated_at", { mode: "timestamp" })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	deletedAt: int("deleted_at", { mode: "timestamp" }),
 };
 
-export const tUuid = (columnName?: string) => t.text(columnName).$defaultFn(() => Bun.randomUUIDv7())
+export const tUuid = (columnName?: string) =>
+	t.text(columnName).$defaultFn(() => Bun.randomUUIDv7());
 
 // export const tEvmAddress = customType<{
 // 	data: Address;
@@ -41,18 +47,18 @@ export const tUuid = (columnName?: string) => t.text(columnName).$defaultFn(() =
 
 // TODO please remove
 export const tJsonString = customType<{
-    data: Record<string, unknown>;
-    driverData: string;
+	data: Record<string, unknown>;
+	driverData: string;
 }>({
-    dataType() {
-        return "text";
-    },
-    toDriver(value) {
-        return jsonStringify(value);
-    },
-    fromDriver(value) {
-        return jsonParse(value);
-    },
+	dataType() {
+		return "text";
+	},
+	toDriver(value) {
+		return jsonStringify(value);
+	},
+	fromDriver(value) {
+		return jsonParse(value);
+	},
 });
 
 // export const tBytes32 = customType<{
@@ -100,16 +106,16 @@ export const tJsonString = customType<{
 // TODO please reconsider
 
 export const tBigInt = customType<{
-    data: bigint;
-    driverData: string;
+	data: bigint;
+	driverData: string;
 }>({
-    dataType() {
-        return "text";
-    },
-    toDriver(value) {
-        return value.toString();
-    },
-    fromDriver(value) {
-        return BigInt(value);
-    },
+	dataType() {
+		return "text";
+	},
+	toDriver(value) {
+		return value.toString();
+	},
+	fromDriver(value) {
+		return BigInt(value);
+	},
 });

@@ -2,18 +2,18 @@ import z from "zod";
 import { createAiGenerateFunction } from "../engine";
 
 export const intentClarification = createAiGenerateFunction(
-    {
-        input: z.object({
-            majorCategory: z.string(),
-            userInput: z.string(),
-        }),
-        output: z.object({
-            inferredGoal: z.string(),
-            uncertainties: z.array(z.string()),
-            clarificationNeeded: z.boolean(),
-        }),
-    },
-    `You are an intent clarification engine for a learning platform.
+	{
+		input: z.object({
+			majorCategory: z.string(),
+			userInput: z.string(),
+		}),
+		output: z.object({
+			inferredGoal: z.string(),
+			uncertainties: z.array(z.string()),
+			clarificationNeeded: z.boolean(),
+		}),
+	},
+	`You are an intent clarification engine for a learning platform.
 Your job is NOT to generate courses or lessons.
 
 Your job is to:
@@ -45,47 +45,47 @@ Example Output:
 );
 
 export const clarificationQuestionGenerator = createAiGenerateFunction(
-    {
-        input: z.object({
-            inferredGoal: z.string(),
-            uncertainties: z.array(z.string()),
-            previous: z.array(
-                z.object({
-                    question: z.string(),
-                    purpose: z.string(),
-                    answer: z.string(),
-                }),
-            ),
-            questionsToGenerate: z.number(),
-            courses: z
-                .array(
-                    z.object({
-                        title: z.string(),
-                        description: z.string(),
-                    }),
-                )
-                .optional(),
-        }),
-        output: z.object({
-            questions: z.array(
-                z
-                    .object({
-                        type: z.literal("yes_no"),
-                        text: z.string(),
-                        purpose: z.string(),
-                    })
-                    .or(
-                        z.object({
-                            type: z.literal("mcq"),
-                            text: z.string(),
-                            purpose: z.string(),
-                            options: z.array(z.string()),
-                        }),
-                    ),
-            ),
-        }),
-    },
-    `You generate short, low-friction clarification questions
+	{
+		input: z.object({
+			inferredGoal: z.string(),
+			uncertainties: z.array(z.string()),
+			previous: z.array(
+				z.object({
+					question: z.string(),
+					purpose: z.string(),
+					answer: z.string(),
+				}),
+			),
+			questionsToGenerate: z.number(),
+			courses: z
+				.array(
+					z.object({
+						title: z.string(),
+						description: z.string(),
+					}),
+				)
+				.optional(),
+		}),
+		output: z.object({
+			questions: z.array(
+				z
+					.object({
+						type: z.literal("yes_no"),
+						text: z.string(),
+						purpose: z.string(),
+					})
+					.or(
+						z.object({
+							type: z.literal("mcq"),
+							text: z.string(),
+							purpose: z.string(),
+							options: z.array(z.string()),
+						}),
+					),
+			),
+		}),
+	},
+	`You generate short, low-friction clarification questions
 for a learning platform.
 
 You must follow these rules strictly:
@@ -161,56 +161,57 @@ example Output:
 );
 
 export const courseSelectionEvaluator = createAiGenerateFunction(
-    {
-        input: z.object({
-            // currentIntentSummary: z.string(),
-            previous: z.array(
-                z.object({
-                    question: z.string(),
-                    purpose: z.string(),
-                    answer: z.string(),
-                }),
-            ),
-            remainingUncertainties: z.array(z.string()),
-            currentCandidateCourses: z.array(
-                z.object({
-                    id: z.number(),
-                    title: z.string(),
-                    description: z.string(),
-                    topics: z.array(z.string()),
-                }),
-            ),
-            questionsAsked: z.number(),
-            questionBudgetRemaining: z.number(),
-        }),
-        output: z.object({
-            decision: z.enum([
-                "ask_more_questions",
-                "select_existing_course",
-                "create_new_course",
-            ]),
+	{
+		input: z.object({
+			// currentIntentSummary: z.string(),
+			previous: z.array(
+				z.object({
+					question: z.string(),
+					purpose: z.string(),
+					answer: z.string(),
+				}),
+			),
+			remainingUncertainties: z.array(z.string()),
+			currentCandidateCourses: z.array(
+				z.object({
+					id: z.number(),
+					title: z.string(),
+					description: z.string(),
+					topics: z.array(z.string()),
+				}),
+			),
+			questionsAsked: z.number(),
+			questionBudgetRemaining: z.number(),
+		}),
+		output: z.object({
+			decision: z.enum([
+				"ask_more_questions",
+				"select_existing_course",
+				"create_new_course",
+			]),
 
-            uncertantiesRemaining: z.array(z.string()).optional().nullable(),
-            questionCount: z.number().optional().nullable(),
+			uncertantiesRemaining: z.array(z.string()).optional().nullable(),
+			questionCount: z.number().optional().nullable(),
 
-            chosenCourseId: z.number().optional().nullable(),
+			chosenCourseId: z.number().optional().nullable(),
 
-            courseGenerationInstructions: z
-                .object({
-                    courseTitle: z.string(),
-                    courseDescription: z.string(),
-                    targetAudience: z.string(),
-                    assumedPrerequisites: z.array(z.string()),
-                    constraints: z.object({
-                        minimumChapters: z.number().min(10),
-                        granularity: z.string(),
-                        focus: z.string(),
-                    }),
-                })
-                .optional().nullable(),
-        }),
-    },
-    `You are a course-selection decision engine in a mobile learning platform.
+			courseGenerationInstructions: z
+				.object({
+					courseTitle: z.string(),
+					courseDescription: z.string(),
+					targetAudience: z.string(),
+					assumedPrerequisites: z.array(z.string()),
+					constraints: z.object({
+						minimumChapters: z.number().min(10),
+						granularity: z.string(),
+						focus: z.string(),
+					}),
+				})
+				.optional()
+				.nullable(),
+		}),
+	},
+	`You are a course-selection decision engine in a mobile learning platform.
 
 In this platform:
 - A "course" is a structured learning path defined by chapters and concepts.
@@ -275,23 +276,23 @@ Example of courseGenerationInstructions:
 );
 
 export const learningIntentSummarizer = createAiGenerateFunction(
-    {
-        input: z.object({
-            majorCategory: z.string(),
-            userInput: z.string(),
-            clarificationQA: z.array(
-                z.object({
-                    question: z.string(),
-                    purpose: z.string(),
-                    answer: z.string(),
-                }),
-            ),
-        }),
-        output: z.object({
-            summary: z.string(),
-        }),
-    },
-    `You update an internal intent summary for a learning platform.
+	{
+		input: z.object({
+			majorCategory: z.string(),
+			userInput: z.string(),
+			clarificationQA: z.array(
+				z.object({
+					question: z.string(),
+					purpose: z.string(),
+					answer: z.string(),
+				}),
+			),
+		}),
+		output: z.object({
+			summary: z.string(),
+		}),
+	},
+	`You update an internal intent summary for a learning platform.
 
 The summary is used for:
 - semantic search
@@ -314,11 +315,11 @@ example output:
 );
 
 export function generateCanonicalCourseDescriptor(course: {
-    name: string;
-    description: string;
-    topics: string[];
+	name: string;
+	description: string;
+	topics: string[];
 }) {
-    return `
+	return `
 Course: ${course.name}
 Description: ${course.description}
 Concepts: ${course.topics.join(", ")}
@@ -326,33 +327,33 @@ Concepts: ${course.topics.join(", ")}
 }
 
 export const generateNewCourseSkeleton = createAiGenerateFunction(
-    {
-        input: z.object({
-            courseTitle: z.string(),
-            courseDescription: z.string(),
-            targetAudience: z.string(),
-            assumedPrerequisites: z.array(z.string()),
-            constraints: z.object({
-                minimumChapters: z.number(),
-                granularity: z.string(),
-                focus: z.string(),
-            }),
-        }),
-        output: z.object({
-            overview: z.array(
-                z.object({
-                    title: z.string(),
-                    description: z.string(),
-                    chapters: {
-                        title: z.string(),
-                        description: z.string(),
-                        topics: z.array(z.string()),
-                    },
-                }),
-            ),
-        }),
-    },
-    `You are a course-structure generator for a mobile learning platform.
+	{
+		input: z.object({
+			courseTitle: z.string(),
+			courseDescription: z.string(),
+			targetAudience: z.string(),
+			assumedPrerequisites: z.array(z.string()),
+			constraints: z.object({
+				minimumChapters: z.number(),
+				granularity: z.string(),
+				focus: z.string(),
+			}),
+		}),
+		output: z.object({
+			overview: z.array(
+				z.object({
+					title: z.string(),
+					description: z.string(),
+					chapters: {
+						title: z.string(),
+						description: z.string(),
+						topics: z.array(z.string()),
+					},
+				}),
+			),
+		}),
+	},
+	`You are a course-structure generator for a mobile learning platform.
 
 In this platform:
 - A course is a long, structured learning path composed of many small chapters.

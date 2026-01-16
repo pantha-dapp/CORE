@@ -1,3 +1,3 @@
-import { createVectorDbClient } from "./lib/db/vec/client"
+import { createVectorDbClient } from "./lib/db/vec/client";
 
-const vecs = createVectorDbClient("course-embeddings")
+const _vecs = createVectorDbClient("course-embeddings");
