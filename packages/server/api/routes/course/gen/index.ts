@@ -1,8 +1,44 @@
 import { Hono } from "hono";
+import z from "zod";
 import { respond } from "../../../../lib/utils/respond";
+import { authenticated } from "../../../middleware/auth";
+import { validator } from "../../../middleware/validator";
+import {
+	clarificationQuestionGenerator,
+	courseSelectionEvaluator,
+	generateNewCourseSkeleton,
+	intentClarification,
+} from "../../../../lib/ai/tasks/courses";
+import { categories } from "../../../../data/categories";
 
-type GenerationState = {};
-const SessionStore = new Map<string, GenerationState>();
+const DEFAULT_QUESTIONS_BUDGET = 20;
+
+type GenerationState = {
+	lastSessionStartedAt: number;
+	state:
+		| "major_category_choice"
+		| "learning_intent_freetext"
+		| "ask_more_questions"
+		| "answer_question"
+		| "select_existing_course"
+		| "create_new_course"
+		| "finished";
+	majorCategory?: number;
+	learningIntent?: string;
+	questionsBudget: number;
+	questions: Array<{
+		question: string;
+		purpose: string;
+		answer?: string;
+	}>;
+	candidateCourses: Array<{
+		title: string;
+		description: string;
+		topics: string[];
+	}>;
+	uncertainties: Array<string>;
+};
+const sessionStore = new Map<string, GenerationState>();
 
 export default new Hono()
 	.post("/session", authenticated, async (ctx) => {
