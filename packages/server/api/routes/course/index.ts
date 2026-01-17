@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import dbClient from "../../../lib/db/client";
@@ -11,6 +11,7 @@ import {
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
+import db from "../../../lib/db";
 
 export default new Hono()
 
@@ -116,4 +117,42 @@ export default new Hono()
 			"Course fetched successfully.",
 			200,
 		);
-	});
+	})
+
+	.post(
+		"/enroll",
+		authenticated,
+		validator(
+			"json",
+			z.object({
+				courseId: z.string().uuid(),
+			}),
+		),
+		async (ctx) => {
+			const userWallet = ctx.get("userWallet");
+			const { courseId } = ctx.req.valid("json");
+
+			const [existingEnrollment] = await db
+				.select()
+				.from(db.schema.userCourses)
+				.where(
+					and(
+						eq(db.schema.userCourses.userWallet, userWallet),
+						eq(db.schema.userCourses.courseId, courseId),
+					),
+				);
+
+			if (existingEnrollment) {
+				return respond.err(ctx, "Already enrolled in the course.", 409);
+			}
+
+			await db
+				.insert(db.schema.userCourses)
+				.values({
+					userWallet: userWallet,
+					courseId: courseId,
+				})
+				.onConflictDoNothing()
+				.execute();
+		},
+	);

@@ -16,7 +16,7 @@ export const userCourses = t.sqliteTable("user_courses", {
 		.primaryKey()
 		.$defaultFn(() => Bun.randomUUIDv7()),
 
-	userWalletAddress: tEvmAddress()
+	userWallet: tEvmAddress()
 		.notNull()
 		.references(() => users.walletAddress, { onDelete: "cascade" }),
 	courseId: t.text("course_id").notNull(),
