@@ -4,7 +4,8 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.3.11",
 		"@types/bun": "latest",
-		"@types/jsonwebtoken": "^9.0.10"
+		"@types/jsonwebtoken": "^9.0.10",
+		"husky": "^9.1.7"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
@@ -16,7 +17,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"fmt-lint": "biome check --write"
+		"fmt-lint": "biome check --write",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@tanstack/ai": "^0.2.1",

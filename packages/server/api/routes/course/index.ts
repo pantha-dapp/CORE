@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
+import db from "../../../lib/db";
 import dbClient from "../../../lib/db/client";
 import {
 	chapterTopics,
@@ -11,7 +12,6 @@ import {
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
-import db from "../../../lib/db";
 
 export default new Hono()
 
