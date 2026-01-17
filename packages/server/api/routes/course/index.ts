@@ -1,12 +1,12 @@
-import { Hono } from "hono";
 import { eq, sql } from "drizzle-orm";
+import { Hono } from "hono";
 import z from "zod";
 import dbClient from "../../../lib/db/client";
 import {
 	chapterTopics,
 	courseChapters,
-	courseTopics,
 	courses,
+	courseTopics,
 } from "../../../lib/db/schema/course";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";

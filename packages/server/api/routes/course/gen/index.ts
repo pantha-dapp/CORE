@@ -1,6 +1,8 @@
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { categories } from "../../../../data/categories";
+import { generateEmbeddings } from "../../../../lib/ai/engine";
 import {
 	clarificationQuestionGenerator,
 	courseSelectionEvaluator,
@@ -9,14 +11,12 @@ import {
 	generateNewCourseSkeleton,
 	intentClarification,
 } from "../../../../lib/ai/tasks/courses";
-import { generateEmbeddings } from "../../../../lib/ai/engine";
 import dbClient from "../../../../lib/db/client";
-import { courseTopics, courses } from "../../../../lib/db/schema/course";
+import { courses, courseTopics } from "../../../../lib/db/schema/course";
 import { createVectorDbClient } from "../../../../lib/db/vec/client";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
-import { eq } from "drizzle-orm";
 
 const DEFAULT_QUESTIONS_BUDGET = 20;
 const vectorDb = createVectorDbClient("course-embeddings");
