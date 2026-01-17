@@ -182,7 +182,6 @@ export default new Hono()
 					ongoingSession.uncertainties.push(u);
 				});
 
-				// Generate ideal course descriptor for similarity matching
 				const idealCourse = await generateIdealCourseDescriptor({
 					majorCategory:
 						categories[ongoingSession.majorCategory ?? -1] ?? "Others",
@@ -368,7 +367,6 @@ export default new Hono()
 							evaluation.courseGenerationInstructions.courseDescription,
 					});
 
-					// Generate canonical descriptor for embedding
 					const canonicalDescriptor = generateCanonicalCourseDescriptor({
 						name: evaluation.courseGenerationInstructions.courseTitle,
 						description:
