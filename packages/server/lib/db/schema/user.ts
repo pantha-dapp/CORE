@@ -9,3 +9,18 @@ export const users = t.sqliteTable("users", {
 
 	...timestamps,
 });
+
+export const userCourses = t.sqliteTable("user_courses", {
+	id: t
+		.text("id")
+		.primaryKey()
+		.$defaultFn(() => Bun.randomUUIDv7()),
+
+	userWalletAddress: tEvmAddress()
+		.notNull()
+		.references(() => users.walletAddress, { onDelete: "cascade" }),
+	courseId: t.text("course_id").notNull(),
+	progress: t.integer("progress").notNull().default(0), // this wil represent number of chappter till which user has reached
+
+	...timestamps,
+});
