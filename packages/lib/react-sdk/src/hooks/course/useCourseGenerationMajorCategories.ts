@@ -10,16 +10,14 @@ export default function () {
 				throw new Error("not connected");
 			}
 
-			const newSessionResponseRaw = await api.rpc.course.gen.session.$get();
-			const newSessionResponse = await newSessionResponseRaw.json();
+			const categoriesResponseRaw = await api.rpc.course.gen.categories.$get();
+			const categoriesResponse = await categoriesResponseRaw.json();
 
-			if (!newSessionResponse.success) {
-				throw new Error("Failed to retreive  session ", {
-					cause: newSessionResponse.error,
-				});
+			if (!categoriesResponse.success) {
+				throw new Error("Failed to retrieve categories");
 			}
 
-			return newSessionResponse.data;
+			return categoriesResponse.data;
 		},
 	});
 }
