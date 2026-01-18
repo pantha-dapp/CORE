@@ -1,14 +1,14 @@
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider } from "@privy-io/wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import router from "./pages/router";
-import "./globals.css";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
 import { wagmiConfig } from "./shared/config/wagmi";
+import { PanthaProvider } from "./shared/contexts/AppWrapper";
 
 // Root element
 const rootElement = document.getElementById("root");
@@ -24,8 +24,10 @@ const App = () => {
 				<QueryClientProvider client={queryClient}>
 					<PrivyProvider appId="cmfzj650r01rxkv0c8bap7wfr">
 						<WagmiProvider config={wagmiConfig}>
-							<RouterProvider router={router} />
-							<Toaster position="bottom-right" />
+							<PanthaProvider>
+								<RouterProvider router={router} />
+								<Toaster position="bottom-right" />
+							</PanthaProvider>
 						</WagmiProvider>
 					</PrivyProvider>
 				</QueryClientProvider>
