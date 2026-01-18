@@ -50,6 +50,7 @@ type GenerationState = {
 const sessionStore = new Map<string, GenerationState>();
 
 export default new Hono()
+
 	.post("/session", authenticated, async (ctx) => {
 		const { userWallet } = ctx.var;
 		const lastSession = sessionStore.get(userWallet);
@@ -74,6 +75,29 @@ export default new Hono()
 			questionsBudget: DEFAULT_QUESTIONS_BUDGET,
 		});
 		return respond.ok(ctx, {}, "Session started successfully.", 201);
+	})
+
+	.get("/session", authenticated, async (ctx) => {
+		const { userWallet } = ctx.var;
+		const session = sessionStore.get(userWallet);
+
+		if (!session) {
+			return respond.err(ctx, "No active generation session found.", 404);
+		}
+
+		return respond.ok(
+			ctx,
+			{
+				state: session.state,
+				questionsBudget: session.questionsBudget,
+				questionsAnswered: session.questions.filter(
+					(q) => q.answer !== undefined,
+				).length,
+				totalQuestions: session.questions.length,
+			},
+			"Session state retrieved successfully.",
+			200,
+		);
 	})
 
 	.get("/categories", authenticated, async (ctx) => {
@@ -392,27 +416,4 @@ export default new Hono()
 				}
 			}
 		},
-	)
-
-	.get("/session", authenticated, async (ctx) => {
-		const { userWallet } = ctx.var;
-		const session = sessionStore.get(userWallet);
-
-		if (!session) {
-			return respond.err(ctx, "No active generation session found.", 404);
-		}
-
-		return respond.ok(
-			ctx,
-			{
-				state: session.state,
-				questionsBudget: session.questionsBudget,
-				questionsAnswered: session.questions.filter(
-					(q) => q.answer !== undefined,
-				).length,
-				totalQuestions: session.questions.length,
-			},
-			"Session state retrieved successfully.",
-			200,
-		);
-	});
+	);
