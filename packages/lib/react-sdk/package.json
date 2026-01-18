@@ -1,11 +1,11 @@
 {
-    "name": "@pantha/react",
-    "version": "0.1.0",
-    "dependencies": {
-        "@tanstack/react-query": "^5.90.19",
-        "idb": "^8.0.3"
-    },
-    "devDependencies": {
-        "@types/react": "^19.2.8"
-    }
+	"name": "@pantha/react",
+	"version": "0.1.0",
+	"dependencies": {
+		"@tanstack/react-query": "^5.90.19",
+		"idb": "^8.0.3"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.8"
+	}
 }
