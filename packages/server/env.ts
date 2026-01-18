@@ -1,4 +1,5 @@
 const envKeys = [
+	"PORT",
 	"OLLAMA_HOST",
 	"FRONTEND_URL",
 	"GROQ_API_KEY",
