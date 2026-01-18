@@ -25,6 +25,6 @@ export const app = new Hono()
 export type ApiType = typeof app;
 
 export default {
-	port: Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 30013,
+	port: env.PORT ? parseInt(env.PORT, 10) : 31001,
 	fetch: app.fetch,
 };
