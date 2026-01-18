@@ -12,8 +12,11 @@ import {
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
+import gen from "./gen";
 
 export default new Hono()
+
+	.route("/gen", gen)
 
 	.get(
 		"/",
