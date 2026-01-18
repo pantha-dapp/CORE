@@ -1,6 +1,14 @@
 {
 	"name": "@pantha/react",
 	"version": "0.1.0",
+	"exports": {
+		".": {
+			"default": "./index.ts"
+		},
+		"./hooks": {
+			"default": "./hooks.ts"
+		}
+	},
 	"dependencies": {
 		"@tanstack/react-query": "^5.90.19",
 		"idb": "^8.0.3"
