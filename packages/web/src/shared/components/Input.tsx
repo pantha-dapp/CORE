@@ -1,6 +1,6 @@
+import clsx from "clsx";
 import React from "react";
 import Icon, { type IconName } from "./Icon";
-import clsx from "clsx";
 
 type InputVariant = "default" | "error";
 type InputSize = "sm" | "md" | "lg";

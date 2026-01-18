@@ -5,9 +5,9 @@ import { Toaster } from "sonner";
 import router from "./pages/router";
 import "./globals.css";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "./shared/config/wagmi";
 
 // Root element

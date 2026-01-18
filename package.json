@@ -12,7 +12,8 @@
 	},
 	"workspaces": [
 		"packages/server",
-		"packages/lib/shared"
+		"packages/lib/shared",
+		"packages/web"
 	],
 	"private": true,
 	"type": "module",

@@ -1,7 +1,7 @@
+import type { UseMutationResult } from "@tanstack/react-query";
+import clsx from "clsx";
 import type React from "react";
 import Icon, { type IconName } from "./Icon";
-import clsx from "clsx";
-import type { UseMutationResult } from "@tanstack/react-query";
 
 type ButtonVariant =
 	| "primary"
@@ -88,7 +88,7 @@ export default function Button<
 
 		// Trigger vibration if enabled
 		if (vibrate && "vibrate" in navigator) {
-			navigator.vibrate(200);
+			navigator.vibrate([200, 200, 100]);
 		}
 	};
 
