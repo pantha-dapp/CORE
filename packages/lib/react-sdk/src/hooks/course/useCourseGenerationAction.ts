@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import type { InferRequestType } from "hono/client";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export default function useCourseGenerationAction() {
+export default function () {
 	const { wallet, api } = usePanthaContext();
 
 	return useMutation({
