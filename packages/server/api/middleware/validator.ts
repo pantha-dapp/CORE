@@ -5,7 +5,10 @@ import { respond } from "../../lib/utils/respond";
 type Target = Parameters<typeof zValidator>[0];
 type Schema = Parameters<typeof zValidator>[1];
 
-export const validator = <T extends Schema>(target: Target, schema: T) => {
+export const validator = <T extends Target, S extends Schema>(
+	target: T,
+	schema: S,
+) => {
 	const validatorMiddleware = zValidator(target, schema, (res, ctx) => {
 		if (!res.success) {
 			return respond.err(
