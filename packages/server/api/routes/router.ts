@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import auth from "./auth";
 import course from "./course";
 
 export const apiRouter = new Hono()
@@ -10,4 +11,5 @@ export const apiRouter = new Hono()
 		};
 		return ctx.json(runtime);
 	})
+	.route("/auth", auth)
 	.route("/course", course);
