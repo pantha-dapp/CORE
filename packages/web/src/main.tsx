@@ -22,7 +22,12 @@ const App = () => {
 		<StrictMode>
 			<ErrorBoundary>
 				<QueryClientProvider client={queryClient}>
-					<PrivyProvider appId="cmfzj650r01rxkv0c8bap7wfr">
+					<PrivyProvider
+						appId="cmkhe9jzt0126l70diykb112q"
+						config={{
+							loginMethods: ["email"],
+						}}
+					>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
 								<RouterProvider router={router} />

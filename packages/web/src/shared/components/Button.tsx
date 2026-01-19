@@ -63,7 +63,7 @@ export default function Button<
 	iconPosition = "left",
 	iconSize = 20,
 	loading = false,
-	vibrate = true,
+	vibrate = false,
 	disabled,
 	className,
 	mutation,
@@ -88,10 +88,10 @@ export default function Button<
 
 		// Trigger vibration if enabled
 		if (vibrate && "vibrate" in navigator) {
-			navigator.vibrate([200, 200, 100]);
+			//navigator.vibrate([200, 200, 100]);
 		}
 	};
-
+	// yaad rhkna ki ye yaad dilana h
 	const buttonClasses = clsx(
 		"inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1",
 		variantClasses[variant],

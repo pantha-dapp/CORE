@@ -7,6 +7,8 @@ import {
 import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
 import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
+import Onboarding from "./Onboarding/Onboarding";
+import Dashboard from "./Profile/dashboard";
 
 const rootRoute = createRootRoute({
 	component: () => {
@@ -32,7 +34,24 @@ const loginRoute = createRoute({
 	},
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, loginRoute]);
+const dashboardRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/dashboard",
+	component: Dashboard,
+});
+
+const onboardingRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/onboarding",
+	component: Onboarding,
+});
+
+const routeTree = rootRoute.addChildren([
+	indexRoute,
+	loginRoute,
+	dashboardRoute,
+	onboardingRoute,
+]);
 const router = createRouter({
 	routeTree,
 });
