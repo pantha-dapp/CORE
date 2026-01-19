@@ -8,6 +8,6 @@ export default defineConfig({
 		dedupe: ["react", "react-dom"],
 	},
 	server: {
-		allowedHosts: ["pseudosyphilitic-neotenous-angle.ngrok-free.dev"],
+		allowedHosts: ["untranscribed-miriam-hereditary.ngrok-free.dev"],
 	},
 });
