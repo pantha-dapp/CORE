@@ -1,6 +1,7 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 import clsx from "clsx";
 import type React from "react";
+import { useEffect, useRef } from "react";
 import Icon, { type IconName } from "./Icon";
 
 type ButtonVariant =
@@ -74,24 +75,24 @@ export default function Button<
 	const isMutationLoading = mutation?.isPending ?? false;
 	const isDisabled = disabled || loading || isMutationLoading;
 	const isLoading = loading || isMutationLoading;
+	const buttonRef = useRef<HTMLButtonElement>(null);
 
-	const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+	function handleVibrate() {
+		if (vibrate && "vibrate" in navigator) {
+			navigator.vibrate([200, 200, 100]);
+		}
+	}
+
+	function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
 		if (mutation && mutationVariables !== undefined) {
 			mutation.mutate(mutationVariables);
 		} else if (mutation) {
-			// For mutations that don't need variables (TVariables = void)
 			mutation.mutate(undefined as TVariables);
 		}
 
-		// Also call the custom onClick if provided
 		onClick?.(e);
+	}
 
-		// Trigger vibration if enabled
-		if (vibrate && "vibrate" in navigator) {
-			//navigator.vibrate([200, 200, 100]);
-		}
-	};
-	// yaad rhkna ki ye yaad dilana h
 	const buttonClasses = clsx(
 		"inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1",
 		variantClasses[variant],
@@ -100,12 +101,25 @@ export default function Button<
 		className,
 	);
 
+	useEffect(() => {
+		const button = buttonRef.current;
+		if (button) {
+			button.addEventListener("click", handleVibrate);
+		}
+		return () => {
+			if (button) {
+				button.removeEventListener("click", handleVibrate);
+			}
+		};
+	}, [buttonRef]);
+
 	return (
 		<button
 			type="button"
 			disabled={isDisabled}
 			className={buttonClasses}
 			onClick={mutation ? handleClick : onClick}
+			ref={buttonRef}
 			{...props}
 		>
 			{isLoading && (
