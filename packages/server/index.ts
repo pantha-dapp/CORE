@@ -1,28 +1,14 @@
 import "dotenv/config";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
-import { apiRouter } from "./api/routes/router";
-import env from "./env";
+import env, { ensureEnv } from "./env";
+
+ensureEnv();
+
+import { app } from "./server";
 
 //@ts-expect-error
 BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
-
-export const app = new Hono()
-	.use(logger())
-	.use(
-		cors({
-			origin: [env.FRONTEND_URL],
-			allowHeaders: ["Content-Type", "Authorization"],
-			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-			credentials: true,
-		}),
-	)
-	.route("/api", apiRouter);
-
-export type ApiType = typeof app;
 
 export default {
 	port: env.PORT ? parseInt(env.PORT, 10) : 31001,
