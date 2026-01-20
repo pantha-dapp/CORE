@@ -1,31 +1,29 @@
+import { useLogin } from "@pantha/react/hooks";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
-import { useMatch, useRouter } from "@tanstack/react-router";
+import { useMatch } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { Drawer } from "vaul";
 import Button from "../../shared/components/Button";
-import Icon from "../../shared/components/Icon";
 import Input from "../../shared/components/Input";
 
 export default function LoginPage() {
-	const router = useRouter();
 	const match = useMatch({ strict: false });
 	const [email, setEmail] = useState("");
 	const [code, setCode] = useState("");
 	const { sendCode, loginWithCode } = useLoginWithEmail();
-	const { authenticated } = usePrivy();
+	const { authenticated, login } = usePrivy();
+	const loginMutation = useLogin();
 
 	const [isOpen, setIsOpen] = React.useState(false);
 	useEffect(() => {
 		if (authenticated && match.routeId === "/login") {
-			const isFirstTimeUser = true; // 🔴 TEMP (later from DB)
-
-			if (isFirstTimeUser) {
-				router.navigate({ to: "/onboarding", replace: true });
-			} else {
-				router.navigate({ to: "/dashboard", replace: true });
-			}
+			// Call Pantha login when Privy authentication is complete
+			loginMutation.mutateAsync().catch((error) => {
+				console.error("Pantha login failed:", error);
+				// Handle login failure, perhaps show error or retry
+			});
 		}
-	}, [authenticated, match.routeId, router]);
+	}, [authenticated, match.routeId, loginMutation]);
 
 	const handleEmailLogin = async () => {
 		try {
@@ -39,7 +37,6 @@ export default function LoginPage() {
 	const handleVerifyOtp = async () => {
 		try {
 			await loginWithCode({
-				email,
 				code: code.trim(),
 			});
 			setIsOpen(false); // 🔑 CLOSE OTP DRAWER
@@ -149,6 +146,7 @@ export default function LoginPage() {
 					type="button"
 					variant="secondary"
 					className="w-full flex items-center justify-center gap-3 px-14 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
+					onClick={() => login({ loginMethods: ["google"] })}
 				>
 					<img
 						src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/500px-Google_%22G%22_logo.svg.png"
@@ -184,16 +182,6 @@ export default function LoginPage() {
 						alt="Farcaster"
 					/>
 					SIGN IN WITH FARCASTER
-				</Button>
-
-				{/* Web3 Wallet */}
-				<Button
-					type="button"
-					variant="secondary"
-					className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
-				>
-					<Icon name="wallet" size={20} />
-					SIGN IN WITH WEB3 WALLET
 				</Button>
 			</div>
 
