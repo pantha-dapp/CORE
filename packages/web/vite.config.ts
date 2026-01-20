@@ -8,6 +8,14 @@ export default defineConfig({
 		dedupe: ["react", "react-dom"],
 	},
 	server: {
-		allowedHosts: ["untranscribed-miriam-hereditary.ngrok-free.dev"],
+		allowedHosts: [
+			"untranscribed-miriam-hereditary.ngrok-free.dev",
+			"pseudosyphilitic-neotenous-angle.ngrok-free.dev",
+		],
+		port: 31003,
+		strictPort: true,
+		proxy: {
+			"/api": "http://localhost:31001",
+		},
 	},
 });
