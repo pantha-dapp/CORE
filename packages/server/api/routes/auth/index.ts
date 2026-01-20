@@ -1,3 +1,4 @@
+import { MINUTE } from "@pantha/shared/constants";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import {
@@ -10,7 +11,6 @@ import {
 } from "viem";
 import { mainnet } from "viem/chains";
 import { parseSiweMessage, verifySiweMessage } from "viem/siwe";
-import { MINUTE } from "../../../constants";
 import db from "../../../lib/db";
 import { issueJwtToken } from "../../../lib/utils/jwt";
 import { respond } from "../../../lib/utils/respond";
