@@ -21,7 +21,9 @@
 	"type": "module",
 	"scripts": {
 		"fmt-lint": "biome check --write",
-		"prepare": "husky"
+		"prepare": "husky",
+		"client:dev": "bun run --cwd packages/web dev",
+		"server:dev": "bun run --cwd packages/server dev"
 	},
 	"lint-staged": {
 		"*.{js,ts,tsx,jsx,json,css}": "biome check --write"
