@@ -1,3 +1,4 @@
+import "./globals.css";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import router from "./pages/router";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
+import { privyConfig } from "./shared/config/privy";
 import { wagmiConfig } from "./shared/config/wagmi";
 import { PanthaProvider } from "./shared/contexts/AppWrapper";
 
@@ -22,12 +24,7 @@ const App = () => {
 		<StrictMode>
 			<ErrorBoundary>
 				<QueryClientProvider client={queryClient}>
-					<PrivyProvider
-						appId="cmkhe9jzt0126l70diykb112q"
-						config={{
-							loginMethods: ["email"],
-						}}
-					>
+					<PrivyProvider appId="cmkkwg9660061ju0ccbmggd59" config={privyConfig}>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
 								<RouterProvider router={router} />
@@ -50,7 +47,7 @@ BigInt.prototype.toJSON = function () {
 createRoot(rootElement).render(app);
 
 // Register service worker
-if ("serviceWorker" in navigator) {
+if ("serviceWorker" in navigator && !import.meta.env.DEV) {
 	navigator.serviceWorker
 		.register("/sw.js")
 		.then((registration) => {
