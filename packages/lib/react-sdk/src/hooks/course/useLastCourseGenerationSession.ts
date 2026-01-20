@@ -1,5 +1,5 @@
+import { MINUTE } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
-import { MINUTE } from "../../../../../server/constants";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export default function () {
