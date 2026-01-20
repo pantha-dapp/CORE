@@ -23,6 +23,10 @@ export function ensureEnv() {
 
 	env = Object.fromEntries(envKeys.map((key) => [key, Bun.env[key]])) as ENV;
 }
+// const isProd =
+// 	process.env.NODE_ENV === "production" || process.env.NODE_ENV === "prod";
+// if (!isProd) ensureEnv();
+
 const isProd =
 	process.env.NODE_ENV === "production" || process.env.NODE_ENV === "prod";
 if (!isProd) ensureEnv();
