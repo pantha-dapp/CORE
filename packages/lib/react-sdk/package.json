@@ -1,19 +1,32 @@
 {
 	"name": "@pantha/react",
 	"version": "0.1.0",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"default": "./index.ts"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		},
 		"./hooks": {
-			"default": "./hooks.ts"
+			"types": "./dist/hooks.d.ts",
+			"import": "./dist/hooks.js"
 		}
+	},
+	"scripts": {
+		"build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly --outDir dist"
 	},
 	"dependencies": {
 		"@tanstack/react-query": "^5.90.19",
 		"idb": "^8.0.3"
 	},
 	"devDependencies": {
-		"@types/react": "^19.2.8"
+		"@types/react": "^19.2.8",
+		"vite": "^5.4.10"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
 	}
 }
