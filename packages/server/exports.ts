@@ -1,3 +1,3 @@
-import type { ApiType } from "./index";
+import type { app } from "./server";
 
-export type { ApiType };
+export type ApiType = typeof app;
