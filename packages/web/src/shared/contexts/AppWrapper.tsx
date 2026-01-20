@@ -5,10 +5,7 @@ export function PanthaProvider({ children }: { children: React.ReactNode }) {
 	const { data: wallet } = useWalletClient();
 
 	return (
-		<PanthaProviderBase
-			apiBaseUrl={process.env.VITE_SERVER_URL || "localhost:30011"}
-			wallet={wallet}
-		>
+		<PanthaProviderBase apiBaseUrl={"/api"} wallet={wallet}>
 			{children}
 		</PanthaProviderBase>
 	);
