@@ -1,11 +1,13 @@
-import { useMutation } from "@tanstack/react-query";
+import { DAY } from "@pantha/shared/constants";
+import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export default function () {
 	const { wallet, api } = usePanthaContext();
 
-	return useMutation({
-		mutationFn: async () => {
+	return useQuery({
+		queryKey: ["courseGenerationMajorCategories"],
+		queryFn: async () => {
 			if (!wallet) {
 				throw new Error("not connected");
 			}
@@ -19,5 +21,6 @@ export default function () {
 
 			return categoriesResponse.data;
 		},
+		staleTime: 7 * DAY,
 	});
 }
