@@ -5,7 +5,7 @@ export function PanthaProvider({ children }: { children: React.ReactNode }) {
 	const { data: wallet } = useWalletClient();
 
 	return (
-		<PanthaProviderBase apiBaseUrl={"/api"} wallet={wallet}>
+		<PanthaProviderBase apiBaseUrl={"/"} wallet={wallet}>
 			{children}
 		</PanthaProviderBase>
 	);

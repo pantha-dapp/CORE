@@ -3,7 +3,7 @@ import { tEvmAddress, timestamps } from "../helpers";
 
 export const users = t.sqliteTable("users", {
 	walletAddress: tEvmAddress().primaryKey(),
-	username: t.text("username").notNull().unique(),
+	username: t.text("username").unique(),
 
 	lastActiveAt: t.int("last_active_at", { mode: "timestamp" }).notNull(),
 

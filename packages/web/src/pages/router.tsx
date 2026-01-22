@@ -1,4 +1,5 @@
 import { useIsLoggedIn } from "@pantha/react/hooks";
+import { usePrivy } from "@privy-io/react-auth";
 import {
 	createRootRoute,
 	createRoute,
@@ -7,36 +8,53 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import type React from "react";
+import { useEffect, useState } from "react";
 import Navigation from "../shared/components/Navigation";
 import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
+import Dashboard from "./Dashboard";
 import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
-import Dashboard from "./Profile";
+import Profile from "./Profile";
 
 type ProtectedRouteType = "loggedOutOnly" | "loggedInOnly";
-
 interface ProtectedRouteProps {
 	type: ProtectedRouteType;
 	children: React.ReactNode;
 }
 
 function ProtectedRoute({ type, children }: ProtectedRouteProps) {
-	const { data: isLoggedIn, isLoading } = useIsLoggedIn();
+	const { ready, authenticated } = usePrivy();
 	const router = useRouter();
+	const { data: isLoggedIn, isLoading: isLoggedInLoading } = useIsLoggedIn();
+	const [protectionLogicExecuted, setProtectionLogicExecuted] = useState(false);
 
-	if (isLoading) {
-		return <div>Loading...</div>; // Or some loading component
-	}
+	useEffect(() => {
+		if (ready && !isLoggedInLoading) {
+			if (type === "loggedOutOnly") {
+				if (isLoggedIn === true) {
+					router.navigate({ to: "/dashboard", replace: true });
+				} else if (isLoggedIn === false) {
+					if (authenticated === false) {
+						setProtectionLogicExecuted(true);
+					}
+				}
+			}
 
-	if (type === "loggedOutOnly" && isLoggedIn) {
-		router.navigate({ to: "/dashboard", replace: true });
-		return null;
-	}
+			if (type === "loggedInOnly") {
+				if (isLoggedIn === true) {
+					setProtectionLogicExecuted(true);
+				} else if (isLoggedIn === false) {
+					if (authenticated === false) {
+						router.navigate({ to: "/login", replace: true });
+					}
+				}
+			}
+		}
+	}, [isLoggedIn, isLoggedInLoading, ready, authenticated, router, type]);
 
-	if (type === "loggedInOnly" && !isLoggedIn) {
-		router.navigate({ to: "/login", replace: true });
-		return null;
+	if (!ready && !protectionLogicExecuted) {
+		return <div>Loading...</div>;
 	}
 
 	return <>{children}</>;
@@ -90,12 +108,37 @@ const dashboardRoute = createRoute({
 		);
 	},
 });
+// const courseMapRoute = createRoute({
+// 	getParentRoute: () => rootRoute,
+// 	path: "/course-map",
+// 	component: function CourseMapRoute() {
+// 		return (
+// 			<ProtectedRoute type="loggedInOnly">
+// 				<CourseMap />
+// 				<Navigation />
+// 			</ProtectedRoute>
+// 		);
+// 	},
+// });
+const profileRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/profile",
+	component: function ProfileRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Profile />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
 
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	loginRoute,
 	onboardingRoute,
 	dashboardRoute,
+	profileRoute,
 ]);
 
 const router = createRouter({

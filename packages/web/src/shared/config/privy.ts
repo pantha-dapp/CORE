@@ -10,6 +10,8 @@ export const privyConfig: PrivyClientConfig = {
 		ethereum: {
 			createOnLogin: "users-without-wallets",
 		},
+		showWalletUIs: false,
 	},
+	loginMethods: ["email", "google", "apple", "farcaster"],
 	supportedChains: [optimism],
 };
