@@ -3,6 +3,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
+import { Buffer as BufferI } from "buffer";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
@@ -23,16 +24,16 @@ const App = () => {
 	return (
 		<StrictMode>
 			<ErrorBoundary>
-				<QueryClientProvider client={queryClient}>
-					<PrivyProvider appId="cmkkwg9660061ju0ccbmggd59" config={privyConfig}>
+				<PrivyProvider appId="cmkhe9jzt0126l70diykb112q" config={privyConfig}>
+					<QueryClientProvider client={queryClient}>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
 								<RouterProvider router={router} />
 								<Toaster position="bottom-right" />
 							</PanthaProvider>
 						</WagmiProvider>
-					</PrivyProvider>
-				</QueryClientProvider>
+					</QueryClientProvider>
+				</PrivyProvider>
 			</ErrorBoundary>
 		</StrictMode>
 	);
@@ -43,6 +44,8 @@ const app = <App />;
 BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
+
+window.Buffer = window.Buffer || BufferI;
 
 createRoot(rootElement).render(app);
 

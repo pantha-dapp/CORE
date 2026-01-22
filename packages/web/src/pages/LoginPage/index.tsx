@@ -1,34 +1,25 @@
-import { useLogin } from "@pantha/react/hooks";
+import { useIsLoggedIn, useLogin } from "@pantha/react/hooks";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
-import { useMatch } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { Drawer } from "vaul";
+import { useWalletClient } from "wagmi";
 import Button from "../../shared/components/Button";
 import Input from "../../shared/components/Input";
 
 export default function LoginPage() {
-	const match = useMatch({ strict: false });
 	const [email, setEmail] = useState("");
 	const [code, setCode] = useState("");
 	const { sendCode, loginWithCode } = useLoginWithEmail();
-	const { authenticated, login } = usePrivy();
-	const loginMutation = useLogin();
-
+	const { login } = usePrivy();
 	const [isOpen, setIsOpen] = React.useState(false);
-	useEffect(() => {
-		if (authenticated && match.routeId === "/login") {
-			// Call Pantha login when Privy authentication is complete
-			loginMutation.mutateAsync().catch((error) => {
-				console.error("Pantha login failed:", error);
-				// Handle login failure, perhaps show error or retry
-			});
-		}
-	}, [authenticated, match.routeId, loginMutation]);
+	const { mutate: loginPantha } = useLogin();
+	const { data: wallet } = useWalletClient();
+	const { data: isLoggedIn } = useIsLoggedIn();
 
 	const handleEmailLogin = async () => {
 		try {
 			await sendCode({ email });
-			setIsOpen(true); // 🔑 OPEN OTP DRAWER
+			setIsOpen(true);
 		} catch (err) {
 			console.error(err);
 		}
@@ -44,6 +35,12 @@ export default function LoginPage() {
 			console.error(err);
 		}
 	};
+
+	useEffect(() => {
+		if (wallet && isLoggedIn === false) {
+			loginPantha();
+		}
+	}, [wallet]);
 
 	return (
 		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 flex flex-col items-center justify-center px-12 py-8">
@@ -88,7 +85,7 @@ export default function LoginPage() {
 						<Drawer.Overlay className="fixed inset-0 bg-black/40" />
 						<Drawer.Content className="bg-gray-100 flex flex-col rounded-t-[10px] mt-24 h-fit fixed bottom-0 left-0 right-0 outline-none">
 							<div className="p-4 bg-gray-800 rounded-t-[10px] flex-1">
-								<div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-300 mb-8" />
+								<div className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-gray-300 mb-8" />
 								<div className="max-w-md mx-auto">
 									<input
 										type="text"
@@ -115,7 +112,7 @@ export default function LoginPage() {
 
 									<button
 										type="button"
-										className="rounded-md mt-4 w-full bg-gray-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+										className="rounded-md mt-4 w-full bg-gray-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-gray-600"
 										onClick={() => setIsOpen(false)}
 									>
 										Close Drawer
