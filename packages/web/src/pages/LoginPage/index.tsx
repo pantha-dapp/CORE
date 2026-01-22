@@ -40,7 +40,7 @@ export default function LoginPage() {
 		if (wallet && isLoggedIn === false) {
 			loginPantha();
 		}
-	}, [wallet]);
+	}, [wallet, isLoggedIn, loginPantha]);
 
 	return (
 		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 flex flex-col items-center justify-center px-12 py-8">
@@ -143,7 +143,7 @@ export default function LoginPage() {
 					type="button"
 					variant="secondary"
 					className="w-full flex items-center justify-center gap-3 px-14 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
-					onClick={() => login({ loginMethods: ["google"] })}
+					onClick={() => login()}
 				>
 					<img
 						src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/500px-Google_%22G%22_logo.svg.png"
@@ -157,6 +157,7 @@ export default function LoginPage() {
 				<Button
 					type="button"
 					variant="secondary"
+					onClick={() => login()}
 					className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
 				>
 					<img
@@ -171,6 +172,7 @@ export default function LoginPage() {
 				<Button
 					type="button"
 					variant="secondary"
+					onClick={() => login()}
 					className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
 				>
 					<img
