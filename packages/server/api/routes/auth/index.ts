@@ -1,5 +1,4 @@
 import { MINUTE } from "@pantha/shared/constants";
-import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import {
 	type Address,
@@ -87,26 +86,17 @@ export default new Hono()
 			return respond.err(ctx, "Invalid signature", 400);
 		}
 
-		// Check if user exists, update lastActiveAt if so
-		const [existingUser] = await db
-			.select({ walletAddress: users.walletAddress })
-			.from(users)
-			.where(eq(users.walletAddress, address))
-			.limit(1);
-
-		if (existingUser) {
-			await db
-				.update(users)
-				.set({ lastActiveAt: new Date() })
-				.where(eq(users.walletAddress, address));
-		} else {
-			// User doesn't exist - they need to register first
-			return respond.err(
-				ctx,
-				"User not registered. Please register first.",
-				401,
-			);
-		}
+		await db
+			.insert(users)
+			.values({
+				walletAddress: address,
+				lastActiveAt: new Date(),
+			})
+			.onConflictDoNothing()
+			.catch((err) => {
+				console.error("Error inserting new user:", err);
+				return respond.err(ctx, "Database error", 500);
+			});
 
 		const token = issueJwtToken(address);
 
