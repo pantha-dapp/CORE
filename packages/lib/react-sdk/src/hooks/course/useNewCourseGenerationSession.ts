@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export default function () {
+export function useNewCourseGenerationSession() {
 	const { wallet, api } = usePanthaContext();
 
 	return useMutation({
