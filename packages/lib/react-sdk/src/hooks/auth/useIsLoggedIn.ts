@@ -17,6 +17,5 @@ export function useIsLoggedIn() {
 			return !!jwt;
 		},
 		staleTime: 1 * DAY,
-		enabled: !!wallet,
 	});
 }
