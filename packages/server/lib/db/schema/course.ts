@@ -49,3 +49,13 @@ export const chapterTopics = t.sqliteTable(
 	},
 	(table) => [t.index("idx_chapter_topics_chapter_id").on(table.chapterId)],
 );
+
+export const chapterPages = t.sqliteTable("chapter_pages", {
+	id: tUuid("id").primaryKey(),
+	chapterId: t
+		.text("chapter_id")
+		.notNull()
+		.references(() => courseChapters.id, { onDelete: "cascade" }),
+	order: t.integer("order").notNull(),
+	content: t.text("content").notNull(),
+});
