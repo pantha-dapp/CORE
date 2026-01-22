@@ -6,9 +6,11 @@ export default function () {
 	const { wallet, api } = usePanthaContext();
 
 	return useMutation({
-		mutationFn: async (
-			action: InferRequestType<typeof api.rpc.course.gen.action.$post>["json"],
-		) => {
+		mutationFn: async (args: {
+			action: InferRequestType<typeof api.rpc.course.gen.action.$post>["json"];
+		}) => {
+			const { action } = args;
+
 			if (!wallet) {
 				throw new Error("not connected");
 			}
