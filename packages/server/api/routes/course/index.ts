@@ -158,4 +158,19 @@ export default new Hono()
 				.onConflictDoNothing()
 				.execute();
 		},
-	);
+	)
+
+	.get("/enrollments", authenticated, async (ctx) => {
+		const userWallet = ctx.get("userWallet");
+		const enrollments = await db
+			.select()
+			.from(db.schema.userCourses)
+			.where(eq(db.schema.userCourses.userWallet, userWallet));
+
+		return respond.ok(
+			ctx,
+			{ enrollments },
+			"Enrollments fetched successfully.",
+			200,
+		);
+	});
