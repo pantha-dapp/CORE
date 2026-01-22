@@ -149,18 +149,30 @@ export default new Hono()
 				return respond.err(ctx, "Already enrolled in the course.", 409);
 			}
 
-			await db
+			const [enrollment] = await db
 				.insert(db.schema.userCourses)
 				.values({
 					userWallet: userWallet,
 					courseId: courseId,
 				})
 				.onConflictDoNothing()
+				.returning()
 				.execute();
+
+			if (!enrollment) {
+				return respond.err(ctx, "Failed to enroll in the course.", 500);
+			}
+
+			return respond.ok(
+				ctx,
+				{ enrollment },
+				"Enrolled in course successfully.",
+				201,
+			);
 		},
 	)
 
-	.get("/enrollments", authenticated, async (ctx) => {
+	.get("/enrolled", authenticated, async (ctx) => {
 		const userWallet = ctx.get("userWallet");
 		const enrollments = await db
 			.select()
