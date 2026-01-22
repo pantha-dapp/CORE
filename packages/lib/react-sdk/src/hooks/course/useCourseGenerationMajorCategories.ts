@@ -2,7 +2,7 @@ import { DAY } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export default function () {
+export function useCourseGenerationMajorCategories() {
 	const { wallet, api } = usePanthaContext();
 
 	return useQuery({

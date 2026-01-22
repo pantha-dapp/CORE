@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export default function () {
+export function useEnrolledCourses() {
 	const { wallet, api } = usePanthaContext();
 
 	return useQuery({

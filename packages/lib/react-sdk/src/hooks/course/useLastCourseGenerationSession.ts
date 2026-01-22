@@ -2,7 +2,7 @@ import { MINUTE } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export default function () {
+export function useLastCourseGenerationSession() {
 	const { wallet, api } = usePanthaContext();
 
 	return useQuery({
