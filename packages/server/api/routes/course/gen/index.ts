@@ -10,7 +10,7 @@ import {
 	generateIdealCourseDescriptor,
 	generateNewCourseSkeleton,
 	intentClarification,
-} from "../../../../lib/ai/tasks/courses";
+} from "../../../../lib/ai/tasks";
 import dbClient from "../../../../lib/db/client";
 import { courses, courseTopics } from "../../../../lib/db/schema/course";
 import { createVectorDbClient } from "../../../../lib/db/vec/client";
