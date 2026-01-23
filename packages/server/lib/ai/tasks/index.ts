@@ -1,6 +1,6 @@
 export { clarificationQuestionGenerator } from "./clarificationQuestionGenerator";
 export { courseSelectionEvaluator } from "./courseSelectionEvaluator";
-export { generateChapterPage } from "./generateChapterPage";
+export { generateChapterPages } from "./generateChapterPage";
 export { generateIdealCourseDescriptor } from "./generateIdealCourseDescriptor";
 export { generateNewCourseSkeleton } from "./generateNewCourseSkeleton";
 export { intentClarification } from "./intentClarification";
