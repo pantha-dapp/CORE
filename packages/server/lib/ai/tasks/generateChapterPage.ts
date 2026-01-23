@@ -1,7 +1,7 @@
 import z from "zod";
 import { createAiGenerateFunction } from "../engine";
 
-const generateChapterPagePrompt = `You are a content generator for a mobile micro-learning platform similar to Duolingo.
+const generateChapterPagesPrompt = `You are a content generator for a mobile micro-learning platform similar to Duolingo.
 
 Your task is to generate a sequence of interactive "pages" for a single chapter.
 Each page is a bite-sized learning moment — a quick read, a question, or an interactive exercise.
@@ -199,7 +199,7 @@ Example Output:
 }
 `;
 
-const generateChapterPageInputSchema = z.object({
+const generateChapterPagesInputSchema = z.object({
 	courseTillNowOverview: z.array(
 		z.object({
 			title: z.string(),
@@ -224,7 +224,7 @@ const generateChapterPageInputSchema = z.object({
 	minimumPages: z.number().default(10),
 });
 
-const generateChapterPageOutputSchema = z.object({
+export const generateChapterPagesOutputSchema = z.object({
 	pages: z.array(
 		z
 			.object({
@@ -331,10 +331,10 @@ const generateChapterPageOutputSchema = z.object({
 	),
 });
 
-export const generateChapterPage = createAiGenerateFunction(
+export const generateChapterPages = createAiGenerateFunction(
 	{
-		input: generateChapterPageInputSchema,
-		output: generateChapterPageOutputSchema,
+		input: generateChapterPagesInputSchema,
+		output: generateChapterPagesOutputSchema,
 	},
-	generateChapterPagePrompt,
+	generateChapterPagesPrompt,
 );
