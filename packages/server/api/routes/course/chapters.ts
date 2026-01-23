@@ -8,6 +8,7 @@ import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
 
 export default new Hono()
+
 	.get(
 		"/:id",
 		authenticated,
@@ -72,63 +73,60 @@ export default new Hono()
 				}),
 			);
 
-			const retrievedPages = await db
+			let pages = await db
 				.select()
 				.from(db.schema.chapterPages)
 				.where(eq(db.schema.chapterPages.chapterId, id))
 				.orderBy(db.schema.chapterPages.order);
 
-			if (retrievedPages && retrievedPages.length > 0) {
-				return respond.ok(
-					ctx,
-					{ pages: retrievedPages },
-					"Chapter pages fetched successfully.",
-					200,
-				);
+			if (!pages || pages.length === 0) {
+				const { pages: generatedPages } = await generateChapterPages({
+					chapter: {
+						overview: {
+							title: chapter.title,
+							description: chapter.description,
+							intent: chapter.intent,
+							topics: chapter.topics,
+						},
+					},
+					courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
+						title: ch.title,
+						description: ch.description,
+						intent: ch.intent,
+						topics: ch.topics,
+					})),
+					minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
+				});
+
+				const insertedPages = await db.transaction(async (tx) => {
+					const inserted = [];
+					for (let i = 0; i < generatedPages.length; i++) {
+						const page = generatedPages[i];
+
+						if (!page) continue;
+
+						const [insertedPage] = await tx
+							.insert(db.schema.chapterPages)
+							.values({
+								chapterId: id,
+								order: i + 1,
+								content: page,
+							})
+							.returning();
+						inserted.push(insertedPage);
+					}
+					return inserted;
+				});
+
+				pages = insertedPages.filter((p) => p !== null && p !== undefined);
 			}
 
-			const { pages: generatedPages } = await generateChapterPages({
-				chapter: {
-					overview: {
-						title: chapter.title,
-						description: chapter.description,
-						intent: chapter.intent,
-						topics: chapter.topics,
-					},
-				},
-				courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
-					title: ch.title,
-					description: ch.description,
-					intent: ch.intent,
-					topics: ch.topics,
-				})),
-				minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
-			});
-
-			const insertedPages = await db.transaction(async (tx) => {
-				const inserted = [];
-				for (let i = 0; i < generatedPages.length; i++) {
-					const page = generatedPages[i];
-
-					if (!page) continue;
-
-					const [insertedPage] = await tx
-						.insert(db.schema.chapterPages)
-						.values({
-							chapterId: id,
-							order: i + 1,
-							content: page,
-						})
-						.returning();
-					inserted.push(insertedPage);
-				}
-				return inserted;
-			});
+			// TODO: generate SafePages before returning
 
 			return respond.ok(
 				ctx,
-				{ pages: insertedPages },
-				"Chapter pages generated and fetched successfully.",
+				{ pages },
+				"Chapter pages fetched successfully.",
 				200,
 			);
 		},
