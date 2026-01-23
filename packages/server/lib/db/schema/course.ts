@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { timestamps, tUuid } from "../helpers";
+import { timestamps, tPageContent, tUuid } from "../helpers";
 
 export const courses = t.sqliteTable("courses", {
 	id: tUuid("id").primaryKey(),
@@ -30,9 +30,14 @@ export const courseChapters = t.sqliteTable(
 			.text("course_id")
 			.notNull()
 			.references(() => courses.id, { onDelete: "cascade" }),
-		order: t.integer("order").notNull(),
 		title: t.text("title").notNull(),
-		content: t.text("content").notNull(),
+		description: t.text("description").notNull(),
+		order: t.integer("order").notNull(),
+		intent: t
+			.text({
+				enum: ["introduce", "recall", "apply", "reinforce", "check_confidence"],
+			})
+			.notNull(),
 	},
 	(table) => [t.index("idx_course_chapters_course_id").on(table.courseId)],
 );
@@ -57,5 +62,5 @@ export const chapterPages = t.sqliteTable("chapter_pages", {
 		.notNull()
 		.references(() => courseChapters.id, { onDelete: "cascade" }),
 	order: t.integer("order").notNull(),
-	content: t.text("content").notNull(),
+	content: tPageContent("content").notNull(),
 });
