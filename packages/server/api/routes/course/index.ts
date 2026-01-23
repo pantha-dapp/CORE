@@ -5,11 +5,14 @@ import db from "../../../lib/db";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
+import chapters from "./chapters";
 import gen from "./gen";
 
 export default new Hono()
 
 	.route("/gen", gen)
+
+	.route("/chapters", chapters)
 
 	.get(
 		"/",
