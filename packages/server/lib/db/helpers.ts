@@ -12,6 +12,8 @@ import {
 	isHash,
 	isHex,
 } from "viem";
+import type z from "zod";
+import type { generateChapterPagesOutputSchema } from "../ai/tasks/generateChapterPage";
 
 export const timestamps = {
 	createdAt: int("created_at", { mode: "timestamp" })
@@ -116,5 +118,20 @@ export const tBigInt = customType<{
 	},
 	fromDriver(value) {
 		return BigInt(value);
+	},
+});
+
+export const tPageContent = customType<{
+	data: z.infer<typeof generateChapterPagesOutputSchema>["pages"][number];
+	driverData: string;
+}>({
+	dataType() {
+		return "text";
+	},
+	toDriver(value) {
+		return jsonStringify(value);
+	},
+	fromDriver(value) {
+		return jsonParse(value);
 	},
 });
