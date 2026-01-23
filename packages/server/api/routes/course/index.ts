@@ -2,13 +2,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import db from "../../../lib/db";
-import dbClient from "../../../lib/db/client";
-import {
-	chapterTopics,
-	courseChapters,
-	courses,
-	courseTopics,
-} from "../../../lib/db/schema/course";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -31,20 +24,20 @@ export default new Hono()
 		async (ctx) => {
 			const { limit, offset } = ctx.req.valid("query");
 
-			const coursesList = await dbClient
+			const coursesList = await db
 				.select()
-				.from(courses)
+				.from(db.schema.courses)
 				// .where()
 				.limit(limit)
 				.offset(offset)
-				.orderBy(sql`${courses.createdAt} DESC`);
+				.orderBy(sql`${db.schema.courses.createdAt} DESC`);
 
 			const coursesWithTopics = await Promise.all(
 				coursesList.map(async (course) => {
-					const topics = await dbClient
+					const topics = await db
 						.select()
-						.from(courseTopics)
-						.where(eq(courseTopics.courseId, course.id));
+						.from(db.schema.courseTopics)
+						.where(eq(db.schema.courseTopics.courseId, course.id));
 
 					return {
 						...course,
@@ -72,50 +65,17 @@ export default new Hono()
 	.get("/:id", authenticated, async (ctx) => {
 		const courseId = ctx.req.param("id");
 
-		const [course] = await dbClient
-			.select()
-			.from(courses)
-			.where(eq(courses.id, courseId));
-
+		const course = await db.courseById({ courseId });
 		if (!course) {
 			return respond.err(ctx, "Course not found.", 404);
 		}
 
-		if (course.deletedAt) {
-			return respond.err(ctx, "Course has been deleted.", 410);
-		}
-
-		const topics = await dbClient
-			.select()
-			.from(courseTopics)
-			.where(eq(courseTopics.courseId, courseId));
-
-		const chapters = await dbClient
-			.select()
-			.from(courseChapters)
-			.where(eq(courseChapters.courseId, courseId))
-			.orderBy(courseChapters.order);
-
-		const chaptersWithTopics = await Promise.all(
-			chapters.map(async (chapter) => {
-				const chapterTopicsList = await dbClient
-					.select()
-					.from(chapterTopics)
-					.where(eq(chapterTopics.chapterId, chapter.id));
-
-				return {
-					...chapter,
-					topics: chapterTopicsList.map((t) => t.topic),
-				};
-			}),
-		);
-
 		return respond.ok(
 			ctx,
 			{
-				...course,
-				topics: topics.map((t) => t.topic),
-				chapters: chaptersWithTopics,
+				id: course.id,
+				title: course.title,
+				description: course.description,
 			},
 			"Course fetched successfully.",
 			200,
@@ -174,10 +134,7 @@ export default new Hono()
 
 	.get("/enrolled", authenticated, async (ctx) => {
 		const userWallet = ctx.get("userWallet");
-		const enrollments = await db
-			.select()
-			.from(db.schema.userCourses)
-			.where(eq(db.schema.userCourses.userWallet, userWallet));
+		const enrollments = await db.userEnrollments({ userWallet });
 
 		return respond.ok(
 			ctx,
