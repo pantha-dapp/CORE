@@ -1,66 +1,78 @@
 // import type { Address } from "viem";
+import { eq } from "drizzle-orm";
+import type { Address } from "viem";
+import db from ".";
 import type dbClient from "./client";
 
 type DbClient = typeof dbClient;
 
 export function dbExtensionHelpers(_db: DbClient) {
-	// async function canSendTo(args: { sender: Address; recipient: Address }) {
-	// 	const { sender, recipient } = args;
+	async function userEnrollments(args: { userWallet: Address }) {
+		const { userWallet } = args;
 
-	// 	const [latestApproval] = await db
-	// 		.select()
-	// 		.from(schema.shareApprovals)
-	// 		.where(
-	// 			and(
-	// 				eq(schema.shareApprovals.senderWallet, sender),
-	// 				eq(schema.shareApprovals.recipientWallet, recipient),
-	// 			),
-	// 		)
-	// 		.orderBy(desc(schema.shareApprovals.createdAt))
-	// 		.limit(1);
+		const enrollments = await db
+			.select()
+			.from(db.schema.userCourses)
+			.where(eq(db.schema.userCourses.userWallet, userWallet))
+			.orderBy(db.schema.userCourses.createdAt);
 
-	// 	return latestApproval ? latestApproval.active : false;
-	// }
+		return enrollments;
+	}
 
-	// async function updateUserFieldWithLog(args: {
-	// 	walletAddress: Address;
-	// 	fieldName: "username" | "email" | "firstName" | "lastName";
-	// 	newValue: string | undefined | null;
-	// }) {
-	// 	const { walletAddress, fieldName, newValue } = args;
+	async function courseById(args: { courseId: string }) {
+		const { courseId } = args;
 
-	// 	const [previous] = await db
-	// 		.select()
-	// 		.from(schema.users)
-	// 		.where(eq(schema.users.walletAddress, walletAddress));
+		const [course] = await db
+			.select()
+			.from(db.schema.courses)
+			.where(eq(db.schema.courses.id, courseId));
 
-	// 	if (
-	// 		!newValue ||
-	// 		newValue.trim() === "" ||
-	// 		newValue === previous[fieldName]
-	// 	) {
-	// 		return;
-	// 	}
+		if (!course || course.deletedAt) {
+			return null;
+		}
 
-	// 	if (!previous) {
-	// 		throw new Error("User not found");
-	// 	}
+		const topics = await db
+			.select()
+			.from(db.schema.courseTopics)
+			.where(eq(db.schema.courseTopics.courseId, courseId));
 
-	// 	const oldValue = previous[fieldName];
+		return {
+			...course,
+			topics,
+		};
+	}
 
-	// 	await db
-	// 		.update(schema.users)
-	// 		.set({ [fieldName]: newValue })
-	// 		.where(eq(schema.users.walletAddress, walletAddress));
+	async function chapterById(args: { chapterId: string }) {
+		const { chapterId } = args;
 
-	// 	await db.insert(schema.userHistory).values({
-	// 		walletAddress,
-	// 		fieldName,
-	// 		oldValue: oldValue ?? "",
-	// 		newValue,
-	// 	});
-	// }
+		const [chapter] = await db
+			.select()
+			.from(db.schema.courseChapters)
+			.where(eq(db.schema.courseChapters.id, chapterId));
 
-	// return { canSendTo, updateUserFieldWithLog };
-	return {};
+		if (!chapter) {
+			return null;
+		}
+
+		const [course] = await db
+			.select()
+			.from(db.schema.courses)
+			.where(eq(db.schema.courses.id, chapter.courseId));
+
+		if (!course || course.deletedAt) {
+			return null;
+		}
+
+		const chapterTopicsList = await db
+			.select()
+			.from(db.schema.chapterTopics)
+			.where(eq(db.schema.chapterTopics.chapterId, chapter.id));
+
+		return {
+			...chapter,
+			topics: chapterTopicsList.map((t) => t.topic),
+		};
+	}
+
+	return { userEnrollments, chapterById, courseById };
 }
