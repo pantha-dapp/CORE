@@ -1,9 +1,35 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { InferRequestType } from "hono/client";
+import { useEffect, useRef, useState } from "react";
 import { usePanthaContext } from "../../context/PanthaProvider";
+import { useJobStatus } from "../job";
 
 export function useCourseGenerationAction() {
 	const { wallet, api } = usePanthaContext();
+
+	const [currentAwaitedJob, setCurrentAwaitedJob] = useState<string>();
+	const currentJobStatus = useJobStatus({ jobId: currentAwaitedJob });
+	const queryClient = useQueryClient();
+
+	const flag = useRef(false);
+
+	function refreshSession() {
+		queryClient.invalidateQueries({
+			queryKey: ["last-course-generation-session"],
+		});
+		queryClient.refetchQueries({
+			queryKey: ["last-course-generation-session"],
+		});
+	}
+
+	useEffect(() => {
+		if (!flag.current) {
+			if (currentJobStatus.data?.state !== "pending") {
+				flag.current = true;
+				refreshSession();
+			}
+		}
+	}, [currentJobStatus.data]);
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -18,15 +44,13 @@ export function useCourseGenerationAction() {
 			const actionResponseRaw = await api.rpc.course.gen.action.$post({
 				json: action,
 			});
-			const actionResponse = (await actionResponseRaw.json()) as {
-				success?: unknown;
-				error?: unknown;
-			};
-
-			if (!("success" in actionResponse)) {
-				throw new Error("Failed to perform action", {
-					cause: actionResponse.error,
-				});
+			const actionResponse = await actionResponseRaw.json();
+			if (actionResponse.success) {
+				if (actionResponse.data.jobId) {
+					setCurrentAwaitedJob(actionResponse.data.jobId);
+				} else {
+					refreshSession();
+				}
 			}
 
 			return actionResponse.success;
