@@ -16,6 +16,7 @@ import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
+import Test from "./Test";
 
 type ProtectedRouteType = "loggedOutOnly" | "loggedInOnly";
 interface ProtectedRouteProps {
@@ -108,6 +109,20 @@ const dashboardRoute = createRoute({
 		);
 	},
 });
+
+const testRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/test",
+	component: function TestRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Test />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
 // const courseMapRoute = createRoute({
 // 	getParentRoute: () => rootRoute,
 // 	path: "/course-map",
@@ -139,6 +154,7 @@ const routeTree = rootRoute.addChildren([
 	onboardingRoute,
 	dashboardRoute,
 	profileRoute,
+	testRoute,
 ]);
 
 const router = createRouter({
