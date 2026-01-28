@@ -1,5 +1,5 @@
 // import type { Address } from "viem";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Address } from "viem";
 import db from ".";
 import type dbClient from "./client";
@@ -17,6 +17,39 @@ export function dbExtensionHelpers(_db: DbClient) {
 			.orderBy(db.schema.userCourses.createdAt);
 
 		return enrollments;
+	}
+
+	async function enrollUserInCourse(args: {
+		userWallet: Address;
+		courseId: string;
+	}) {
+		const { userWallet, courseId } = args;
+
+		const [existingEnrollment] = await db
+			.select()
+			.from(db.schema.userCourses)
+			.where(
+				and(
+					eq(db.schema.userCourses.userWallet, userWallet),
+					eq(db.schema.userCourses.courseId, courseId),
+				),
+			);
+
+		if (existingEnrollment) {
+			throw "User is already enrolled in the given course.";
+		}
+
+		const [enrollment] = await db
+			.insert(db.schema.userCourses)
+			.values({
+				userWallet: userWallet,
+				courseId: courseId,
+			})
+			.onConflictDoNothing()
+			.returning()
+			.execute();
+
+		return enrollment;
 	}
 
 	async function courseById(args: { courseId: string }) {
@@ -74,5 +107,5 @@ export function dbExtensionHelpers(_db: DbClient) {
 		};
 	}
 
-	return { userEnrollments, chapterById, courseById };
+	return { userEnrollments, enrollUserInCourse, chapterById, courseById };
 }
