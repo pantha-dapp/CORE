@@ -1,4 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
+import { tryCatch } from "@pantha/shared";
+import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import db from "../../../lib/db";
@@ -98,37 +99,24 @@ export default new Hono()
 			const userWallet = ctx.get("userWallet");
 			const { courseId } = ctx.req.valid("json");
 
-			const [existingEnrollment] = await db
-				.select()
-				.from(db.schema.userCourses)
-				.where(
-					and(
-						eq(db.schema.userCourses.userWallet, userWallet),
-						eq(db.schema.userCourses.courseId, courseId),
-					),
-				);
-
-			if (existingEnrollment) {
-				return respond.err(ctx, "Already enrolled in the course.", 409);
-			}
-
-			const [enrollment] = await db
-				.insert(db.schema.userCourses)
-				.values({
+			const enrollmentResult = await tryCatch(
+				db.enrollUserInCourse({
 					userWallet: userWallet,
-					courseId: courseId,
-				})
-				.onConflictDoNothing()
-				.returning()
-				.execute();
+					courseId,
+				}),
+			);
 
-			if (!enrollment) {
-				return respond.err(ctx, "Failed to enroll in the course.", 500);
+			if (enrollmentResult.error) {
+				return respond.err(
+					ctx,
+					`Failed to enroll in course. ${enrollmentResult.error.message}`,
+					500,
+				);
 			}
 
 			return respond.ok(
 				ctx,
-				{ enrollment },
+				{ enrollment: enrollmentResult.data },
 				"Enrolled in course successfully.",
 				201,
 			);
