@@ -26,8 +26,7 @@ Example Output:
   "inferredGoal": "Learning Python for automating tasks",
   "uncertainties": [
     "What kind of automation (files, web, DevOps, testing)?"
-  ],
-  "clarificationNeeded": true
+  ]
 }
 `;
 
@@ -39,7 +38,6 @@ const intentClarificationInputSchema = z.object({
 const intentClarificationOutputSchema = z.object({
 	inferredGoal: z.string(),
 	uncertainties: z.array(z.string()),
-	clarificationNeeded: z.boolean(),
 });
 
 export const intentClarification = createAiGenerateFunction(
