@@ -18,7 +18,7 @@ export function useEnrolledCourses() {
 				throw new Error("failed to fetch enrollments");
 			}
 
-			return enrollmentsResponse.success;
+			return enrollmentsResponse.data;
 		},
 	});
 }
