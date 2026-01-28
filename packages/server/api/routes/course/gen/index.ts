@@ -1,3 +1,4 @@
+import { tryCatch } from "@pantha/shared";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
@@ -11,12 +12,13 @@ import {
 	generateNewCourseSkeleton,
 	intentClarification,
 } from "../../../../lib/ai/tasks";
-import dbClient from "../../../../lib/db/client";
-import { courses, courseTopics } from "../../../../lib/db/schema/course";
+import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
+import db from "../../../../lib/db";
 import { createVectorDbClient } from "../../../../lib/db/vec/client";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
+import { createJob } from "../../jobs";
 
 const DEFAULT_QUESTIONS_BUDGET = 20;
 const vectorDb = createVectorDbClient("course-embeddings");
@@ -26,19 +28,16 @@ type GenerationState = {
 	state:
 		| "major_category_choice"
 		| "learning_intent_freetext"
-		| "ask_more_questions"
 		| "answer_question"
-		| "select_existing_course"
-		| "create_new_course"
 		| "finished";
 	majorCategory?: number;
 	learningIntent?: string;
 	questionsBudget: number;
-	questions: Array<{
-		question: string;
-		purpose: string;
-		answer?: string;
-	}>;
+	questions: Array<
+		z.infer<
+			typeof clarificationQuestionGeneratorOutputSchema
+		>["questions"][number] & { answer?: string; key: string }
+	>;
 	candidateCourses: Array<{
 		id: string;
 		title: string;
@@ -51,17 +50,25 @@ const sessionStore = new Map<string, GenerationState>();
 
 export default new Hono()
 
-	.post("/session", authenticated, async (ctx) => {
+	.get("/session", authenticated, async (ctx) => {
 		const { userWallet } = ctx.var;
-		const lastSession = sessionStore.get(userWallet);
+		let session = sessionStore.get(userWallet);
 
-		if (lastSession) {
-			const { lastSessionStartedAt } = lastSession;
+		if (session) {
+			const { lastSessionStartedAt } = session;
 			if (lastSessionStartedAt + 60_000 > Date.now()) {
-				return respond.err(
+				return respond.ok(
 					ctx,
-					"A generation session is already active. Please wait before starting a new one.",
-					429,
+					{
+						state: session.state,
+						questionsBudget: session.questionsBudget,
+						questionsAnswered: session.questions.filter(
+							(q) => q.answer !== undefined,
+						).length,
+						totalQuestions: session.questions.length,
+					},
+					"Session state retrieved successfully.",
+					200,
 				);
 			}
 		}
@@ -74,29 +81,19 @@ export default new Hono()
 			uncertainties: [],
 			questionsBudget: DEFAULT_QUESTIONS_BUDGET,
 		});
-		return respond.ok(ctx, {}, "Session started successfully.", 201);
-	})
-
-	.get("/session", authenticated, async (ctx) => {
-		const { userWallet } = ctx.var;
-		const session = sessionStore.get(userWallet);
+		session = sessionStore.get(userWallet);
 
 		if (!session) {
-			return respond.err(ctx, "No active generation session found.", 404);
+			return respond.err(ctx, "No generation of session was possible.", 404);
 		}
 
 		return respond.ok(
 			ctx,
 			{
-				state: session.state,
-				questionsBudget: session.questionsBudget,
-				questionsAnswered: session.questions.filter(
-					(q) => q.answer !== undefined,
-				).length,
-				totalQuestions: session.questions.length,
+				session,
 			},
-			"Session state retrieved successfully.",
-			200,
+			"Session started successfully.",
+			201,
 		);
 	})
 
@@ -128,7 +125,8 @@ export default new Hono()
 				.or(
 					z.object({
 						type: z.literal("answer_question"),
-						answers: z.array(z.string()),
+						questionKey: z.string(),
+						answer: z.string(),
 					}),
 				),
 		),
@@ -145,33 +143,7 @@ export default new Hono()
 				);
 			}
 
-			if (
-				action.type === "major_category_choice" &&
-				ongoingSession.state !== "major_category_choice"
-			) {
-				return respond.err(
-					ctx,
-					`Invalid action type. Expected state ${ongoingSession.state} but received ${action.type}.`,
-					400,
-				);
-			}
-
-			if (
-				action.type === "learning_intent_freetext" &&
-				ongoingSession.state !== "learning_intent_freetext"
-			) {
-				return respond.err(
-					ctx,
-					`Invalid action type. Expected state ${ongoingSession.state} but received ${action.type}.`,
-					400,
-				);
-			}
-
-			if (
-				action.type === "answer_question" &&
-				ongoingSession.state !== "ask_more_questions" &&
-				ongoingSession.state !== "answer_question"
-			) {
+			if (action.type !== ongoingSession.state) {
 				return respond.err(
 					ctx,
 					`Invalid action type. Expected state ${ongoingSession.state} but received ${action.type}.`,
@@ -186,83 +158,111 @@ export default new Hono()
 				return respond.ok(
 					ctx,
 					{
-						previousState: ongoingSession.state,
+						state: ongoingSession.state,
+						jobId: null,
 					},
 					"Major category recorded. Please provide your learning intent.",
 					200,
 				);
 			}
+
 			if (action.type === "learning_intent_freetext") {
 				ongoingSession.learningIntent = action.intent;
 
-				const intentClarificationResult = await intentClarification({
-					majorCategory:
-						categories[ongoingSession.majorCategory ?? -1] ?? "Others",
-					userInput: ongoingSession.learningIntent ?? "",
-				});
+				const jobId = createJob(async () => {
+					const intentClarificationResult = await tryCatch(
+						intentClarification({
+							majorCategory:
+								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
+							userInput: ongoingSession.learningIntent ?? "",
+						}),
+					);
 
-				ongoingSession.state = "ask_more_questions";
-				intentClarificationResult.uncertainties.forEach((u) => {
-					ongoingSession.uncertainties.push(u);
-				});
+					if (intentClarificationResult.error) {
+						throw "Failed to clarify user learning intent.";
+					}
+					const intentClarificationData = intentClarificationResult.data;
 
-				const idealCourse = await generateIdealCourseDescriptor({
-					majorCategory:
-						categories[ongoingSession.majorCategory ?? -1] ?? "Others",
-					inferredGoal: intentClarificationResult.inferredGoal,
-					uncertainties: intentClarificationResult.uncertainties,
-				});
+					intentClarificationData.uncertainties.forEach((u) => {
+						ongoingSession.uncertainties.push(u);
+					});
+					ongoingSession.state = "answer_question";
 
-				const idealCourseDescriptor =
-					generateCanonicalCourseDescriptor(idealCourse);
-				const queryEmbedding = await generateEmbeddings(idealCourseDescriptor);
-				const similarCourses = vectorDb.querySimilar(queryEmbedding, 5);
+					const idealCourseResult = await tryCatch(
+						generateIdealCourseDescriptor({
+							majorCategory:
+								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
+							inferredGoal: intentClarificationData.inferredGoal,
+							uncertainties: intentClarificationData.uncertainties,
+						}),
+					);
 
-				if (similarCourses.length > 0) {
-					const courseIds = similarCourses
-						.filter((c) => c.similarity > 0.7)
-						.map((c) => c.id);
+					if (idealCourseResult.error) {
+						throw "Failed to generate ideal course descriptor.";
+					}
+					const idealCourse = idealCourseResult.data;
+					const idealCourseDescriptor =
+						generateCanonicalCourseDescriptor(idealCourse);
+					const idealCourseDescriptorEmbedding = await generateEmbeddings(
+						idealCourseDescriptor,
+					);
+					const similarCoursesToIdeal = vectorDb.querySimilar(
+						idealCourseDescriptorEmbedding,
+						5,
+					);
 
-					for (const courseId of courseIds) {
-						const [course] = await dbClient
-							.select()
-							.from(courses)
-							.where(eq(courses.id, courseId));
+					// Push all candidate courses to the ongoing session's state
+					if (similarCoursesToIdeal.length > 0) {
+						const courseIds = similarCoursesToIdeal
+							.filter((c) => c.similarity > 0.7)
+							.map((c) => c.id);
 
-						if (course) {
-							const topics = await dbClient
+						for (const courseId of courseIds) {
+							const [course] = await db
 								.select()
-								.from(courseTopics)
-								.where(eq(courseTopics.courseId, courseId));
+								.from(db.schema.courses)
+								.where(eq(db.schema.courses.id, courseId));
 
-							ongoingSession.candidateCourses.push({
-								id: courseId,
-								title: course.title,
-								description: course.description,
-								topics: topics.map((t) => t.topic),
-							});
+							if (course) {
+								const topics = await db
+									.select()
+									.from(db.schema.courseTopics)
+									.where(eq(db.schema.courseTopics.courseId, courseId));
+
+								ongoingSession.candidateCourses.push({
+									id: courseId,
+									title: course.title,
+									description: course.description,
+									topics: topics.map((t) => t.topic),
+								});
+							}
 						}
 					}
-				}
 
-				const { questions } = await clarificationQuestionGenerator({
-					inferredGoal: intentClarificationResult.inferredGoal,
-					uncertainties: ongoingSession.uncertainties,
-					previous: ongoingSession.questions.filter(
-						(q) => q.answer !== undefined,
-					) as Array<{
-						question: string;
-						purpose: string;
-						answer: string;
-					}>,
-					questionsToGenerate: Math.min(3, ongoingSession.questionsBudget),
-					courses: ongoingSession.candidateCourses,
-				});
+					const clarificationQuestionResult = await tryCatch(
+						clarificationQuestionGenerator({
+							inferredGoal: intentClarificationData.inferredGoal,
+							uncertainties: ongoingSession.uncertainties,
+							previous: ongoingSession.questions.map((q) => ({
+								question: q.text,
+								purpose: q.purpose,
+								answer: q.answer ?? "unanswered",
+							})),
+							questionsToGenerate: Math.min(3, ongoingSession.questionsBudget),
+							courses: ongoingSession.candidateCourses,
+						}),
+					);
+					if (clarificationQuestionResult.error) {
+						throw "Failed to generate clarification questions.";
+					}
+					const { questions } = clarificationQuestionResult.data;
 
-				questions.forEach((q) => {
-					ongoingSession.questions.push({
-						question: q.text,
-						purpose: q.purpose,
+					questions.forEach((q) => {
+						ongoingSession.questionsBudget--;
+						ongoingSession.questions.push({
+							...q,
+							key: Bun.randomUUIDv7().slice(0, 8),
+						});
 					});
 				});
 
@@ -270,150 +270,204 @@ export default new Hono()
 					ctx,
 					{
 						state: ongoingSession.state,
-						questions: questions,
-						questionsBudget: ongoingSession.questionsBudget,
+						jobId: jobId,
 					},
-					"Intent clarified. Please answer the questions.",
-					200,
+					"Intent recorded. Generating clarification questions.",
+					202,
 				);
 			}
 
 			if (action.type === "answer_question") {
+				ongoingSession.questions.forEach((q) => {
+					if (q.key === action.questionKey) {
+						q.answer = action.answer;
+					}
+				});
+
 				const pendingQuestions = ongoingSession.questions.filter(
 					(q) => q.answer === undefined,
 				);
 
-				action.answers.forEach((answer, idx) => {
-					if (pendingQuestions[idx]) {
-						pendingQuestions[idx].answer = answer;
-						ongoingSession.questionsBudget--;
-					}
-				});
+				if (pendingQuestions.length > 0) {
+					return respond.ok(
+						ctx,
+						{
+							state: ongoingSession.state,
+							jobId: null,
+						},
+						"Answer recorded. Please answer the remaining questions.",
+						200,
+					);
+				}
 
-				const evaluation = await courseSelectionEvaluator({
-					previous: ongoingSession.questions.filter(
-						(q) => q.answer !== undefined,
-					) as Array<{
-						question: string;
-						purpose: string;
-						answer: string;
-					}>,
-					currentCandidateCourses: ongoingSession.candidateCourses.map(
-						(course, idx) => ({
-							...course,
-							id: idx,
+				const jobId = createJob(async () => {
+					const courseSelectionEvaluatorResult = await tryCatch(
+						courseSelectionEvaluator({
+							previous: ongoingSession.questions.map((q) => ({
+								question: q.text,
+								purpose: q.purpose,
+								answer: q.answer || "unanswered",
+							})),
+							currentCandidateCourses: ongoingSession.candidateCourses.map(
+								(course, idx) => ({
+									...course,
+									id: idx,
+								}),
+							),
+							questionBudgetRemaining: ongoingSession.questionsBudget,
+							questionsAsked:
+								DEFAULT_QUESTIONS_BUDGET - ongoingSession.questionsBudget,
+							remainingUncertainties: ongoingSession.uncertainties,
 						}),
-					),
-					questionBudgetRemaining: ongoingSession.questionsBudget,
-					questionsAsked:
-						DEFAULT_QUESTIONS_BUDGET - ongoingSession.questionsBudget,
-					remainingUncertainties: ongoingSession.uncertainties,
-				});
-
-				if (evaluation.decision === "ask_more_questions") {
-					ongoingSession.uncertainties =
-						evaluation.uncertantiesRemaining || ongoingSession.uncertainties;
-
-					const { questions } = await clarificationQuestionGenerator({
-						inferredGoal: "",
-						uncertainties: ongoingSession.uncertainties,
-						previous: ongoingSession.questions.filter(
-							(q) => q.answer !== undefined,
-						) as Array<{
-							question: string;
-							purpose: string;
-							answer: string;
-						}>,
-						questionsToGenerate: Math.min(
-							evaluation.questionCount || 3,
-							ongoingSession.questionsBudget,
-						),
-						courses: ongoingSession.candidateCourses,
-					});
-
-					questions.forEach((q) => {
-						ongoingSession.questions.push({
-							question: q.text,
-							purpose: q.purpose,
-						});
-					});
-
-					return respond.ok(
-						ctx,
-						{
-							state: ongoingSession.state,
-							questions: questions,
-							questionsBudget: ongoingSession.questionsBudget,
-						},
-						"Generating more questions.",
-						200,
 					);
-				}
+					if (courseSelectionEvaluatorResult.error) {
+						throw "Failed to evaluate course selection.";
+					}
+					const evaluation = courseSelectionEvaluatorResult.data;
 
-				if (evaluation.decision === "select_existing_course") {
-					ongoingSession.state = "select_existing_course";
+					if (evaluation.decision === "ask_more_questions") {
+						ongoingSession.uncertainties =
+							evaluation.uncertantiesRemaining || ongoingSession.uncertainties;
 
-					const selectedCourse =
-						ongoingSession.candidateCourses[evaluation.chosenCourseId ?? 0];
-
-					return respond.ok(
-						ctx,
-						{
-							state: ongoingSession.state,
-							courseId: selectedCourse?.id,
-							courseTitle: selectedCourse?.title,
-						},
-						"Existing course selected.",
-						200,
-					);
-				}
-
-				if (evaluation.decision === "create_new_course") {
-					ongoingSession.state = "create_new_course";
-
-					if (!evaluation.courseGenerationInstructions) {
-						return respond.err(
-							ctx,
-							"No instructions for course generation",
-							500,
+						const clarificationQuestionGeneratorResult = await tryCatch(
+							clarificationQuestionGenerator({
+								inferredGoal: "",
+								uncertainties: ongoingSession.uncertainties,
+								previous: ongoingSession.questions.map((q) => ({
+									question: q.text,
+									purpose: q.purpose,
+									answer: q.answer ?? "unanswered",
+								})),
+								questionsToGenerate: Math.min(
+									evaluation.questionCount || 3,
+									ongoingSession.questionsBudget,
+								),
+								courses: ongoingSession.candidateCourses,
+							}),
 						);
+						if (clarificationQuestionGeneratorResult.error) {
+							throw "Failed to generate additional clarification questions.";
+						}
+						const { questions } = clarificationQuestionGeneratorResult.data;
+
+						questions.forEach((q) => {
+							ongoingSession.questions.push({
+								...q,
+								key: Bun.randomUUIDv7().slice(0, 8),
+							});
+						});
 					}
 
-					const newCourse = await generateNewCourseSkeleton(
-						evaluation.courseGenerationInstructions,
-					);
+					if (evaluation.decision === "select_existing_course") {
+						if (!evaluation.chosenCourseId) {
+							throw "No course ID chosen for enrollment";
+						}
+						const chosenCourseId =
+							ongoingSession.candidateCourses[evaluation.chosenCourseId]?.id;
+						if (!chosenCourseId) {
+							throw "Chosen course ID is invalid";
+						}
 
-					const courseId = crypto.randomUUID();
-					await dbClient.insert(courses).values({
-						id: courseId,
-						title: evaluation.courseGenerationInstructions.courseTitle,
-						description:
-							evaluation.courseGenerationInstructions.courseDescription,
-					});
+						const enrollmentResult = await tryCatch(
+							db.enrollUserInCourse({
+								userWallet: userWallet,
+								courseId: chosenCourseId,
+							}),
+						);
+						if (enrollmentResult.error) {
+							throw "Failed to enroll user in the chosen course.";
+						}
 
-					const canonicalDescriptor = generateCanonicalCourseDescriptor({
-						name: evaluation.courseGenerationInstructions.courseTitle,
-						description:
-							evaluation.courseGenerationInstructions.courseDescription,
-						topics:
-							evaluation.courseGenerationInstructions.assumedPrerequisites,
-					});
-					const embedding = await generateEmbeddings(canonicalDescriptor);
-					vectorDb.writeEntry(courseId, embedding);
+						ongoingSession.state = "finished";
+					}
 
-					ongoingSession.state = "finished";
+					if (evaluation.decision === "create_new_course") {
+						let generatedCourseId = "";
 
-					return respond.ok(
-						ctx,
-						{
-							state: ongoingSession.state,
-							course: newCourse,
-							courseId: courseId,
-						},
-						"New course generated successfully.",
-						200,
-					);
-				}
+						await db
+							.transaction(async (tx) => {
+								if (!evaluation.courseGenerationInstructions) {
+									throw "No instructions for course generation";
+								}
+
+								const newCourse = await generateNewCourseSkeleton(
+									evaluation.courseGenerationInstructions,
+								);
+
+								const courseId = crypto.randomUUID();
+
+								await tx.insert(db.schema.courses).values({
+									id: courseId,
+									title: evaluation.courseGenerationInstructions.courseTitle,
+									description:
+										evaluation.courseGenerationInstructions.courseDescription,
+								});
+
+								const canonicalDescriptor = generateCanonicalCourseDescriptor({
+									name: evaluation.courseGenerationInstructions.courseTitle,
+									description:
+										evaluation.courseGenerationInstructions.courseDescription,
+									topics:
+										evaluation.courseGenerationInstructions
+											.assumedPrerequisites,
+								});
+								const embedding = await generateEmbeddings(canonicalDescriptor);
+								vectorDb.writeEntry(courseId, embedding);
+								generatedCourseId = courseId;
+
+								for (const topic of newCourse.overview.topics) {
+									await tx.insert(db.schema.courseTopics).values({
+										courseId: courseId,
+										topic: topic,
+									});
+								}
+
+								let chapterOrder = 0;
+								for (const chapter of newCourse.overview.chapters) {
+									const [insertedChapter] = await tx
+										.insert(db.schema.courseChapters)
+										.values({
+											courseId: courseId,
+											description: chapter.description,
+											title: chapter.title,
+											intent: chapter.intent,
+											order: chapterOrder++,
+										})
+										.returning({ id: db.schema.courseChapters.id });
+
+									if (!insertedChapter) {
+										throw "Failed to insert course chapter.";
+									}
+
+									for (const topic of chapter.topics) {
+										await tx.insert(db.schema.chapterTopics).values({
+											chapterId: insertedChapter.id,
+											topic: topic,
+										});
+									}
+								}
+							})
+							.catch(() => {
+								if (generatedCourseId) {
+									vectorDb.deleteEntry(generatedCourseId);
+								}
+							});
+
+						ongoingSession.state = "finished";
+					}
+				});
+
+				return respond.ok(
+					ctx,
+					{
+						state: ongoingSession.state,
+						jobId: jobId,
+					},
+					"Answers recorded. Evaluating next steps.",
+					202,
+				);
 			}
+
+			return respond.err(ctx, "Unhandled action type.", 400);
 		},
 	);
