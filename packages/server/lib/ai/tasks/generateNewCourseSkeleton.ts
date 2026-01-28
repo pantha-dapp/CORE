@@ -37,6 +37,7 @@ Example Output:
     {
       "title": "Introduction to Python Automation",
       "description": "This chapter introduces the concept of automation using Python, covering basic scripting techniques and common use cases.",
+      "topics": ["Python scripting basics", "Automation use cases"],
       "chapters": [
         {
           "title": "Setting Up Your Python Environment",
@@ -65,6 +66,7 @@ const generateNewCourseSkeletonOutputSchema = z.object({
 	overview: z.object({
 		title: z.string(),
 		description: z.string(),
+		topics: z.array(z.string()),
 		chapters: z.array(
 			z.object({
 				title: z.string(),
