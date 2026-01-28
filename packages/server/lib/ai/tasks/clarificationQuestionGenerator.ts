@@ -24,10 +24,15 @@ generate clarification questions that help distinguish
 between the candidate courses provided, each course is a list of chapters.
 each chapter has a title and description.
 
+You will also be provided with previous questions asked to the user along with the answers given by the user for each question.
+Judge the previous questions and answers to avoid repeating similar questions.
+Judge the user's answers to avoid asking questions that have already been answered or are irrelevant.
+User's skill levels and preferences can be inferred from previous answers and should be considered
+
 Rules:
 - Ask ONLY what helps choose or reject these courses
 - Prefer yes/no or MCQ
-- Do NOT repeat past questions
+- Do NOT repeat previous questions
 - Generate EXACTLY the requested number
 
 Do not include options inside of mcq question text, only in options array;
@@ -96,7 +101,7 @@ const clarificationQuestionGeneratorInputSchema = z.object({
 		.optional(),
 });
 
-const clarificationQuestionGeneratorOutputSchema = z.object({
+export const clarificationQuestionGeneratorOutputSchema = z.object({
 	questions: z.array(
 		z
 			.object({
