@@ -5,9 +5,11 @@ import {
 	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
 // import type { Chain } from "viem";
 import type { UseWalletClientReturnType } from "wagmi";
+import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
 
 type Wallet = UseWalletClientReturnType["data"];
@@ -34,8 +36,11 @@ type PanthaConfig = {
 	wallet: Wallet | undefined;
 };
 
+const storage = idb({ db: "pantha", store: "auth" });
+
 export function PanthaProvider(props: PanthaConfig) {
 	const { children, apiBaseUrl, wallet } = props;
+	const [ready, setReady] = useState(false);
 
 	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
 
@@ -57,10 +62,15 @@ export function PanthaProvider(props: PanthaConfig) {
 	useEffect(() => {
 		if (
 			!flag.current &&
-			wallet
+			wallet &&
+			api
 			//    && runtime.data
 		) {
 			flag.current = true;
+			storage.get<string>("jwt").then((token) => {
+				token && api.setJwt(token);
+				setReady(true);
+			});
 			// const fsContracts = getContracts({
 			// 	client: wallet,
 			// 	chainId: runtime.data.chain.id,
@@ -69,12 +79,13 @@ export function PanthaProvider(props: PanthaConfig) {
 		}
 	}, [
 		// runtime.data,
+		api,
 		wallet,
 	]);
 
 	const value: PanthaContext = useMemo(
 		() => ({
-			ready: !!api, //&& !!runtime.data,
+			ready, //&& !!runtime.data,
 			wallet: wallet,
 			api: api,
 			// runtime: runtime.data || ({} as Runtime),
