@@ -24,9 +24,6 @@ export const authenticated = createMiddleware<{
 	} catch (_) {
 		return respond.err(ctx, "Invalid or expired token", 401);
 	}
-	if (!payload) {
-		return respond.err(ctx, "Failed to verify token", 401);
-	}
 
 	if (!payload || !payload.sub) {
 		return respond.err(ctx, "Invalid or expired token", 401);

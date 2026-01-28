@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
 	type ReactNode,
@@ -7,7 +8,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-// import type { Chain } from "viem";
 import type { UseWalletClientReturnType } from "wagmi";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
@@ -18,16 +18,12 @@ type PanthaContext = {
 	ready: boolean;
 	api: ApiClient;
 	wallet: Wallet;
-	// contracts: PanthaContracts | null;
-	// runtime: Runtime;
 };
 
 const PanthaContext = createContext<PanthaContext>({
 	ready: false,
 	api: {} as ApiClient,
 	wallet: undefined,
-	// contracts: null,
-	// runtime: {} as Runtime,
 });
 
 type PanthaConfig = {
@@ -44,60 +40,28 @@ export function PanthaProvider(props: PanthaConfig) {
 
 	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
 
-	// const runtime = useQuery({
-	// 	queryKey: ["runtime", apiBaseUrl],
-	// 	queryFn: async () => {
-	// 		const response = await api.rpc.base.get("/runtime");
-	// 		const data = await response.data;
-	// 		if (!data) throw new Error("Failed to fetch runtime");
-	// 		return data;
-	// 	},
-	// 	staleTime: 5 * MINUTE,
-
-	// 	enabled: !!api,
-	// });
+	const queryClient = useQueryClient();
 
 	const flag = useRef(false);
 
 	useEffect(() => {
-		if (
-			!flag.current &&
-			wallet &&
-			api
-			//    && runtime.data
-		) {
+		if (!flag.current && wallet && api) {
 			flag.current = true;
 			storage.get<string>("jwt").then((token) => {
 				token && api.setJwt(token);
 				setReady(true);
 			});
-			// const fsContracts = getContracts({
-			// 	client: wallet,
-			// 	chainId: runtime.data.chain.id,
-			// });
-			// setContracts(fsContracts);
 		}
-	}, [
-		// runtime.data,
-		api,
-		wallet,
-	]);
+	}, [api, wallet]);
 
 	const value: PanthaContext = useMemo(
 		() => ({
-			ready, //&& !!runtime.data,
+			ready,
 			wallet: wallet,
 			api: api,
-			// runtime: runtime.data || ({} as Runtime),
 		}),
-		[
-			api,
-			wallet, //runtime.data
-		],
+		[api, wallet],
 	);
-
-	// if (!runtime.data) return <>Runtime Loading...</>;
-	// if (!contracts) return <>conaracts not ready</>;
 
 	return (
 		<PanthaContext.Provider value={value}>{children}</PanthaContext.Provider>
@@ -107,9 +71,3 @@ export function PanthaProvider(props: PanthaConfig) {
 export function usePanthaContext() {
 	return useContext(PanthaContext);
 }
-
-// type Runtime = {
-// 	uptime: number;
-// 	chain: Chain;
-// 	serverAddressSynapse: string;
-// };
