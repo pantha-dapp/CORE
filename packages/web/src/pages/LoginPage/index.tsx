@@ -12,7 +12,7 @@ export default function LoginPage() {
 	const { sendCode, loginWithCode } = useLoginWithEmail();
 	const { login } = usePrivy();
 	const [isOpen, setIsOpen] = React.useState(false);
-	const { mutate: loginPantha } = useLogin();
+	const { mutateAsync: loginPantha } = useLogin();
 	const { data: wallet } = useWalletClient();
 	const { data: isLoggedIn } = useIsLoggedIn();
 
@@ -40,7 +40,7 @@ export default function LoginPage() {
 		if (wallet && isLoggedIn === false) {
 			loginPantha();
 		}
-	}, [wallet, isLoggedIn, loginPantha]);
+	}, [wallet, isLoggedIn]);
 
 	return (
 		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 flex flex-col items-center justify-center px-12 py-8">
@@ -143,7 +143,7 @@ export default function LoginPage() {
 					type="button"
 					variant="secondary"
 					className="w-full flex items-center justify-center gap-3 px-14 py-4 bg-gray-700/50 border-2 border-gray-600 rounded-xl text-white font-semibold hover:bg-gray-700 transition-colors"
-					onClick={() => login()}
+					onClick={() => login({ loginMethods: ["google"] })}
 				>
 					<img
 						src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/500px-Google_%22G%22_logo.svg.png"
