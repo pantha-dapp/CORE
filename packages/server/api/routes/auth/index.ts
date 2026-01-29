@@ -13,6 +13,7 @@ import { parseSiweMessage, verifySiweMessage } from "viem/siwe";
 import db from "../../../lib/db";
 import { issueJwtToken } from "../../../lib/utils/jwt";
 import { respond } from "../../../lib/utils/respond";
+import { authenticated } from "../../middleware/auth";
 
 const nonces: Record<Address, { nonce: string; validTill: number }> = {};
 const { users } = db.schema;
@@ -101,4 +102,13 @@ export default new Hono()
 		const token = issueJwtToken(address);
 
 		return respond.ok(ctx, { valid, token }, "Signature verified", 200);
+	})
+
+	.get("/validate", authenticated, async (ctx) => {
+		return respond.ok(
+			ctx,
+			{ userWallet: ctx.var.userWallet, valid: true },
+			"Token is valid",
+			200,
+		);
 	});
