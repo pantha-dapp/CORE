@@ -1,4 +1,5 @@
-import { useIsLoggedIn } from "@pantha/react/hooks";
+import { usePanthaContext } from "@pantha/react";
+import { useEnrolledCourses, useIsLoggedIn } from "@pantha/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
 import {
 	createRootRoute,
@@ -25,6 +26,7 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({ type, children }: ProtectedRouteProps) {
 	const { ready, authenticated } = usePrivy();
+	const { ready: panthaReady } = usePanthaContext();
 	const router = useRouter();
 	const { data: isLoggedIn, isLoading: isLoggedInLoading } = useIsLoggedIn();
 	const [protectionLogicExecuted, setProtectionLogicExecuted] = useState(false);
@@ -53,7 +55,7 @@ function ProtectedRoute({ type, children }: ProtectedRouteProps) {
 		}
 	}, [isLoggedIn, isLoggedInLoading, ready, authenticated, router, type]);
 
-	if (!ready && !protectionLogicExecuted) {
+	if (!ready && !panthaReady && !protectionLogicExecuted) {
 		return <div>Loading...</div>;
 	}
 

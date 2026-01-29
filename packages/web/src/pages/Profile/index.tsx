@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useRouter } from "@tanstack/react-router";
+import { Navigate, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
@@ -52,7 +52,10 @@ export default function Profile(): JSX.Element {
 							</div>
 						</div>
 
-						<Button className="bg-secondary text-white px-4 py-2 rounded-xl font-semibold">
+						<Button
+							className="bg-secondary text-white px-4 py-2 rounded-xl font-semibold"
+							onClick={() => router.navigate({ to: "/login", replace: true })}
+						>
 							+ Add Friends
 						</Button>
 					</div>

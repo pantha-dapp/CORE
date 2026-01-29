@@ -1,7 +1,23 @@
+import { useEnrolledCourses } from "@pantha/react/hooks";
+import { useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import type { JSX } from "react/jsx-runtime";
 import Button from "../../shared/components/Button";
 
 export default function Dashboard() {
+	const enrolledCourses = useEnrolledCourses();
+	const router = useRouter();
+	console.log("enrolledCourses", enrolledCourses);
+	useEffect(() => {
+		router.navigate({ to: "/onboarding" });
+		// if (enrolledCourses.data === undefined) {
+		// 	!enrolledCourses.data.enrollments.length &&
+		// }
+	}, [enrolledCourses]);
+
+	// if (enrolledCourses.data === undefined) {
+	// 	return <div>Loading your courses...</div>;
+	// }
 	return (
 		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-6 py-8 pb-24">
 			<div className="max-w-6xl mx-auto space-y-10">
