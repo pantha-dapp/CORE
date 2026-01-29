@@ -3,18 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 import { idb } from "../../utils/idb";
 
-const storage = idb({ db: "pantha", store: "auth" });
+// const storage = idb({ db: "pantha", store: "auth" });
 
 export function useIsLoggedIn() {
-	const { wallet } = usePanthaContext();
+	const { wallet, api } = usePanthaContext();
 
 	return useQuery({
 		queryKey: ["is-logged-in", wallet?.account.address],
 		queryFn: async () => {
 			if (!wallet) return false;
 
-			const jwt = await storage.get("jwt");
-			return !!jwt;
+			return api.jwtExists;
 		},
 		staleTime: 1 * DAY,
 	});
