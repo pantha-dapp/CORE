@@ -20,6 +20,8 @@ export function createJob(fn: () => Promise<void>): string {
 			jobRecord.state = "success";
 		})
 		.catch((err) => {
+			console.error("Job failed:", err);
+
 			const jobRecord = JobStorage[id];
 			if (!jobRecord) return;
 
