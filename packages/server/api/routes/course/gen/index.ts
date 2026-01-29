@@ -60,12 +60,7 @@ export default new Hono()
 				return respond.ok(
 					ctx,
 					{
-						state: session.state,
-						questionsBudget: session.questionsBudget,
-						questionsAnswered: session.questions.filter(
-							(q) => q.answer !== undefined,
-						).length,
-						totalQuestions: session.questions.length,
+						session,
 					},
 					"Session state retrieved successfully.",
 					200,
