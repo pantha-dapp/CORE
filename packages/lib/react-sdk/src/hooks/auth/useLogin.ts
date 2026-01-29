@@ -3,6 +3,7 @@ import { createSiweMessage } from "viem/siwe";
 import { usePanthaContext } from "../../context/PanthaProvider";
 import { idb } from "../../utils/idb";
 import { useIsLoggedIn } from "./useIsLoggedIn";
+import { useLogout } from "./useLogout";
 
 const storage = idb({ db: "pantha", store: "auth" });
 
@@ -11,13 +12,31 @@ export function useLogin() {
 	const queryClient = useQueryClient();
 
 	const { data: isLoggedIn } = useIsLoggedIn();
+	const { mutate: logout } = useLogout();
 
 	return useMutation({
 		mutationFn: async () => {
 			if (isLoggedIn) return true;
 
+			console.log("here I get undefined:", wallet);
+
 			if (!wallet) {
+				logout();
 				throw new Error("Wallet not connected");
+			}
+
+			const storedToken = await storage.get<string>("jwt");
+			if (storedToken) {
+				api.setJwt(storedToken);
+				const validationResponse = await api.rpc.auth.validate.$get();
+				const validationData = await validationResponse.json();
+
+				if (validationData.success && validationData.data?.valid) {
+					return true;
+				} else {
+					await storage.del("jwt");
+					api.setJwt(null);
+				}
 			}
 
 			const address = wallet.account.address;
