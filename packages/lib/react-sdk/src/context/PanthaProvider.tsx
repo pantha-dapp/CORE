@@ -38,40 +38,31 @@ const storage = idb({ db: "pantha", store: "auth" });
 export function PanthaProvider(props: PanthaConfig) {
 	const { children, apiBaseUrl, wallet } = props;
 	const [ready, setReady] = useState(false);
-
-	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
-	const { mutate: login } = useLogin();
-
 	const flag = useRef(false);
 
+	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
+
 	useEffect(() => {
-		if (!flag.current && wallet && api) {
-			flag.current = true;
-
-			storage.get<string>("jwt").then((token) => {
-				token && api.setJwt(token);
-				setReady(true);
-			});
-
-			api.onResponse((response) => {
-				if (response.status === 401) {
-					if (wallet) {
-						api.setJwt(null);
-					} else {
-						login();
+		if (!flag.current) {
+			if (api) {
+				flag.current = true;
+				storage.get<string>("jwt").then((token) => {
+					if (token && typeof token === "string") {
+						api.setJwt(token);
 					}
-				}
-			});
+					setReady(true);
+				});
+			}
 		}
-	}, [api, wallet]);
+	}, [api]);
 
 	const value: PanthaContext = useMemo(
 		() => ({
-			ready,
+			ready: ready,
 			wallet: wallet,
 			api: api,
 		}),
-		[api, wallet],
+		[api, wallet, ready],
 	);
 
 	return (
