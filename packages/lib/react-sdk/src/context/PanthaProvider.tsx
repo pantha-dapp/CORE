@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 import type { UseWalletClientReturnType } from "wagmi";
+import { useLogin } from "../hooks/auth";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
 
@@ -39,17 +40,27 @@ export function PanthaProvider(props: PanthaConfig) {
 	const [ready, setReady] = useState(false);
 
 	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
-
-	const queryClient = useQueryClient();
+	const { mutate: login } = useLogin();
 
 	const flag = useRef(false);
 
 	useEffect(() => {
 		if (!flag.current && wallet && api) {
 			flag.current = true;
+
 			storage.get<string>("jwt").then((token) => {
 				token && api.setJwt(token);
 				setReady(true);
+			});
+
+			api.onResponse((response) => {
+				if (response.status === 401) {
+					if (wallet) {
+						api.setJwt(null);
+					} else {
+						login();
+					}
+				}
 			});
 		}
 	}, [api, wallet]);
