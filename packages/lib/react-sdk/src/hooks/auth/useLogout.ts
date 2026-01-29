@@ -10,13 +10,14 @@ export function useLogout() {
 
 	return useMutation({
 		mutationFn: async () => {
-			await storage.del("jwt");
-			api.setJwt(null);
+			try {
+				await storage.del("jwt");
 
-			return true;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["is-logged-in"] });
+				api.setJwt(null);
+				queryClient.invalidateQueries({ queryKey: ["is-logged-in"] });
+
+				return true;
+			} catch (_) {}
 		},
 	});
 }
