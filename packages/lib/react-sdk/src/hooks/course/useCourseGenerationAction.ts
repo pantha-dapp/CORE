@@ -48,12 +48,13 @@ export function useCourseGenerationAction() {
 			if (actionResponse.success) {
 				if (actionResponse.data.jobId) {
 					setCurrentAwaitedJob(actionResponse.data.jobId);
+					flag.current = false;
 				} else {
 					refreshSession();
 				}
 			}
 
-			return actionResponse.success;
+			return currentJobStatus.data;
 		},
 	});
 }
