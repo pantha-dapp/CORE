@@ -1,10 +1,12 @@
 import "./globals.css";
-import { PrivyProvider } from "@privy-io/react-auth";
+import { usePanthaContext } from "@pantha/react";
+import { useLogout } from "@pantha/react/hooks";
+import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider } from "@tanstack/react-router";
+import { RouterProvider, useRouter } from "@tanstack/react-router";
 import { Buffer as BufferI } from "buffer";
-import { StrictMode } from "react";
+import { StrictMode, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import router from "./pages/router";
@@ -19,6 +21,29 @@ if (!rootElement) throw new Error("Failed to find the root element");
 
 const queryClient = new QueryClient({ defaultOptions: {} });
 
+function AppWrapper(props: { children: React.ReactNode }) {
+	const { api, ready } = usePanthaContext();
+	const flag = useRef(false);
+	const { mutate: logout } = useLogout();
+	const router = useRouter();
+
+	const privy = usePrivy();
+
+	if (!flag.current && api) {
+		flag.current = true;
+		api.onResponse((res) => {
+			if (res.status === 401) {
+				queryClient.invalidateQueries();
+				privy.logout();
+				logout();
+				router.navigate({ to: "/login", replace: true });
+			}
+		});
+	}
+
+	return <>{ready ? props.children : <>Loading SDK...</>}</>;
+}
+
 // App
 const App = () => {
 	return (
@@ -28,8 +53,10 @@ const App = () => {
 					<QueryClientProvider client={queryClient}>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
-								<RouterProvider router={router} />
-								<Toaster position="bottom-right" />
+								<AppWrapper>
+									<RouterProvider router={router} />
+									<Toaster position="bottom-right" />
+								</AppWrapper>
 							</PanthaProvider>
 						</WagmiProvider>
 					</QueryClientProvider>

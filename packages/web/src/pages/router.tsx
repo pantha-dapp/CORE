@@ -1,5 +1,5 @@
 import { usePanthaContext } from "@pantha/react";
-import { useEnrolledCourses, useIsLoggedIn } from "@pantha/react/hooks";
+import { useIsLoggedIn } from "@pantha/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
 import {
 	createRootRoute,
