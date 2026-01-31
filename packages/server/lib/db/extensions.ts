@@ -107,5 +107,23 @@ export function dbExtensionHelpers(_db: DbClient) {
 		};
 	}
 
-	return { userEnrollments, enrollUserInCourse, chapterById, courseById };
+	async function chapterPagesById(args: { chapterId: string }) {
+		const { chapterId } = args;
+
+		const pages = db
+			.select()
+			.from(db.schema.chapterPages)
+			.where(eq(db.schema.chapterPages.chapterId, chapterId))
+			.orderBy(db.schema.chapterPages.order);
+
+		return pages;
+	}
+
+	return {
+		userEnrollments,
+		enrollUserInCourse,
+		chapterById,
+		courseById,
+		chapterPagesById,
+	};
 }
