@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
 	type ReactNode,
@@ -9,7 +8,6 @@ import {
 	useState,
 } from "react";
 import type { UseWalletClientReturnType } from "wagmi";
-import { useLogin } from "../hooks/auth";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
 
