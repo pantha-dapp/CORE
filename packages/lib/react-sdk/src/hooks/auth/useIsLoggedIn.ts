@@ -1,7 +1,6 @@
 import { DAY } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
-import { idb } from "../../utils/idb";
 
 // const storage = idb({ db: "pantha", store: "auth" });
 
