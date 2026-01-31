@@ -17,6 +17,7 @@ import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
+import Test from "./Test";
 
 type ProtectedRouteType = "loggedOutOnly" | "loggedInOnly";
 interface ProtectedRouteProps {
@@ -124,12 +125,26 @@ const profileRoute = createRoute({
 	},
 });
 
+const testRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/test",
+	component: function TestRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Test />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	loginRoute,
 	onboardingRoute,
 	dashboardRoute,
 	profileRoute,
+	testRoute,
 ]);
 
 const router = createRouter({
