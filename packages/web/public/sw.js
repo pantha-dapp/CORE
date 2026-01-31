@@ -1,5 +1,5 @@
-const CACHE_NAME = "pantha-v1";
-const urlsToCache = [
+const _CACHE_NAME = "pantha-v1";
+const _urlsToCache = [
 	"/",
 	"/src/main.tsx",
 	"/manifest.json",
