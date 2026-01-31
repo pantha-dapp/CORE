@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { Navigate, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
