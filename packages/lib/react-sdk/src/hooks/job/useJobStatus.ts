@@ -25,6 +25,7 @@ export function useJobStatus(args: { jobId: string | undefined }) {
 
 			return jobStatusResponse.data;
 		},
+
 		refetchInterval: (o) => {
 			const status = o.state.data?.state;
 
