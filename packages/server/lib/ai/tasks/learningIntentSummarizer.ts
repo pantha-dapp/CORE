@@ -17,10 +17,12 @@ Rules:
 - Do NOT mention uncertainty unless it remains unresolved
 
 Output JSON only.
-example output:
+
+Example Output:
 {
-  "summary": "A concise summary of the user's learning intent based on confirmed information."}
-}`;
+  "summary": "A concise summary of the user's learning intent based on confirmed information."
+}
+`;
 
 const learningIntentSummarizerInputSchema = z.object({
 	majorCategory: z.string(),

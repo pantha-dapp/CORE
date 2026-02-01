@@ -46,19 +46,38 @@ output chosenCourseId if and only if decision is select_existing_course,
 
 output courseGenerationInstructions if and only if decision is create_new_course.
 
-Example of courseGenerationInstructions:
+Example Output for ask_more_questions:
 {
-  "course_title": "Python Automation",
-  "course_description": "A comprehensive course focused on using Python to automate file operations, operating system tasks, repetitive workflows, and system-level scripting for practical and professional use.",
-  "target_audience": "Learners with basic programming familiarity who want to automate real-world tasks using Python",
-  "assumed_prerequisites": [
-    "Basic understanding of programming concepts",
-    "Familiarity with variables, conditionals, and loops"
+  "decision": "ask_more_questions",
+  "uncertantiesRemaining": [
+    "What is the user's current skill level?",
+    "Is the focus more on web automation or system automation?"
   ],
-  "constraints": {
-    "minimum_chapters": 10, <- must be at least 10
-    "granularity": "very fine-grained",
-    "focus": "practical automation, not theory-heavy computer science"
+  "questionCount": 2
+}
+
+Example Output for select_existing_course:
+{
+  "decision": "select_existing_course",
+  "chosenCourseId": 42
+}
+
+Example Output for create_new_course:
+{
+  "decision": "create_new_course",
+  "courseGenerationInstructions": {
+    "courseTitle": "Python Automation",
+    "courseDescription": "A comprehensive course focused on using Python to automate file operations, operating system tasks, repetitive workflows, and system-level scripting for practical and professional use.",
+    "targetAudience": "Learners with basic programming familiarity who want to automate real-world tasks using Python",
+    "assumedPrerequisites": [
+      "Basic understanding of programming concepts",
+      "Familiarity with variables, conditionals, and loops"
+    ],
+    "constraints": {
+      "minimumChapters": 80,
+      "granularity": "very fine-grained",
+      "focus": "practical automation, not theory-heavy computer science"
+    }
   }
 }
 
@@ -105,7 +124,7 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 			targetAudience: z.string(),
 			assumedPrerequisites: z.array(z.string()),
 			constraints: z.object({
-				minimumChapters: z.number().min(10),
+				minimumChapters: z.number().min(30),
 				granularity: z.string(),
 				focus: z.string(),
 			}),

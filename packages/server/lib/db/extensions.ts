@@ -25,13 +25,18 @@ export function dbExtensionHelpers(_db: DbClient) {
 	}) {
 		const { userWallet, courseId } = args;
 
+		const course = await courseById({ courseId });
+		if (!course) {
+			throw "Course does not exist.";
+		}
+
 		const [existingEnrollment] = await db
 			.select()
 			.from(db.schema.userCourses)
 			.where(
 				and(
 					eq(db.schema.userCourses.userWallet, userWallet),
-					eq(db.schema.userCourses.courseId, courseId),
+					eq(db.schema.userCourses.courseId, course.id),
 				),
 			);
 

@@ -1,4 +1,5 @@
 import { tryCatch } from "@pantha/shared";
+import { MINUTE } from "@pantha/shared/constants";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
@@ -30,8 +31,10 @@ type GenerationState = {
 		| "learning_intent_freetext"
 		| "answer_question"
 		| "finished";
+	courseId?: string;
 	majorCategory?: number;
 	learningIntent?: string;
+	inferredGoal?: string;
 	questionsBudget: number;
 	questions: Array<
 		z.infer<
@@ -56,7 +59,7 @@ export default new Hono()
 
 		if (session) {
 			const { lastSessionStartedAt } = session;
-			if (lastSessionStartedAt + 60_000 > Date.now()) {
+			if (lastSessionStartedAt + 10 * MINUTE > Date.now()) {
 				return respond.ok(
 					ctx,
 					{
@@ -163,7 +166,7 @@ export default new Hono()
 
 			if (action.type === "learning_intent_freetext") {
 				ongoingSession.learningIntent = action.intent;
-
+				console.log("Learning intent received:", action.intent);
 				const jobId = createJob(async () => {
 					const intentClarificationResult = await tryCatch(
 						intentClarification({
@@ -177,62 +180,12 @@ export default new Hono()
 						throw "Failed to clarify user learning intent.";
 					}
 					const intentClarificationData = intentClarificationResult.data;
+					ongoingSession.inferredGoal = intentClarificationData.inferredGoal;
 
 					intentClarificationData.uncertainties.forEach((u) => {
 						ongoingSession.uncertainties.push(u);
 					});
 					ongoingSession.state = "answer_question";
-
-					const idealCourseResult = await tryCatch(
-						generateIdealCourseDescriptor({
-							majorCategory:
-								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
-							inferredGoal: intentClarificationData.inferredGoal,
-							uncertainties: intentClarificationData.uncertainties,
-						}),
-					);
-
-					if (idealCourseResult.error) {
-						throw "Failed to generate ideal course descriptor.";
-					}
-					const idealCourse = idealCourseResult.data;
-					const idealCourseDescriptor =
-						generateCanonicalCourseDescriptor(idealCourse);
-					const idealCourseDescriptorEmbedding = await generateEmbeddings(
-						idealCourseDescriptor,
-					);
-					const similarCoursesToIdeal = vectorDb.querySimilar(
-						idealCourseDescriptorEmbedding,
-						5,
-					);
-
-					// Push all candidate courses to the ongoing session's state
-					if (similarCoursesToIdeal.length > 0) {
-						const courseIds = similarCoursesToIdeal
-							.filter((c) => c.similarity > 0.7)
-							.map((c) => c.id);
-
-						for (const courseId of courseIds) {
-							const [course] = await db
-								.select()
-								.from(db.schema.courses)
-								.where(eq(db.schema.courses.id, courseId));
-
-							if (course) {
-								const topics = await db
-									.select()
-									.from(db.schema.courseTopics)
-									.where(eq(db.schema.courseTopics.courseId, courseId));
-
-								ongoingSession.candidateCourses.push({
-									id: courseId,
-									title: course.title,
-									description: course.description,
-									topics: topics.map((t) => t.topic),
-								});
-							}
-						}
-					}
 
 					const clarificationQuestionResult = await tryCatch(
 						clarificationQuestionGenerator({
@@ -256,7 +209,7 @@ export default new Hono()
 						ongoingSession.questionsBudget--;
 						ongoingSession.questions.push({
 							...q,
-							key: Bun.randomUUIDv7().slice(0, 8),
+							key: crypto.randomUUID().slice(0, 8),
 						});
 					});
 				});
@@ -296,6 +249,61 @@ export default new Hono()
 				}
 
 				const jobId = createJob(async () => {
+					const idealCourseResult = await tryCatch(
+						generateIdealCourseDescriptor({
+							majorCategory:
+								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
+							inferredGoal: ongoingSession.inferredGoal ?? "",
+							learningIntent: ongoingSession.learningIntent ?? "",
+							uncertainties: ongoingSession.uncertainties,
+							previous: ongoingSession.questions.map((q) => ({
+								question: q.text,
+								purpose: q.purpose,
+								answer: q.answer || "",
+							})),
+						}),
+					);
+
+					if (idealCourseResult.error) {
+						throw "Failed to generate ideal course descriptor.";
+					}
+					const idealCourse = idealCourseResult.data;
+					const idealCourseDescriptor =
+						generateCanonicalCourseDescriptor(idealCourse);
+					const idealCourseDescriptorEmbedding = await generateEmbeddings(
+						idealCourseDescriptor,
+					);
+					const similarCoursesToIdeal = vectorDb.querySimilar(
+						idealCourseDescriptorEmbedding,
+						5,
+					);
+
+					// Push all candidate courses to the ongoing session's state
+					ongoingSession.candidateCourses = [];
+					if (similarCoursesToIdeal.length > 0) {
+						const courseIds = similarCoursesToIdeal
+							.filter((c) => c.similarity > 0.7)
+							.map((c) => c.id);
+
+						for (const courseId of courseIds) {
+							const course = await db.courseById({ courseId });
+
+							if (course) {
+								const topics = await db
+									.select()
+									.from(db.schema.courseTopics)
+									.where(eq(db.schema.courseTopics.courseId, courseId));
+
+								ongoingSession.candidateCourses.push({
+									id: courseId,
+									title: course.title,
+									description: course.description,
+									topics: topics.map((t) => t.topic),
+								});
+							}
+						}
+					}
+
 					const courseSelectionEvaluatorResult = await tryCatch(
 						courseSelectionEvaluator({
 							previous: ongoingSession.questions.map((q) => ({
@@ -348,7 +356,7 @@ export default new Hono()
 						questions.forEach((q) => {
 							ongoingSession.questions.push({
 								...q,
-								key: Bun.randomUUIDv7().slice(0, 8),
+								key: crypto.randomUUID().slice(0, 8),
 							});
 						});
 					}
@@ -374,6 +382,7 @@ export default new Hono()
 						}
 
 						ongoingSession.state = "finished";
+						ongoingSession.courseId = chosenCourseId;
 					}
 
 					if (evaluation.decision === "create_new_course") {
@@ -414,41 +423,51 @@ export default new Hono()
 									await tx.insert(db.schema.courseTopics).values({
 										courseId: courseId,
 										topic: topic,
+										id: crypto.randomUUID(),
 									});
 								}
 
 								let chapterOrder = 0;
 								for (const chapter of newCourse.overview.chapters) {
+									const chapterId = crypto.randomUUID();
 									const [insertedChapter] = await tx
 										.insert(db.schema.courseChapters)
 										.values({
 											courseId: courseId,
 											description: chapter.description,
+											id: chapterId,
 											title: chapter.title,
 											intent: chapter.intent,
 											order: chapterOrder++,
 										})
 										.returning({ id: db.schema.courseChapters.id });
 
-									if (!insertedChapter) {
+									if (!insertedChapter || !insertedChapter.id) {
 										throw "Failed to insert course chapter.";
 									}
 
 									for (const topic of chapter.topics) {
 										await tx.insert(db.schema.chapterTopics).values({
+											id: crypto.randomUUID(),
 											chapterId: insertedChapter.id,
 											topic: topic,
 										});
 									}
 								}
+
+								await db.enrollUserInCourse({
+									userWallet: userWallet,
+									courseId: generatedCourseId,
+								});
 							})
 							.catch(() => {
-								if (generatedCourseId) {
+								if (!generatedCourseId || generatedCourseId.length === 0) {
 									vectorDb.deleteEntry(generatedCourseId);
 								}
 							});
 
 						ongoingSession.state = "finished";
+						ongoingSession.courseId = generatedCourseId;
 					}
 				});
 

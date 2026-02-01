@@ -11,7 +11,7 @@ In this platform:
 Your task is to generate a COMPLETE course skeleton.
 
 Rules (STRICT):
-- You MUST generate AT LEAST 200 chapters.
+- You MUST generate AT LEAST 50 chapters.
 - Chapters must be ordered from foundational to advanced.
 - Chapters must increase in difficulty gradually.
 - Chapters must be concept-focused, not lesson-focused.
@@ -19,36 +19,56 @@ Rules (STRICT):
 - Do NOT use vague chapter titles like "Advanced Topics".
 - Do NOT bundle multiple unrelated ideas into one chapter.
 
-Each chapter MUST include:
-- A clear, specific title
-- A detailed description explaining what the learner will understand or be able to do after completing the chapter
-- A list of concrete topics or sub-concepts covered in that chapter
+CRITICAL - EVERY SINGLE CHAPTER MUST HAVE ALL 4 REQUIRED FIELDS:
+1. "title" (string): Clear, specific chapter title
+2. "description" (string): Detailed explanation of what the learner will understand or be able to do (minimum 15 words)
+3. "topics" (array): List of 3-5 concrete sub-concepts covered (must have at least 2 items)
+4. "intent" (string): Must be EXACTLY one of these values: "introduce", "recall", "apply", "reinforce", "check_confidence"
+
+VALIDATION RULES:
+- Missing ANY field in ANY chapter will cause complete failure
+- Empty arrays or empty strings are NOT allowed
+- "intent" must match one of the 5 allowed values exactly (case-sensitive)
+- Descriptions must be substantive enough for automated content generation
 
 Descriptions MUST be detailed enough that:
 - Another system can generate quizzes, diagrams, and interactive steps from them
 - The scope of the chapter is unambiguous
+- A learner can understand the specific learning outcome
 
-Output JSON only.
-Do NOT include commentary or explanations.
+Output ONLY valid JSON matching the schema.
+Do NOT include commentary, explanations, or markdown formatting.
 
 Example Output:
 {
-  "overview": [
-    {
-      "title": "Introduction to Python Automation",
-      "description": "This chapter introduces the concept of automation using Python, covering basic scripting techniques and common use cases.",
-      "topics": ["Python scripting basics", "Automation use cases"],
-      "chapters": [
-        {
-          "title": "Setting Up Your Python Environment",
-          "description": "Learn how to install Python, set up a virtual environment, and manage packages using pip.",
-          "topics": [
-            "Installing Python",
-            "Creating virtual environments",
-            "Using pip for package management"
-          ]
-        },
-]    }`;
+  "overview": {
+    "title": "Python Automation Mastery",
+    "description": "A comprehensive course covering Python scripting and automation techniques from fundamentals to advanced applications.",
+    "topics": ["Python scripting", "Task automation", "File operations", "API integration", "Web scraping"],
+    "chapters": [
+      {
+        "title": "Setting Up Your Python Environment",
+        "description": "Learn how to install Python, set up a virtual environment, and manage packages using pip.",
+        "topics": [
+          "Installing Python",
+          "Creating virtual environments",
+          "Using pip for package management"
+        ],
+        "intent": "introduce"
+      },
+      {
+        "title": "Understanding Variables and Data Types",
+        "description": "Master the fundamentals of Python variables, data types, and basic operations.",
+        "topics": [
+          "Variable declaration",
+          "Strings, integers, floats",
+          "Type conversion"
+        ],
+        "intent": "introduce"
+      }
+    ]
+  }
+}`;
 
 const generateNewCourseSkeletonInputSchema = z.object({
 	courseTitle: z.string(),
@@ -56,7 +76,7 @@ const generateNewCourseSkeletonInputSchema = z.object({
 	targetAudience: z.string(),
 	assumedPrerequisites: z.array(z.string()),
 	constraints: z.object({
-		minimumChapters: z.number().default(200),
+		minimumChapters: z.number().default(50),
 		granularity: z.string(),
 		focus: z.string(),
 	}),

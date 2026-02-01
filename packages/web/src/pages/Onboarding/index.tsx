@@ -2,12 +2,30 @@ import {
 	useCourseGenerationAction,
 	useCourseGenerationMajorCategories,
 	useCourseGenerationSession,
+	useEnrolledCourses,
+	useJobStatus,
 } from "@pantha/react/hooks";
+import { useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
+// import { useState } from "react";
 
 export default function Onboarding() {
 	const session = useCourseGenerationSession();
-	const { data: jobState, mutate: action } = useCourseGenerationAction();
+	const { data: actionData, mutate: action } = useCourseGenerationAction();
+	const jobState = useJobStatus({ jobId: actionData?.awaitedJobId });
 	const majorCategories = useCourseGenerationMajorCategories();
+	const router = useRouter();
+	const enrolledCourses = useEnrolledCourses();
+	const currentQuestion = useMemo(
+		() => session.data?.session.questions.find((q) => !q.answer),
+		[session.data],
+	);
+
+	useEffect(() => {
+		if (enrolledCourses.data && session.data?.session.state === "finished") {
+			router.navigate({ to: "/dashboard" });
+		}
+	}, [enrolledCourses.data, router, session.data?.session.state]);
 
 	return (
 		<div>
@@ -16,14 +34,17 @@ export default function Onboarding() {
 				className="resize-none text-sm p-5 w-full"
 				defaultValue={JSON.stringify(session.data, null, 2)}
 			/>
+			<button type="button" onClick={() => session.refetch()}>
+				Refresh Session
+			</button>
 			<textarea
-				rows={5}
+				rows={3}
 				className="resize-none text-sm p-5 w-full"
-				defaultValue={JSON.stringify({ jobState }, null, 2)}
+				defaultValue={JSON.stringify(jobState.data, null, 2)}
 			/>
 
 			{session.data &&
-				(jobState?.state === "pending" ? (
+				(jobState?.data?.state === "pending" ? (
 					"Loading wait"
 				) : (
 					<div className="flex flex-col gap-y-3">
@@ -61,6 +82,65 @@ export default function Onboarding() {
 								>
 									submit a cool intent
 								</button>
+							</div>
+						)}
+						{/* // here i will retirve questions one by one and then answer them  */}
+
+						{session.data.session.state === "answer_question" && (
+							<div className="flex flex-col gap-y-3">
+								{currentQuestion?.text}
+
+								{currentQuestion?.type === "mcq" &&
+									currentQuestion.options.map((option) => (
+										<button
+											key={option}
+											type="button"
+											onClick={() =>
+												action({
+													action: {
+														type: "answer_question",
+														questionKey: currentQuestion.key,
+														answer: option,
+													},
+												})
+											}
+										>
+											{option}
+										</button>
+									))}
+
+								{currentQuestion?.type === "yes_no" && (
+									<div className="flex gap-x-3">
+										<button
+											type="button"
+											onClick={() =>
+												action({
+													action: {
+														type: "answer_question",
+														questionKey: currentQuestion.key,
+														answer: "yes",
+													},
+												})
+											}
+										>
+											Yes
+										</button>
+										<button
+											type="button"
+											onClick={() =>
+												action({
+													action: {
+														type: "answer_question",
+														questionKey: currentQuestion.key,
+														answer: "no",
+													},
+												})
+											}
+										>
+											No
+										</button>
+									</div>
+								)}
 							</div>
 						)}
 					</div>
