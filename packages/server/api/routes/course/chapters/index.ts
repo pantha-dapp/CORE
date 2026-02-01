@@ -5,8 +5,11 @@ import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
+import session from "./session";
 
 export default new Hono()
+
+	.route("/session", session)
 
 	.get(
 		"/:id",
