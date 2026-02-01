@@ -11,7 +11,7 @@ export function useCourseGenerationAction() {
 	const currentJobStatus = useJobStatus({ jobId: currentAwaitedJob });
 	const queryClient = useQueryClient();
 
-	const flag = useRef(false);
+	const refreshedJobsRef = useRef<Set<string>>(new Set());
 
 	function refreshSession() {
 		queryClient.invalidateQueries({
@@ -23,13 +23,16 @@ export function useCourseGenerationAction() {
 	}
 
 	useEffect(() => {
-		if (!flag.current) {
-			if (currentJobStatus.data?.state !== "pending") {
-				flag.current = true;
-				refreshSession();
-			}
+		if (
+			currentAwaitedJob &&
+			currentJobStatus.data?.state &&
+			currentJobStatus.data.state !== "pending" &&
+			!refreshedJobsRef.current.has(currentAwaitedJob)
+		) {
+			refreshedJobsRef.current.add(currentAwaitedJob);
+			refreshSession();
 		}
-	}, [currentJobStatus.data]);
+	}, [currentJobStatus.data?.state, currentAwaitedJob]);
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -48,13 +51,14 @@ export function useCourseGenerationAction() {
 			if (actionResponse.success) {
 				if (actionResponse.data.jobId) {
 					setCurrentAwaitedJob(actionResponse.data.jobId);
-					flag.current = false;
+					refreshedJobsRef.current.clear();
+					return { awaitedJobId: actionResponse.data.jobId };
 				} else {
 					refreshSession();
 				}
 			}
 
-			return currentJobStatus.data;
+			return { awaitedJobId: undefined };
 		},
 	});
 }
