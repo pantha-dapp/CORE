@@ -1,7 +1,7 @@
 import { jsonStringify } from "@pantha/shared";
+import { MINUTE } from "@pantha/shared/constants";
 import { Hono } from "hono";
 import z from "zod";
-import { categories } from "../../../../data/categories";
 import db from "../../../../lib/db";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
@@ -11,77 +11,71 @@ type ChapterGameState = {
 	chapterId: string;
 	pages: Array<typeof db.schema.chapterPages.$inferSelect>;
 	currentPage: number;
-	correct: [];
-	incorrect: [];
+	correct: number[];
+	incorrect: number[];
 	lastSessionStartedAt: number;
 };
 const gameSessions = new Map<string, ChapterGameState>();
 
 export default new Hono()
 
-	.post(
+	.get(
 		"/",
 		authenticated,
 		validator(
-			"json",
+			"query",
 			z.object({
 				chapterId: z.string().min(1),
 			}),
 		),
 		async (ctx) => {
 			const { userWallet } = ctx.var;
-			const { chapterId } = ctx.req.valid("json");
+			const { chapterId } = ctx.req.valid("query");
+			let session = gameSessions.get(userWallet);
 
-			if (gameSessions.has(userWallet)) {
+			if (session?.chapterId !== chapterId) {
 				gameSessions.delete(userWallet);
 			}
-			const chapterPages = await db.chapterPagesById({ chapterId });
 
-			if (!chapterPages || chapterPages.length === 0) {
-				return respond.err(ctx, "Chapter not found", 404);
+			session = gameSessions.get(userWallet);
+			if (!session) {
+				const chapterPages = await db.chapterPagesById({ chapterId });
+
+				if (!chapterPages || chapterPages.length === 0) {
+					return respond.err(ctx, "Chapter not found", 404);
+				}
+				gameSessions.set(userWallet, {
+					chapterId,
+					pages: chapterPages,
+					currentPage: 0,
+					correct: [],
+					incorrect: [],
+					lastSessionStartedAt: Date.now(),
+				});
+				session = gameSessions.get(userWallet);
 			}
 
-			gameSessions.set(userWallet, {
-				chapterId,
-				pages: chapterPages,
-				currentPage: 0,
-				correct: [],
-				incorrect: [],
-				lastSessionStartedAt: Date.now(),
-			});
+			if (!session) {
+				return respond.err(ctx, "Failed to create session", 500);
+			}
 
-			return respond.ok(ctx, {}, "Session started successfully.", 201);
+			const { lastSessionStartedAt } = session;
+			if (lastSessionStartedAt + 10 * MINUTE > Date.now()) {
+				return respond.ok(
+					ctx,
+					{
+						chapterId: session.chapterId,
+						currentPage: session.currentPage,
+					},
+					"Session state retrieved successfully.",
+					200,
+				);
+			} else {
+				gameSessions.delete(userWallet);
+				return respond.err(ctx, "Session expired", 410);
+			}
 		},
 	)
-
-	.get("/", authenticated, async (ctx) => {
-		const { userWallet } = ctx.var;
-		const session = gameSessions.get(userWallet);
-
-		if (!session) {
-			return respond.err(
-				ctx,
-				"No active session found. Please start a session.",
-				404,
-			);
-		}
-
-		const { lastSessionStartedAt } = session;
-		if (lastSessionStartedAt + 60_000 > Date.now()) {
-			return respond.ok(
-				ctx,
-				{
-					chapterId: session.chapterId,
-					currentPage: session.currentPage,
-				},
-				"Session state retrieved successfully.",
-				200,
-			);
-		} else {
-			gameSessions.delete(userWallet);
-			return respond.err(ctx, "Session expired", 410);
-		}
-	})
 
 	.post(
 		"/answer",
@@ -151,5 +145,25 @@ export default new Hono()
 				default:
 					break;
 			}
+
+			if (correct) {
+				session.correct.push(session.currentPage);
+			} else {
+				session.incorrect.push(session.currentPage);
+			}
+			session.currentPage += 1;
+			session.lastSessionStartedAt = Date.now();
+
+			gameSessions.set(userWallet, session);
+
+			return respond.ok(
+				ctx,
+				{
+					correct,
+					currentPage: session.currentPage,
+				},
+				"Answer processed successfully.",
+				200,
+			);
 		},
 	);
