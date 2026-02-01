@@ -15,6 +15,18 @@ export default new Hono()
 
 	.route("/chapters", chapters)
 
+	.get("/enrolled", authenticated, async (ctx) => {
+		const userWallet = ctx.get("userWallet");
+		const enrollments = await db.userEnrollments({ userWallet });
+
+		return respond.ok(
+			ctx,
+			{ enrollments },
+			"Enrollments fetched successfully.",
+			200,
+		);
+	})
+
 	.get(
 		"/",
 		authenticated,
@@ -66,26 +78,6 @@ export default new Hono()
 		},
 	)
 
-	.get("/:id", authenticated, async (ctx) => {
-		const courseId = ctx.req.param("id");
-
-		const course = await db.courseById({ courseId });
-		if (!course) {
-			return respond.err(ctx, "Course not found.", 404);
-		}
-
-		return respond.ok(
-			ctx,
-			{
-				id: course.id,
-				title: course.title,
-				description: course.description,
-			},
-			"Course fetched successfully.",
-			200,
-		);
-	})
-
 	.post(
 		"/enroll",
 		authenticated,
@@ -123,14 +115,22 @@ export default new Hono()
 		},
 	)
 
-	.get("/enrolled", authenticated, async (ctx) => {
-		const userWallet = ctx.get("userWallet");
-		const enrollments = await db.userEnrollments({ userWallet });
+	.get("/:id", authenticated, async (ctx) => {
+		const courseId = ctx.req.param("id");
+
+		const course = await db.courseById({ courseId });
+		if (!course) {
+			return respond.err(ctx, "Course not found.", 404);
+		}
 
 		return respond.ok(
 			ctx,
-			{ enrollments },
-			"Enrollments fetched successfully.",
+			{
+				id: course.id,
+				title: course.title,
+				description: course.description,
+			},
+			"Course fetched successfully.",
 			200,
 		);
 	});
