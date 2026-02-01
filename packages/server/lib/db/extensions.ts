@@ -80,6 +80,17 @@ export function dbExtensionHelpers(_db: DbClient) {
 		};
 	}
 
+	async function courseChaptersById(args: { courseId: string }) {
+		const { courseId } = args;
+		const chapters = await db
+			.select()
+			.from(db.schema.courseChapters)
+			.where(eq(db.schema.courseChapters.courseId, courseId))
+			.orderBy(db.schema.courseChapters.order);
+
+		return chapters;
+	}
+
 	async function chapterById(args: { chapterId: string }) {
 		const { chapterId } = args;
 
@@ -128,6 +139,7 @@ export function dbExtensionHelpers(_db: DbClient) {
 		userEnrollments,
 		enrollUserInCourse,
 		chapterById,
+		courseChaptersById,
 		courseById,
 		chapterPagesById,
 	};
