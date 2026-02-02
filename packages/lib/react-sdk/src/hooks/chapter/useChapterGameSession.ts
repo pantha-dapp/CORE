@@ -2,7 +2,7 @@ import { MINUTE } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useCourseGameSession(args: { chapterId: string }) {
+export function useChapterGameSession(args: { chapterId: string }) {
 	const { wallet, api } = usePanthaContext();
 	const { chapterId } = args;
 

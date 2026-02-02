@@ -12,6 +12,8 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import Navigation from "../shared/components/Navigation";
 import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
+import ChapterDetails from "./ChapterDetails";
+import Chapters from "./Chapters";
 import Dashboard from "./Dashboard";
 import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
@@ -112,6 +114,34 @@ const dashboardRoute = createRoute({
 	},
 });
 
+const ChaptersRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/chapters/$courseId",
+	component: function ChaptersRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				{/* Add your Courses component here */}
+				<Chapters />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
+const ChapterDetailRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/course/$courseId/chapter/$chapterId",
+	component: function ChapterDetailRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				{/* Add your ChapterDetail component here */}
+				<ChapterDetails />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
 const profileRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/profile",
@@ -143,6 +173,8 @@ const routeTree = rootRoute.addChildren([
 	loginRoute,
 	onboardingRoute,
 	dashboardRoute,
+	ChaptersRoute,
+	ChapterDetailRoute,
 	profileRoute,
 	testRoute,
 ]);

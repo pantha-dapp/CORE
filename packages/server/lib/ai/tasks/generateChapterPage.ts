@@ -143,57 +143,49 @@ FORBIDDEN:
 - Do NOT repeat the same question type more than twice consecutively
 - Do NOT include meta-commentary or explanations outside the JSON
 - Do NOT ignore the chapter intent
+- Do NOT output null values for any field
+- Do NOT include fields that are not required for the page type
 
-Output JSON only.
+Output JSON only. Omit any fields not used by the page type and never use null.
 
 Example Output:
 {
   "pages": [
     {
       "type": "teach_and_explain_content",
-      "content": {
-        "topic": "What is a Variable?",
-        "markdown": "A **variable** is a named container that stores data in your program.\\n\\nThink of it like a labeled box — you can put something inside, and later retrieve it using the label.\\n\\nIn Python, creating a variable is simple:\\n\\n\`\`\`python\\nname = \\"Alice\\"\\nage = 25\\n\`\`\`"
-      }
+      "topic": "What is a Variable?",
+      "markdown": "A **variable** is a named container that stores data in your program.\\n\\nThink of it like a labeled box — you can put something inside, and later retrieve it using the label.\\n\\nIn Python, creating a variable is simple:\\n\\n\`\`\`python\\nname = \\"Alice\\"\\nage = 25\\n\`\`\`"
     },
     {
       "type": "quiz",
-      "content": {
-        "question": "What does a variable do in programming?",
-        "options": [
-          "Stores data with a name",
-          "Deletes files from your computer",
-          "Connects to the internet",
-          "Prints text to the screen"
-        ],
-        "correctOptionIndex": 0
-      }
+      "question": "What does a variable do in programming?",
+      "options": [
+        "Stores data with a name",
+        "Deletes files from your computer",
+        "Connects to the internet",
+        "Prints text to the screen"
+      ],
+      "correctOptionIndex": 0
     },
     {
       "type": "true_false",
-      "content": {
-        "statement": "In Python, you must declare a variable's type before using it.",
-        "isTrue": false
-      }
+      "statement": "In Python, you must declare a variable's type before using it.",
+      "isTrue": false
     },
     {
       "type": "fill_in_the_blanks",
-      "content": {
-        "sentance": "A variable is a named container that stores data",
-        "missingWordIndices": [4, 6]
-      }
+      "sentence": "A variable is a named container that stores data",
+      "missingWordIndices": [4, 6]
     },
     {
       "type": "example_usages",
-      "content": {
-        "topic": "Common Uses of Variables",
-        "text": "Variables are used everywhere in programming to store and manipulate data.",
-        "examples": [
-          "Storing a user's name for personalized greetings",
-          "Keeping track of a game score",
-          "Holding the result of a calculation"
-        ]
-      }
+      "topic": "Common Uses of Variables",
+      "text": "Variables are used everywhere in programming to store and manipulate data.",
+      "examples": [
+        "Storing a user's name for personalized greetings",
+        "Keeping track of a game score",
+        "Holding the result of a calculation"
+      ]
     }
   ]
 }
@@ -224,117 +216,141 @@ const generateChapterPagesInputSchema = z.object({
 	minimumPages: z.number().default(10),
 });
 
-export const generateChapterPagesOutputSchema = z.object({
-	pages: z.array(
-		z
-			.object({
-				type: z.literal("example_usages"),
-				imageUrl: z.string().optional(),
-				content: z.object({
-					topic: z.string(),
-					text: z.string(),
-					examples: z.array(z.string()),
-				}),
-			})
-			.describe(
-				"A page that introduces a topic, explains it and provides examples use cases for that thing / object.",
-			)
-			.or(
-				z.object({
-					type: z.literal("quiz"),
-					imageUrl: z.string().optional(),
-					content: z.object({
-						question: z.string(),
-						options: z.array(z.string()),
-						correctOptionIndex: z.number(),
-					}),
-				}),
-			)
-			.describe(
-				"A quiz page with a question, multiple options, and the index of the correct option.",
-			)
-			.or(
-				z.object({
-					type: z.literal("teach_and_explain_content"),
-					imageUrl: z.string().optional(),
-					content: z.object({
-						topic: z.string(),
-						markdown: z.string(),
-					}),
-				}),
-			)
-			.describe("A page that teaches and explains a concept in detail.")
-			.or(
-				z.object({
-					type: z.literal("true_false"),
-					imageUrl: z.string().optional(),
-					content: z.object({
-						statement: z.string(),
-						isTrue: z.boolean(),
-					}),
-				}),
-			)
-			.describe("A true/false question page.")
-			.or(
-				z.object({
-					type: z.literal("fill_in_the_blanks"),
-					imageUrl: z.string().optional(),
-					content: z.object({
-						sentance: z.string(),
-						missingWordIndices: z.array(z.number()),
-					}),
-				}),
-			)
-			.describe("A fill-in-the-blanks question page.")
-			.or(
-				z.object({
-					type: z.literal("identify_shown_object_in_image"),
-					imageUrl: z.string(),
-					content: z.object({
-						options: z.array(z.string()),
-						correctOptionIndex: z.number(),
-					}),
-				}),
-			)
-			.describe(
-				"An image-based question where user has to identify the shown object.",
-			)
-			.or(
-				z.object({
-					type: z.literal("matching"),
-					content: z.object({
-						pairs: z.array(
-							z.object({
-								left: z.string(),
-								right: z.string(),
-							}),
-						),
-					}),
-				}),
-			)
-			.describe(
-				"A matching type question page where all pairs are of similar topic and similar things appear on same side.",
-			)
-			.or(
-				z.object({
-					type: z.literal("identify_object_from_images"),
-					content: z.object({
-						object: z.string(),
-						imageUrls: z.array(z.string()),
-						correctImageIndex: z.number(),
-					}),
-				}),
-			)
-			.describe(
-				"A question where user has to identify the correct image for the given object from multiple images.",
-			),
+const pageTypeEnum = z.enum([
+	"example_usages",
+	"quiz",
+	"teach_and_explain_content",
+	"true_false",
+	"fill_in_the_blanks",
+	"identify_shown_object_in_image",
+	"matching",
+	"identify_object_from_images",
+]);
+
+const pageFields = {
+	imageUrl: z.string(),
+	topic: z.string(),
+	markdown: z.string(),
+	text: z.string(),
+	examples: z.array(z.string()),
+	question: z.string(),
+	options: z.array(z.string()),
+	correctOptionIndex: z.number(),
+	statement: z.string(),
+	isTrue: z.boolean(),
+	sentence: z.string(),
+	missingWordIndices: z.array(z.number()),
+	pairs: z.array(
+		z.object({
+			left: z.string(),
+			right: z.string(),
+		}),
 	),
+	object: z.string(),
+	imageUrls: z.array(z.string()),
+	correctImageIndex: z.number(),
+};
+
+const makePageSchema = <T extends z.ZodRawShape>(
+	type: z.ZodLiteral<z.infer<typeof pageTypeEnum>>,
+	shape: T,
+	imageRequired = false,
+) =>
+	z.object({
+		type,
+		imageUrl: imageRequired
+			? pageFields.imageUrl
+			: pageFields.imageUrl.optional(),
+		...shape,
+	});
+
+// Flat schema for structured output - all fields except type are explicitly optional
+export const chapterPageSchema = z.object({
+	type: pageTypeEnum,
+	imageUrl: pageFields.imageUrl.optional(),
+	topic: pageFields.topic.optional(),
+	markdown: pageFields.markdown.optional(),
+	text: pageFields.text.optional(),
+	examples: pageFields.examples.optional(),
+	question: pageFields.question.optional(),
+	options: pageFields.options.optional(),
+	correctOptionIndex: pageFields.correctOptionIndex.optional(),
+	statement: pageFields.statement.optional(),
+	isTrue: pageFields.isTrue.optional(),
+	sentence: pageFields.sentence.optional(),
+	missingWordIndices: pageFields.missingWordIndices.optional(),
+	pairs: pageFields.pairs.optional(),
+	object: pageFields.object.optional(),
+	imageUrls: pageFields.imageUrls.optional(),
+	correctImageIndex: pageFields.correctImageIndex.optional(),
 });
 
-export const generateChapterPages = createAiGenerateFunction(
+export type ChapterPageFlat = z.infer<typeof chapterPageSchema>;
+
+// Typed schema for application use (not used for structured output)
+const chapterPageTypedSchema = z.discriminatedUnion("type", [
+	makePageSchema(z.literal("example_usages"), {
+		topic: pageFields.topic,
+		text: pageFields.text,
+		examples: pageFields.examples,
+	}),
+	makePageSchema(z.literal("quiz"), {
+		question: pageFields.question,
+		options: pageFields.options,
+		correctOptionIndex: pageFields.correctOptionIndex,
+	}),
+	makePageSchema(z.literal("teach_and_explain_content"), {
+		topic: pageFields.topic,
+		markdown: pageFields.markdown,
+	}),
+	makePageSchema(z.literal("true_false"), {
+		statement: pageFields.statement,
+		isTrue: pageFields.isTrue,
+	}),
+	makePageSchema(z.literal("fill_in_the_blanks"), {
+		sentence: pageFields.sentence,
+		missingWordIndices: pageFields.missingWordIndices,
+	}),
+	makePageSchema(
+		z.literal("identify_shown_object_in_image"),
+		{
+			options: pageFields.options,
+			correctOptionIndex: pageFields.correctOptionIndex,
+		},
+		true,
+	),
+	makePageSchema(z.literal("matching"), {
+		pairs: pageFields.pairs,
+	}),
+	makePageSchema(z.literal("identify_object_from_images"), {
+		object: pageFields.object,
+		imageUrls: pageFields.imageUrls,
+		correctImageIndex: pageFields.correctImageIndex,
+	}),
+]);
+
+export const generateChapterPagesOutputSchema = z.object({
+	pages: z.array(chapterPageSchema),
+});
+
+export const chapterPagesTypedSchema = z.object({
+	pages: z.array(chapterPageTypedSchema),
+});
+
+export type ChapterPage = z.infer<typeof chapterPageTypedSchema>;
+
+const generateChapterPagesRaw = createAiGenerateFunction(
 	{
 		input: generateChapterPagesInputSchema,
 		output: generateChapterPagesOutputSchema,
 	},
 	generateChapterPagesPrompt,
 );
+
+export async function generateChapterPages(
+	...params: Parameters<typeof generateChapterPagesRaw>
+) {
+	const [input, prompt] = params;
+	const result = await generateChapterPagesRaw(input, prompt);
+	return chapterPagesTypedSchema.parse(result);
+}
