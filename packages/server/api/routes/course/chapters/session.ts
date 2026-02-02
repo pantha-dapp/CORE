@@ -118,7 +118,7 @@ export default new Hono()
 				case "fill_in_the_blanks":
 					correct = content.missingWordIndices.every((index: number) => {
 						return (
-							content.sentance.split(" ")[
+							content.sentence.split(" ")[
 								content.missingWordIndices[index] ?? -1
 							] === answer[index]
 						);

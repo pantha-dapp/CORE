@@ -1,14 +1,51 @@
 import { useCourseById, useEnrolledCourses } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import type { JSX } from "react/jsx-runtime";
 import Button from "../../shared/components/Button";
+
+// Component to display individual enrollment details and handle navigation because it was not happening properly in the main Dashboard component
+
+function EnrollmentCard({
+	enrollment,
+}: {
+	enrollment: { courseId: string; progress: number };
+}) {
+	const router = useRouter();
+	const courseDetails = useCourseById({ id: enrollment.courseId });
+
+	function handleCourseClick(courseId: string) {
+		router.navigate({ to: `/chapters/${courseId}` });
+	}
+
+	return (
+		<li className="p-4 bg-gray-800 rounded-lg shadow-md flex justify-between items-center">
+			<div>
+				<h2 className="text-xl font-semibold">
+					{courseDetails.data?.title || "Loading..."}
+				</h2>
+				{courseDetails.data?.description && (
+					<p className="text-gray-300 text-sm mt-1">
+						{courseDetails.data.description}
+					</p>
+				)}
+				<p className="text-gray-400 mt-2">Progress: {enrollment.progress}</p>
+			</div>
+			<div>
+				<Button
+					onClick={() => handleCourseClick(enrollment.courseId)}
+					className="bg-blue-600 hover:bg-blue-700"
+				>
+					View Course
+				</Button>
+			</div>
+		</li>
+	);
+}
+
 export default function Dashboard() {
 	const enrolledCourses = useEnrolledCourses();
 	const router = useRouter();
-	const courseDetails = useCourseById({
-		id: enrolledCourses.data?.enrollments[0]?.courseId ?? "",
-	}); // Example to show usage of useCourseById
+
 	useEffect(() => {
 		if (
 			enrolledCourses.data !== undefined &&
@@ -32,25 +69,12 @@ export default function Dashboard() {
 			) : (
 				<div>
 					<ul className="space-y-4">
-						{enrolledCourses.data?.enrollments.map(
-							(enrollment): JSX.Element => (
-								<li
-									key={enrollment.courseId}
-									className="p-4 bg-gray-800 rounded-lg shadow-md flex justify-between items-center"
-								>
-									<div>
-										<h2 className="text-xl font-semibold">
-											course details:{" "}
-											{courseDetails.data?.title || "Loading..."}
-										</h2>
-										<p className="text-gray-400">
-											description:{" "}
-											{courseDetails.data?.description || "Loading..."}
-										</p>
-									</div>
-								</li>
-							),
-						)}
+						{enrolledCourses.data?.enrollments.map((enrollment) => (
+							<EnrollmentCard
+								key={enrollment.courseId}
+								enrollment={enrollment}
+							/>
+						))}
 					</ul>
 				</div>
 			)}
