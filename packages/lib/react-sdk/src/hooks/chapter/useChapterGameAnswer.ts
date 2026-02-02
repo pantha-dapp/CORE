@@ -1,22 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { InferRequestType } from "hono/client";
-import { useEffect, useRef, useState } from "react";
 import { usePanthaContext } from "../../context/PanthaProvider";
-import { useJobStatus } from "../job";
 
 export function useChapterGameAnswer() {
 	const { wallet, api } = usePanthaContext();
 
 	const queryClient = useQueryClient();
 
-	const flag = useRef(false);
-
 	function refreshSession() {
 		queryClient.invalidateQueries({
-			queryKey: ["last-course-generation-session"],
+			queryKey: ["last-chapter-game-session"],
 		});
 		queryClient.refetchQueries({
-			queryKey: ["last-course-generation-session"],
+			queryKey: ["last-chapter-game-session"],
 		});
 	}
 
