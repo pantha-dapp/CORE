@@ -2,7 +2,7 @@ import { jsonParse, jsonStringify } from "@pantha/shared";
 import { chat } from "@tanstack/ai";
 import { createOpenaiChat } from "@tanstack/ai-openai";
 import { eq } from "drizzle-orm";
-import { json, type ZodObject, z } from "zod";
+import { type ZodObject, z } from "zod";
 import env from "../../env";
 import db from "../db";
 import { createVectorDbClient } from "../db/vec/client";
