@@ -13,7 +13,7 @@ import {
 	isHex,
 } from "viem";
 import type z from "zod";
-import type { generateChapterPagesOutputSchema } from "../ai/tasks/generateChapterPage";
+import type { chapterPagesTypedSchema } from "../ai/tasks/generateChapterPage";
 
 export const timestamps = {
 	createdAt: int("created_at", { mode: "timestamp" })
@@ -122,7 +122,7 @@ export const tBigInt = customType<{
 });
 
 export const tPageContent = customType<{
-	data: z.infer<typeof generateChapterPagesOutputSchema>["pages"][number];
+	data: z.infer<typeof chapterPagesTypedSchema>["pages"][number];
 	driverData: string;
 }>({
 	dataType() {
