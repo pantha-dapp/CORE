@@ -288,46 +288,90 @@ export const chapterPageSchema = z.object({
 export type ChapterPageFlat = z.infer<typeof chapterPageSchema>;
 
 // Typed schema for application use (not used for structured output)
-const chapterPageTypedSchema = z.discriminatedUnion("type", [
-	makePageSchema(z.literal("example_usages"), {
-		topic: pageFields.topic,
-		text: pageFields.text,
-		examples: pageFields.examples,
-	}),
-	makePageSchema(z.literal("quiz"), {
-		question: pageFields.question,
-		options: pageFields.options,
-		correctOptionIndex: pageFields.correctOptionIndex,
-	}),
-	makePageSchema(z.literal("teach_and_explain_content"), {
-		topic: pageFields.topic,
-		markdown: pageFields.markdown,
-	}),
-	makePageSchema(z.literal("true_false"), {
-		statement: pageFields.statement,
-		isTrue: pageFields.isTrue,
-	}),
-	makePageSchema(z.literal("fill_in_the_blanks"), {
-		sentence: pageFields.sentence,
-		missingWordIndices: pageFields.missingWordIndices,
-	}),
-	makePageSchema(
-		z.literal("identify_shown_object_in_image"),
-		{
-			options: pageFields.options,
-			correctOptionIndex: pageFields.correctOptionIndex,
-		},
-		true,
-	),
-	makePageSchema(z.literal("matching"), {
-		pairs: pageFields.pairs,
-	}),
-	makePageSchema(z.literal("identify_object_from_images"), {
-		object: pageFields.object,
-		imageUrls: pageFields.imageUrls,
-		correctImageIndex: pageFields.correctImageIndex,
-	}),
-]);
+const chapterPageTypedSchema = z
+	.object({
+		type: z.literal("example_usages"),
+		imageUrl: z.string().optional(),
+		content: z.object({
+			topic: z.string(),
+			text: z.string(),
+			examples: z.array(z.string()),
+		}),
+	})
+	.or(
+		z.object({
+			type: z.literal("quiz"),
+			imageUrl: z.string().optional(),
+			content: z.object({
+				question: z.string(),
+				options: z.array(z.string()),
+				correctOptionIndex: z.number(),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("teach_and_explain_content"),
+			imageUrl: z.string().optional(),
+			content: z.object({
+				topic: z.string(),
+				markdown: z.string(),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("true_false"),
+			imageUrl: z.string().optional(),
+			content: z.object({
+				statement: z.string(),
+				isTrue: z.boolean(),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("fill_in_the_blanks"),
+			imageUrl: z.string().optional(),
+			content: z.object({
+				sentance: z.string(),
+				missingWordIndices: z.array(z.number()),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("identify_shown_object_in_image"),
+			imageUrl: z.string(),
+			content: z.object({
+				options: z.array(z.string()),
+				correctOptionIndex: z.number(),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("matching"),
+			content: z.object({
+				pairs: z.array(
+					z.object({
+						left: z.string(),
+						right: z.string(),
+					}),
+				),
+			}),
+		}),
+	)
+	.or(
+		z.object({
+			type: z.literal("identify_object_from_images"),
+			content: z.object({
+				object: z.string(),
+				imageUrls: z.array(z.string()),
+				correctImageIndex: z.number(),
+			}),
+		}),
+	);
 
 export const generateChapterPagesOutputSchema = z.object({
 	pages: z.array(chapterPageSchema),

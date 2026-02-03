@@ -38,6 +38,7 @@ export default new Hono()
 			}
 
 			session = gameSessions.get(userWallet);
+
 			if (!session) {
 				const chapterPages = await db.chapterPagesById({ chapterId });
 
@@ -118,7 +119,7 @@ export default new Hono()
 				case "fill_in_the_blanks":
 					correct = content.missingWordIndices.every((index: number) => {
 						return (
-							content.sentence.split(" ")[
+							content.sentance.split(" ")[
 								content.missingWordIndices[index] ?? -1
 							] === answer[index]
 						);
