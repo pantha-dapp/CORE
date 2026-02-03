@@ -21,7 +21,7 @@ db.run(`
   CREATE INDEX IF NOT EXISTS idx_vec_entries_key ON vec_entries (key);
 `);
 
-type VectorDbClientKey = "course-embeddings";
+type VectorDbClientKey = "course-embeddings" | "llm-resp-vec-cache";
 
 export function createVectorDbClient(key: VectorDbClientKey) {
 	function readEntry(id: string) {
