@@ -34,7 +34,9 @@ export function createAiGenerateFunction<
 		noCache?: boolean,
 	): Promise<z.infer<R>> {
 		schemas.input.parse(input);
-		const inputEmbedding = await generateEmbeddings(jsonStringify(input));
+		const inputEmbedding = noCache
+			? []
+			: await generateEmbeddings(jsonStringify(input));
 
 		if (!noCache) {
 			const [cachedEntry] = vectorDb.querySimilar(inputEmbedding, 1);
