@@ -1,7 +1,13 @@
+import { jsonParse, jsonStringify } from "@pantha/shared";
 import { chat } from "@tanstack/ai";
 import { createOpenaiChat } from "@tanstack/ai-openai";
-import { type ZodObject, z } from "zod";
+import { eq } from "drizzle-orm";
+import { json, type ZodObject, z } from "zod";
 import env from "../../env";
+import db from "../db";
+import { createVectorDbClient } from "../db/vec/client";
+
+const vectorDb = createVectorDbClient("llm-resp-vec-cache");
 
 const aiAdapter = createOpenaiChat(
 	//@ts-expect-error
@@ -22,8 +28,31 @@ export function createAiGenerateFunction<
 	},
 	sysmtemPrompt: string,
 ) {
-	async function aiGenerate(input: z.infer<T>, prompt?: string) {
+	async function aiGenerate(
+		input: z.infer<T>,
+		prompt?: string,
+		noCache?: boolean,
+	): Promise<z.infer<R>> {
 		schemas.input.parse(input);
+		const inputEmbedding = await generateEmbeddings(jsonStringify(input));
+
+		if (!noCache) {
+			const [cachedEntry] = vectorDb.querySimilar(inputEmbedding, 1);
+			if (cachedEntry && cachedEntry.similarity > 0.95) {
+				const [cachedResponse] = await db
+					.select()
+					.from(db.schema.vectorCache)
+					.where(eq(db.schema.vectorCache.id, cachedEntry.id));
+
+				if (cachedResponse) {
+					const content = cachedResponse.content;
+					const { success } = schemas.output.safeParse(jsonParse(content));
+					if (success) {
+						return jsonParse(content);
+					}
+				}
+			}
+		}
 
 		const response = await chat({
 			adapter: aiAdapter,
@@ -34,6 +63,18 @@ export function createAiGenerateFunction<
 			systemPrompts: [sysmtemPrompt ?? ""],
 			outputSchema: schemas.output,
 		});
+
+		if (!noCache) {
+			const [cacheEntry] = await db
+				.insert(db.schema.vectorCache)
+				.values({
+					content: jsonStringify(response),
+				})
+				.returning();
+			if (cacheEntry) {
+				vectorDb.writeEntry(cacheEntry.id, inputEmbedding);
+			}
+		}
 
 		return schemas.output.parse(response);
 	}
