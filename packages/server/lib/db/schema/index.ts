@@ -1,8 +1,10 @@
+import * as cache from "./cache";
 import * as course from "./course";
 import * as user from "./user";
 
 // Combine all schema parts
 const schema = {
+	...cache,
 	...course,
 	...user,
 };
