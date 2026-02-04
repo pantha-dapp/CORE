@@ -60,13 +60,13 @@ export default new Hono()
 					case "example_usages":
 						return;
 					case "fill_in_the_blanks": {
-						const contentWords = content.sentence.split(" ");
+						const contentWords = content.sentance.split(" ");
 						content.missingWordIndices.forEach((index: number) => {
 							if (index >= 0 && index < contentWords.length) {
 								contentWords[index] = "[____]";
 							}
 						});
-						content.sentence = contentWords.join(" ");
+						content.sentance = contentWords.join(" ");
 						return;
 					}
 					case "identify_object_from_images": {
