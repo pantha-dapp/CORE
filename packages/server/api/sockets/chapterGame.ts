@@ -55,7 +55,7 @@ export default new Hono().get(
 
 		return {
 			onMessage(event, ws) {
-				const data = z
+				const _data = z
 					.object({
 						answer: z.string(),
 					})
