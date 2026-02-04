@@ -145,6 +145,7 @@ export async function generateEmbeddings(
 
 const CACHE_EVICTION_TRIGGER_THRESHOLD = 500;
 const CACHE_ENTRIES_TO_EVICT = 50;
+const CACHE_EVICTION_POLICY: "lru" | "lfu" = "lfu";
 const cacheMeta = {
 	count: 0,
 	lastEvictionAt: 0,
@@ -168,7 +169,12 @@ async function cacheEviction() {
 				const entriesToEvict = await tx
 					.select()
 					.from(db.schema.vectorCache)
-					.orderBy(db.schema.vectorCache.lastHitAt)
+					.orderBy(
+						// depeding on policy choose target column for ordering
+						CACHE_EVICTION_POLICY === "lfu"
+							? db.schema.vectorCache.hits
+							: db.schema.vectorCache.lastHitAt,
+					)
 					.limit(CACHE_ENTRIES_TO_EVICT);
 
 				for (const entry of entriesToEvict) {
