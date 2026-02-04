@@ -251,7 +251,7 @@ const pageFields = {
 	correctImageIndex: z.number(),
 };
 
-const makePageSchema = <T extends z.ZodRawShape>(
+const _makePageSchema = <T extends z.ZodRawShape>(
 	type: z.ZodLiteral<z.infer<typeof pageTypeEnum>>,
 	shape: T,
 	imageRequired = false,
