@@ -1,14 +1,11 @@
-import { jsonParse, jsonStringify } from "@pantha/shared";
-import { MINUTE } from "@pantha/shared/constants";
+import { jsonStringify } from "@pantha/shared";
 import { chat } from "@tanstack/ai";
 import { createOpenaiChat } from "@tanstack/ai-openai";
-import { count, eq, sql } from "drizzle-orm";
-import { type ZodObject, z } from "zod";
+import type { ZodObject } from "zod";
+import { z } from "zod";
 import env from "../../env";
-import db from "../db";
-import { createVectorDbClient } from "../db/vec/client";
-
-const vectorDb = createVectorDbClient("llm-resp-vec-cache");
+import { getCachedResponse, setCachedResponse } from "./cache";
+import { type LanguageCode, languageCodesAndNames } from "./translations";
 
 const aiAdapter = createOpenaiChat(
 	//@ts-expect-error
@@ -40,28 +37,12 @@ export function createAiGenerateFunction<
 			: await generateEmbeddings(jsonStringify(input));
 
 		if (!noCache) {
-			const [cachedEntry] = vectorDb.querySimilar(inputEmbedding, 1);
-			if (cachedEntry && cachedEntry.similarity > 0.95) {
-				const [cachedResponse] = await db
-					.select()
-					.from(db.schema.vectorCache)
-					.where(eq(db.schema.vectorCache.id, cachedEntry.id));
-
-				if (cachedResponse) {
-					const content = cachedResponse.content;
-					const { success } = schemas.output.safeParse(jsonParse(content));
-
-					if (success) {
-						// register the cace hit but do not need to awai tit
-						db.update(db.schema.vectorCache)
-							.set({
-								lastHitAt: Date.now(),
-								hits: sql`${db.schema.vectorCache.hits} + 1`,
-							})
-							.where(eq(db.schema.vectorCache.id, cachedResponse.id));
-						return jsonParse(content);
-					}
-				}
+			const cachedResponse = await getCachedResponse<z.infer<R>>(
+				inputEmbedding,
+				schemas.output,
+			);
+			if (cachedResponse) {
+				return cachedResponse;
 			}
 		}
 
@@ -76,26 +57,7 @@ export function createAiGenerateFunction<
 		});
 
 		if (!noCache) {
-			db.insert(db.schema.vectorCache)
-				.values({
-					content: jsonStringify(response),
-					lastHitAt: Date.now(),
-				})
-				.onConflictDoUpdate({
-					target: db.schema.vectorCache.content,
-					set: {
-						lastHitAt: Date.now(),
-					},
-				})
-				.returning()
-				.then(([cacheEntry]) => {
-					if (cacheEntry) {
-						cacheMeta.count += 1;
-						vectorDb.writeEntry(cacheEntry.id, inputEmbedding);
-					}
-				});
-
-			cacheEviction();
+			setCachedResponse(response, inputEmbedding);
 		}
 
 		return schemas.output.parse(response);
@@ -143,48 +105,38 @@ export async function generateEmbeddings(
 	return embedding;
 }
 
-const CACHE_EVICTION_TRIGGER_THRESHOLD = 500;
-const CACHE_ENTRIES_TO_EVICT = 50;
-const CACHE_EVICTION_POLICY: "lru" | "lfu" = "lfu";
-const cacheMeta = {
-	count: 0,
-	lastEvictionAt: 0,
-};
+export async function generateTranslation(args: {
+	sourceLanguage: LanguageCode;
+	targetLanguage: LanguageCode;
+	input: string;
+}) {
+	const { input, sourceLanguage, targetLanguage } = args;
 
-async function cacheEviction() {
-	if (!cacheMeta.count || cacheMeta.count <= 0) {
-		const [currentCount] = await db
-			.select({ count: count() })
-			.from(db.schema.vectorCache);
-		if (!currentCount) {
-			cacheMeta.count = 0;
-			return;
-		}
-		cacheMeta.count = currentCount.count;
-	}
+	const payload = await fetch(`${env.OLLAMA_HOST}/api/chat`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			model: "translategemma:27b",
+			stream: false,
+			messages: [
+				{
+					role: "user",
+					content: `You are a professional ${languageCodesAndNames[sourceLanguage]} (${sourceLanguage}) to ${languageCodesAndNames[targetLanguage]} (${targetLanguage}) translator. Your goal is to accurately convey the meaning and nuances of the original ${languageCodesAndNames[sourceLanguage]} text while adhering to ${languageCodesAndNames[targetLanguage]} grammar, vocabulary, and cultural sensitivities.
+Produce only the ${languageCodesAndNames[targetLanguage]} translation, without any additional explanations or commentary. Please translate the following ${languageCodesAndNames[sourceLanguage]} text into ${languageCodesAndNames[targetLanguage]}:
 
-	if (cacheMeta.count >= CACHE_EVICTION_TRIGGER_THRESHOLD) {
-		if (Date.now() - cacheMeta.lastEvictionAt > 5 * MINUTE) {
-			await db.transaction(async (tx) => {
-				const entriesToEvict = await tx
-					.select()
-					.from(db.schema.vectorCache)
-					.orderBy(
-						// depeding on policy choose target column for ordering
-						CACHE_EVICTION_POLICY === "lfu"
-							? db.schema.vectorCache.hits
-							: db.schema.vectorCache.lastHitAt,
-					)
-					.limit(CACHE_ENTRIES_TO_EVICT);
+${input}`,
+				},
+			],
+		}),
+	});
 
-				for (const entry of entriesToEvict) {
-					cacheMeta.count -= 1;
-					await tx
-						.delete(db.schema.vectorCache)
-						.where(eq(db.schema.vectorCache.id, entry.id));
-					vectorDb.deleteEntry(entry.id);
-				}
-			});
-		}
-	}
+	const data = await payload.json();
+
+	const { message } = z
+		.object({ message: z.object({ role: z.string(), content: z.string() }) })
+		.parse(data);
+
+	return message.content;
 }
