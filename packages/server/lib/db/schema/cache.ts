@@ -4,4 +4,6 @@ import { tUuid } from "../helpers";
 export const vectorCache = t.sqliteTable("vector_cache", {
 	id: tUuid("id").primaryKey(),
 	content: t.text("content").notNull(),
+	lastHitAt: t.integer("last_hit_at").notNull(),
+	hits: t.integer("hits").notNull().default(0),
 });
