@@ -1,18 +1,29 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useChapterGameAnswer() {
+export function useChapterGameAnswer(args?: { chapterId?: string }) {
 	const { wallet, api } = usePanthaContext();
 
 	const queryClient = useQueryClient();
+	const chapterId = args?.chapterId;
 
 	function refreshSession() {
-		queryClient.invalidateQueries({
-			queryKey: ["last-chapter-game-session"],
-		});
-		queryClient.refetchQueries({
-			queryKey: ["last-chapter-game-session"],
-		});
+		if (chapterId) {
+			queryClient.invalidateQueries({
+				queryKey: ["last-chapter-game-session", chapterId],
+			});
+			queryClient.refetchQueries({
+				queryKey: ["last-chapter-game-session", chapterId],
+			});
+		} else {
+			// Fallback: invalidate all sessions
+			queryClient.invalidateQueries({
+				queryKey: ["last-chapter-game-session"],
+			});
+			queryClient.refetchQueries({
+				queryKey: ["last-chapter-game-session"],
+			});
+		}
 	}
 
 	return useMutation({
