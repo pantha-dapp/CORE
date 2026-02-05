@@ -3,9 +3,9 @@ import { generateTranslation } from "./lib/ai/engine";
 let responseTime = Date.now();
 const g = await generateTranslation({
 	input:
-		"TranslateGemma is a family of lightweight, state-of-the-art open translation models from Google, based on the Gemma 3 family of models. TranslateGemma models are designed to handle translation tasks across 55 languages. Their relatively small size makes it possible to deploy them in environments with limited resources such as laptops, desktops or your own cloud infrastructure, democratizing access to state of the art translation models and helping foster innovation for everyone.",
+		"Hello, My name is foxie, I am a software engineer and I love coding. I have been working in the industry for over 10 years and I have experience with a wide range of programming languages and technologies. In my free time, I enjoy hiking, traveling, and spending time with my family.",
 	sourceLanguage: "en",
-	targetLanguage: "es",
+	targetLanguage: "es-AR",
 });
 
 console.log(g);
