@@ -2,6 +2,8 @@ import { and, eq, lte } from "drizzle-orm";
 import { generateChapterPages } from "../ai/tasks";
 import db from "../db";
 
+const preparing = new Set<string>();
+
 export async function prepareChapter(id: string) {
 	const chapter = await db.chapterById({ chapterId: id });
 	if (!chapter) {
@@ -10,6 +12,10 @@ export async function prepareChapter(id: string) {
 
 	const pages = await db.chapterPagesById({ chapterId: id });
 	if (pages && pages.length > 0) {
+		return;
+	}
+
+	if (preparing.has(id)) {
 		return;
 	}
 
@@ -74,6 +80,8 @@ export async function prepareChapter(id: string) {
 			inserted.push(insertedPage);
 		}
 	});
+
+	preparing.delete(id);
 
 	// we will also queue chapter prepataion for images etc for now we dont do that becuse no images are there
 }
