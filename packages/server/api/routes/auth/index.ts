@@ -95,8 +95,7 @@ export default new Hono()
 			})
 			.onConflictDoNothing()
 			.catch((err) => {
-				console.error("Error inserting new user:", err);
-				return respond.err(ctx, "Database error", 500);
+				return respond.err(ctx, `Database error ${String(err)}`, 500);
 			});
 
 		const token = issueJwtToken(address);

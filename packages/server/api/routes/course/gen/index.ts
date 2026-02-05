@@ -16,6 +16,7 @@ import {
 import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
 import db from "../../../../lib/db";
 import { createVectorDbClient } from "../../../../lib/db/vec/client";
+import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
@@ -166,7 +167,6 @@ export default new Hono()
 
 			if (action.type === "learning_intent_freetext") {
 				ongoingSession.learningIntent = action.intent;
-				console.log("Learning intent received:", action.intent);
 				const jobId = createJob(async () => {
 					const intentClarificationResult = await tryCatch(
 						intentClarification({
@@ -179,6 +179,7 @@ export default new Hono()
 					if (intentClarificationResult.error) {
 						throw "Failed to clarify user learning intent.";
 					}
+					console;
 					const intentClarificationData = intentClarificationResult.data;
 					ongoingSession.inferredGoal = intentClarificationData.inferredGoal;
 
@@ -334,7 +335,7 @@ export default new Hono()
 
 						const clarificationQuestionGeneratorResult = await tryCatch(
 							clarificationQuestionGenerator({
-								inferredGoal: "",
+								inferredGoal: ongoingSession.inferredGoal ?? "",
 								uncertainties: ongoingSession.uncertainties,
 								previous: ongoingSession.questions.map((q) => ({
 									question: q.text,
@@ -354,6 +355,7 @@ export default new Hono()
 						const { questions } = clarificationQuestionGeneratorResult.data;
 
 						questions.forEach((q) => {
+							ongoingSession.questionsBudget--;
 							ongoingSession.questions.push({
 								...q,
 								key: crypto.randomUUID().slice(0, 8),
@@ -428,6 +430,7 @@ export default new Hono()
 								}
 
 								let chapterOrder = 0;
+								let firstChapterId = "";
 								for (const chapter of newCourse.overview.chapters) {
 									const chapterId = crypto.randomUUID();
 									const [insertedChapter] = await tx
@@ -446,6 +449,10 @@ export default new Hono()
 										throw "Failed to insert course chapter.";
 									}
 
+									if (!firstChapterId) {
+										firstChapterId = insertedChapter.id;
+									}
+
 									for (const topic of chapter.topics) {
 										await tx.insert(db.schema.chapterTopics).values({
 											id: crypto.randomUUID(),
@@ -459,6 +466,8 @@ export default new Hono()
 									userWallet: userWallet,
 									courseId: generatedCourseId,
 								});
+
+								prepareChapter(firstChapterId);
 							})
 							.catch(() => {
 								if (!generatedCourseId || generatedCourseId.length === 0) {
