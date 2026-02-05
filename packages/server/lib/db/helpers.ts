@@ -13,7 +13,7 @@ import {
 	isHex,
 } from "viem";
 import type z from "zod";
-import type { chapterPagesTypedSchema } from "../ai/tasks/generateChapterPage";
+import type { chapterPagesTypedSchema } from "../ai/tasks/generateChapterPagesOverview";
 
 export const timestamps = {
 	createdAt: int("created_at", { mode: "timestamp" })
