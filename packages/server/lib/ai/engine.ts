@@ -34,7 +34,9 @@ export function createAiGenerateFunction<
 		schemas.input.parse(input);
 		const inputEmbedding = noCache
 			? []
-			: await generateEmbeddings(jsonStringify(input));
+			: await generateEmbeddings(
+					jsonStringify({ input, schemas, systemPrompt, prompt }),
+				);
 
 		if (!noCache) {
 			const cachedResponse = await getCachedResponse<z.infer<R>>(
@@ -118,7 +120,7 @@ export async function generateTranslation(args: {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({
-			model: "translategemma:27b",
+			model: "translategemma:4b",
 			stream: false,
 			messages: [
 				{
