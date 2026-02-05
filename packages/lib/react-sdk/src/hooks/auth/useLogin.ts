@@ -18,8 +18,6 @@ export function useLogin() {
 		mutationFn: async () => {
 			if (isLoggedIn) return true;
 
-			console.log("here I get undefined:", wallet);
-
 			if (!wallet) {
 				logout();
 				throw new Error("Wallet not connected");
