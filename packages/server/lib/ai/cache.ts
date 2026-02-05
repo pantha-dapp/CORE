@@ -57,7 +57,7 @@ export async function getCachedResponse<T>(
 	outputSchema: { safeParse: (data: unknown) => { success: boolean } },
 ): Promise<T | null> {
 	const [cachedEntry] = vectorDb.querySimilar(inputEmbedding, 1);
-	if (cachedEntry && cachedEntry.similarity > 0.95) {
+	if (cachedEntry && cachedEntry.similarity > 0.998877) {
 		const [cachedResponse] = await db
 			.select()
 			.from(db.schema.vectorCache)
@@ -91,12 +91,12 @@ export async function setCachedResponse(
 			content: jsonStringify(response),
 			lastHitAt: Date.now(),
 		})
-		.onConflictDoUpdate({
-			target: db.schema.vectorCache.content,
-			set: {
-				lastHitAt: Date.now(),
-			},
-		})
+		// .onConflictDoUpdate({
+		// 	target: db.schema.vectorCache.content,
+		// 	set: {
+		// 		lastHitAt: Date.now(),
+		// 	},
+		// })
 		.returning()
 		.then(([cacheEntry]) => {
 			if (cacheEntry) {
