@@ -56,8 +56,9 @@ export async function getCachedResponse<T>(
 	inputEmbedding: number[],
 	outputSchema: { safeParse: (data: unknown) => { success: boolean } },
 ): Promise<T | null> {
-	const [cachedEntry] = vectorDb.querySimilar(inputEmbedding, 1);
-	if (cachedEntry && cachedEntry.similarity > 0.998877) {
+	const [cachedEntry] = await vectorDb.querySimilar(inputEmbedding, 1);
+	console.log(cachedEntry);
+	if (cachedEntry && cachedEntry.score > 0.998877) {
 		const [cachedResponse] = await db
 			.select()
 			.from(db.schema.vectorCache)
@@ -101,7 +102,10 @@ export async function setCachedResponse(
 		.then(([cacheEntry]) => {
 			if (cacheEntry) {
 				cacheMeta.count += 1;
-				vectorDb.writeEntry(cacheEntry.id, inputEmbedding);
+				vectorDb.writeEntry(cacheEntry.id, {
+					vector: inputEmbedding,
+					payload: {},
+				});
 			}
 		});
 
