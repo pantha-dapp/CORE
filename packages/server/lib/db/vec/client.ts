@@ -1,109 +1,148 @@
-import { Database } from "bun:sqlite";
+import { tryCatch } from "@pantha/shared";
+import { QdrantClient } from "@qdrant/js-client-rest";
 import z from "zod";
 import env from "../../../env";
 
-const dbFile = Bun.file(env.EMBEDDINGS_SQLITE_FILE_PATH);
-if (!dbFile.exists()) {
-	console.log(
-		`Creating new embeddings database at ${env.EMBEDDINGS_SQLITE_FILE_PATH}`,
+const dbClient = new QdrantClient({
+	host: env.QDRANT_HOST,
+	port: Number(env.QDRANT_PORT),
+});
+
+const collectionDefinitions = {
+	"course-embeddings": {
+		size: 768,
+		distance: "Cosine",
+		schema: z.object({
+			//  courseId: z.string()
+		}),
+	},
+	"llm-resp-vec-cache": {
+		size: 768,
+		distance: "Cosine",
+		schema: z.object({
+			// vectorCacheId: z.string(),
+		}),
+	},
+} as const satisfies Record<
+	string,
+	{
+		size: number;
+		distance: "Cosine" | "Dot" | "Euclid" | "Manhattan";
+		schema: z.ZodObject;
+	}
+>;
+
+type VectorDbClientKey = keyof typeof collectionDefinitions;
+
+async function ensureCollectionsExist() {
+	await Promise.all(
+		Object.entries(collectionDefinitions).map(async ([name, def]) => {
+			const { exists } = await dbClient.collectionExists(name);
+			if (!exists) {
+				await dbClient.createCollection(name, {
+					vectors: { size: def.size, distance: def.distance },
+				});
+			}
+		}),
 	);
-	dbFile.write(new Uint8Array());
 }
 
-const db = new Database(env.EMBEDDINGS_SQLITE_FILE_PATH);
-db.run(`
-  CREATE TABLE IF NOT EXISTS vec_entries (
-    key TEXT NOT NULL,
-    id TEXT NOT NULL PRIMARY KEY,
-    vector BLOB
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_vec_entries_key ON vec_entries (key);
-`);
-
-type VectorDbClientKey = "course-embeddings" | "llm-resp-vec-cache";
-
-export function createVectorDbClient(key: VectorDbClientKey) {
-	function readEntry(id: string) {
-		const [entry] = db
-			.query("SELECT vector FROM vec_entries WHERE key = ? AND id = ?")
-			.all(key, id);
+export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
+	ensureCollectionsExist();
+	async function readEntry(id: string) {
+		const entry = await dbClient.query(key, {
+			query: id,
+		});
 		if (!entry) return null;
-		return z.object({ vector: z.instanceof(Uint8Array) }).parse(entry).vector;
+		const content = entry.points[0];
+		if (entry.points.length > 1 || entry.points.length === 0 || !content) {
+			throw new Error(
+				"Invalid state: multiple or no entries found for id, maybe the id is not an id",
+			);
+		}
+
+		const parsed = collectionDefinitions[key].schema.safeParse(content.payload);
+		if (!parsed.success) {
+			throw new Error("Failed to parse payload:");
+		}
+
+		return {
+			vector: z.array(z.number()).parse(content.vector),
+			payload: parsed.data,
+		};
 	}
 
-	function writeEntry(id: string, vector: number[]) {
-		const exists = readEntry(id);
-		if (exists) {
-			db.run("UPDATE vec_entries SET vector = ? WHERE key = ? AND id = ?", [
-				Buffer.from(new Float32Array(vector).buffer),
-				key,
-				id,
-			]);
-		} else {
-			db.run("INSERT INTO vec_entries (key, id, vector) VALUES (?, ?, ?)", [
-				key,
-				id,
-				Buffer.from(new Float32Array(vector).buffer),
-			]);
+	async function writeEntry(
+		id: string,
+		options: {
+			vector: number[];
+			payload: z.infer<(typeof collectionDefinitions)[T]["schema"]>;
+		},
+	) {
+		await dbClient.upsert(key, {
+			points: [
+				{
+					id,
+					...options,
+				},
+			],
+		});
+	}
+
+	async function deleteEntry(id: string) {
+		const found = await tryCatch(readEntry(id));
+
+		if (found.data) {
+			await dbClient.delete(key, { filter: { must: { has_id: id } } });
 		}
 	}
 
-	function deleteEntry(id: string) {
-		db.run("DELETE FROM vec_entries WHERE key = ? AND id = ?", [key, id]);
-	}
+	// async function all() {
+	// 	const {} = await dbClient
+	// 		.getCollection(key)
 
-	function all() {
-		const rows = db
-			.query("SELECT id, vector FROM vec_entries WHERE key = ?")
-			.all(key);
+	// 	return z
+	// 		.array(z.object({ id: z.string(), vector: z.instanceof(Uint8Array) }))
+	// 		.parse(rows)
+	// 		.map(({ id, vector }) => {
+	// 			const floatArray = new Float32Array(
+	// 				vector.buffer,
+	// 				vector.byteOffset,
+	// 				vector.byteLength / Float32Array.BYTES_PER_ELEMENT,
+	// 			);
+	// 			return {
+	// 				id,
+	// 				vector: Array.from(floatArray),
+	// 			};
+	// 		});
+	// }
 
-		return z
-			.array(z.object({ id: z.string(), vector: z.instanceof(Uint8Array) }))
-			.parse(rows)
-			.map(({ id, vector }) => {
-				const floatArray = new Float32Array(
-					vector.buffer,
-					vector.byteOffset,
-					vector.byteLength / Float32Array.BYTES_PER_ELEMENT,
-				);
-				return {
-					id,
-					vector: Array.from(floatArray),
-				};
-			});
-	}
-
-	function querySimilar(vector: number[], k: number = 5) {
-		const entries = all();
-
-		const similarities = entries.map(({ id, vector: vec }) => {
-			const similarity = cosineSimilarity(vector, vec);
-			return { id, similarity };
+	async function querySimilar(vector: number[], k: number = 5) {
+		const entries = await dbClient.query(key, {
+			query: vector,
+			limit: k,
+			with_payload: true,
 		});
 
-		similarities.sort((a, b) => b.similarity - a.similarity);
-
-		return similarities.slice(0, k).map((entry) => {
-			return {
-				id: entry.id,
-				similarity: entry.similarity,
-			};
-		});
+		return entries.points.map((entry) => ({
+			id: String(entry.id),
+			score: z.number().parse(entry.score),
+			payload: collectionDefinitions[key].schema.parse(entry.payload),
+		}));
 	}
 
 	const client = {
 		readEntry,
 		writeEntry,
 		deleteEntry,
-		all,
+		// all,
 		querySimilar,
 	};
 
 	return client;
 }
 
-function cosineSimilarity(a: number[], b: number[]) {
+function _cosineSimilarity(a: number[], b: number[]) {
 	if (a.length !== b.length) throw new Error("Vectors must be of same length");
 
 	const dotProduct = a.reduce((sum, ai, i) => {
