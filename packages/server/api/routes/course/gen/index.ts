@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import z from "zod";
 import { categories } from "../../../../data/categories";
 import { generateEmbeddings } from "../../../../lib/ai/engine";
+import { generateOrFindImage } from "../../../../lib/ai/image";
 import {
 	clarificationQuestionGenerator,
 	courseSelectionEvaluator,
@@ -393,6 +394,10 @@ export default new Hono()
 					if (evaluation.decision === "create_new_course") {
 						let generatedCourseId = "";
 
+						const iconDesignGuideline = await Bun.file(
+							"./data/icon-design-guideline.md",
+						).text();
+
 						await db
 							.transaction(async (tx) => {
 								if (!evaluation.courseGenerationInstructions) {
@@ -473,6 +478,27 @@ export default new Hono()
 									courseId: generatedCourseId,
 								});
 
+								generateOrFindImage(
+									`${iconDesignGuideline}\n${newCourse.overview.icon}`,
+									0.9,
+								).then((icon) => {
+									db.update(db.schema.courses)
+										.set({ icon: icon.imageUrl })
+										.where(eq(db.schema.courses.id, generatedCourseId))
+										.run();
+
+									newCourse.overview.chapters.forEach((chapter) => {
+										generateOrFindImage(
+											`${iconDesignGuideline}\n${chapter.icon}`,
+											0.9,
+										).then((chapterIcon) => {
+											db.update(db.schema.courseChapters)
+												.set({ icon: chapterIcon.imageUrl })
+												.where(eq(db.schema.courseChapters.id, firstChapterId))
+												.run();
+										});
+									});
+								});
 								prepareChapter(firstChapterId);
 							})
 							.catch(() => {
