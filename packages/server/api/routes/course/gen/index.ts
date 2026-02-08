@@ -274,7 +274,7 @@ export default new Hono()
 					const idealCourseDescriptorEmbedding = await generateEmbeddings(
 						idealCourseDescriptor,
 					);
-					const similarCoursesToIdeal = vectorDb.querySimilar(
+					const similarCoursesToIdeal = await vectorDb.querySimilar(
 						idealCourseDescriptorEmbedding,
 						5,
 					);
@@ -283,7 +283,10 @@ export default new Hono()
 					ongoingSession.candidateCourses = [];
 					if (similarCoursesToIdeal.length > 0) {
 						const courseIds = similarCoursesToIdeal
-							.filter((c) => c.similarity > 0.7)
+							.filter((c) => {
+								console.log("c score", c.score);
+								return c.score > 0.7;
+							})
 							.map((c) => c.id);
 
 						for (const courseId of courseIds) {
@@ -418,7 +421,10 @@ export default new Hono()
 											.assumedPrerequisites,
 								});
 								const embedding = await generateEmbeddings(canonicalDescriptor);
-								vectorDb.writeEntry(courseId, embedding);
+								vectorDb.writeEntry(courseId, {
+									vector: embedding,
+									payload: {},
+								});
 								generatedCourseId = courseId;
 
 								for (const topic of newCourse.overview.topics) {
