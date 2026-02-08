@@ -135,6 +135,30 @@ export function dbExtensionHelpers(_db: DbClient) {
 		return pages;
 	}
 
+	async function userFollowing(args: { userWallet: Address }) {
+		const { userWallet } = args;
+
+		const following = await db
+			.select()
+			.from(db.schema.followings)
+			.where(eq(db.schema.followings.follower, userWallet))
+			.orderBy(db.schema.followings.createdAt);
+
+		return following;
+	}
+
+	async function userFollowers(args: { userWallet: Address }) {
+		const { userWallet } = args;
+
+		const followers = await db
+			.select()
+			.from(db.schema.followings)
+			.where(eq(db.schema.followings.following, userWallet))
+			.orderBy(db.schema.followings.createdAt);
+
+		return followers;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
