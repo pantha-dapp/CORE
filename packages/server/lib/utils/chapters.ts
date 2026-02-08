@@ -53,6 +53,7 @@ export async function prepareChapter(id: string) {
 				topics: chapter.topics,
 			},
 		},
+		chapterNo: chaptersTillNow.length + 1,
 		courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
 			title: ch.title,
 			description: ch.description,
