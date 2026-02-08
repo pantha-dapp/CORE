@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"dev": "bun --watch index.ts",
+		"db:studio": "bunx --bun drizzle-kit studio",
 		"db:migrate": "bunx --bun drizzle-kit push"
 	},
 	"devDependencies": {
@@ -20,6 +21,7 @@
 	"dependencies": {
 		"@hono/zod-validator": "^0.7.6",
 		"@pantha/shared": "workspace:^",
+		"@qdrant/js-client-rest": "^1.16.2",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.45.1",
 		"drizzle-zod": "^0.8.3",
