@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { tUuid } from "../helpers";
+import { tUuid } from "../helpers.base";
 
 export const vectorCache = t.sqliteTable("vector_cache", {
 	id: tUuid("id").primaryKey(),
