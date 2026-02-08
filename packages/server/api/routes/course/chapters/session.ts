@@ -1,4 +1,4 @@
-import { jsonStringify } from "@pantha/shared";
+import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
 import { Hono } from "hono";
 import z from "zod";
@@ -113,17 +113,11 @@ export default new Hono()
 			let correct = false;
 
 			switch (type) {
-				case "example_usages":
+				case "example_uses":
 					correct = true;
 					break;
 				case "fill_in_the_blanks":
-					correct = content.missingWordIndices.every((index: number) => {
-						return (
-							content.sentance.split(" ")[
-								content.missingWordIndices[index] ?? -1
-							] === answer[index]
-						);
-					});
+					correct = jsonStringify(content.answers) === jsonStringify(answer);
 					break;
 				case "identify_object_from_images":
 					correct = content.correctImageIndex === parseInt(answer[0], 10);
@@ -132,7 +126,9 @@ export default new Hono()
 					correct = content.correctOptionIndex === parseInt(answer[0], 10);
 					break;
 				case "matching":
-					correct = jsonStringify(content.pairs) === jsonStringify(answer);
+					correct =
+						jsonStringify(content.pairs) ===
+						jsonStringify(jsonParse(answer[0]));
 					break;
 				case "quiz":
 					correct = content.correctOptionIndex === parseInt(answer[0], 10);
