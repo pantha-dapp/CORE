@@ -18,8 +18,11 @@ async function findSimilarPregeneratedImage(embedding: number[]) {
 export async function generateOrFindImage(
 	prompt: string,
 	cacheThreshold = 0.95,
+	similarityQueryOverride?: string,
 ) {
-	const inputEmbedding = await generateEmbeddings(prompt);
+	const inputEmbedding = await generateEmbeddings(
+		similarityQueryOverride ?? prompt,
+	);
 	const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
 	if (similarImage && similarImage.score > cacheThreshold) {
 		return { imageUrl: similarImage.payload.imageUrl };
