@@ -481,6 +481,7 @@ export default new Hono()
 								generateOrFindImage(
 									`${iconDesignGuideline}\n${newCourse.overview.icon}`,
 									0.9,
+									`Icon: ${newCourse.overview.icon}`,
 								).then((icon) => {
 									db.update(db.schema.courses)
 										.set({ icon: icon.imageUrl })
@@ -491,6 +492,7 @@ export default new Hono()
 										generateOrFindImage(
 											`${iconDesignGuideline}\n${chapter.icon}`,
 											0.9,
+											`Icon: ${chapter.icon}`,
 										).then((chapterIcon) => {
 											db.update(db.schema.courseChapters)
 												.set({ icon: chapterIcon.imageUrl })
