@@ -126,7 +126,7 @@ export function dbExtensionHelpers(_db: DbClient) {
 	async function chapterPagesById(args: { chapterId: string }) {
 		const { chapterId } = args;
 
-		const pages = db
+		const pages = await db
 			.select()
 			.from(db.schema.chapterPages)
 			.where(eq(db.schema.chapterPages.chapterId, chapterId))
