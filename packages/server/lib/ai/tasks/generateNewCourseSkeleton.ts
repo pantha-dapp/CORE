@@ -24,6 +24,7 @@ CRITICAL - EVERY SINGLE CHAPTER MUST HAVE ALL 4 REQUIRED FIELDS:
 2. "description" (string): Detailed explanation of what the learner will understand or be able to do (minimum 15 words)
 3. "topics" (array): List of 3-5 concrete sub-concepts covered (must have at least 2 items)
 4. "intent" (string): Must be EXACTLY one of these values: "introduce", "recall", "apply", "reinforce", "check_confidence"
+5. "icon" (string): A simple keyword representing an icon that visually captures the chapter's main theme (e.g., "Python language", "Network Switch", "Musical Note")
 
 VALIDATION RULES:
 - Missing ANY field in ANY chapter will cause complete failure
@@ -36,6 +37,8 @@ Descriptions MUST be detailed enough that:
 - The scope of the chapter is unambiguous
 - A learner can understand the specific learning outcome
 
+Icons must be generic and not specific / chapter content related. They are only for visual representation so use generic words and reuse them whenever possible, we dont want too many icons.
+
 Output ONLY valid JSON matching the schema.
 Do NOT include commentary, explanations, or markdown formatting.
 
@@ -44,6 +47,7 @@ Example Output:
   "overview": {
     "title": "Python Automation Mastery",
     "description": "A comprehensive course covering Python scripting and automation techniques from fundamentals to advanced applications.",
+    "icon": "Python language",
     "topics": ["Python scripting", "Task automation", "File operations", "API integration", "Web scraping"],
     "chapters": [
       {
@@ -87,11 +91,13 @@ const generateNewCourseSkeletonOutputSchema = z.object({
 		title: z.string(),
 		description: z.string(),
 		topics: z.array(z.string()),
+		icon: z.string(),
 		chapters: z.array(
 			z.object({
 				title: z.string(),
 				description: z.string(),
 				topics: z.array(z.string()),
+				icon: z.string(),
 				intent: z.enum([
 					"introduce",
 					"recall",
