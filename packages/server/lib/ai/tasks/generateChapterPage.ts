@@ -1,26 +1,19 @@
-import { createSelectSchema } from "drizzle-zod";
-import z from "zod";
-import db from "../../db";
+import type z from "zod";
 import { createAiGenerateFunction } from "../engine";
+import {
+	type ChapterPageType,
+	generatePageInputSchema,
+	pageContentSchemas,
+} from "./generateChapterPage.schemas";
 
-export const zChapterPageType = z.enum([
-	"example_uses",
-	"quiz",
-	"teach_and_explain_content",
-	"true_false",
-	"fill_in_the_blanks",
-	"identify_shown_object_in_image",
-	"matching",
-	"identify_object_from_images",
-]);
-type ChapterPageType = z.infer<typeof zChapterPageType>;
-const pageContentTypes = {
+export {
+	generateChapterPageOutputTypedSchema,
+	zChapterPageType,
+} from "./generateChapterPage.schemas";
+
+export const pageContentTypes = {
 	example_uses: {
-		schema: z.object({
-			topic: z.string(),
-			text: z.string(),
-			examples: z.array(z.string()),
-		}),
+		schema: pageContentSchemas.example_uses,
 		instructions: `Generate an "example_uses" page that shows real-world applications of a recently taught concept.
 
 STRUCTURE:
@@ -47,11 +40,7 @@ EXAMPLE:
 }`,
 	},
 	quiz: {
-		schema: z.object({
-			question: z.string(),
-			options: z.array(z.string()),
-			correctOptionIndex: z.number(),
-		}),
+		schema: pageContentSchemas.quiz,
 		instructions: `Generate a "quiz" page to test understanding of a recently taught concept.
 
 STRUCTURE:
@@ -81,10 +70,7 @@ EXAMPLE:
 }`,
 	},
 	teach_and_explain_content: {
-		schema: z.object({
-			topic: z.string(),
-			markdown: z.string(),
-		}),
+		schema: pageContentSchemas.teach_and_explain_content,
 		instructions: `Generate a "teach_and_explain_content" page that introduces or explains a concept.
 
 STRUCTURE:
@@ -109,10 +95,7 @@ EXAMPLE:
 }`,
 	},
 	true_false: {
-		schema: z.object({
-			statement: z.string(),
-			isTrue: z.boolean(),
-		}),
+		schema: pageContentSchemas.true_false,
 		instructions: `Generate a "true_false" page for quick knowledge checks.
 
 STRUCTURE:
@@ -134,15 +117,13 @@ EXAMPLE:
 }`,
 	},
 	fill_in_the_blanks: {
-		schema: z.object({
-			sentance: z.string(),
-			missingWordIndices: z.array(z.number()),
-		}),
+		schema: pageContentSchemas.fill_in_the_blanks,
 		instructions: `Generate a "fill_in_the_blanks" page to reinforce key terminology.
 
 STRUCTURE:
-- sentance: A complete sentence with all words present (don't use underscores)
-- missingWordIndices: Zero-based array of word positions to blank out
+- words: A complete array of words that form a sentence or short paragraph, blanks are represented by $1, $2, etc. which correspond to the missing words
+- answers: array of correct words for the blanks in order as they appear in the sentence as per their $ index
+- wrongOptions: array of incorrect options for the blanks to show as distractors
 
 GUIDELINES:
 - Write a complete, grammatically correct sentence first
@@ -151,19 +132,19 @@ GUIDELINES:
 - Sentence should test understanding, not just memorization
 - Good for reinforcing definitions and key concepts
 - Count words by splitting on spaces (index 0 is first word)
+- Distractors should be plausible but clearly wrong to someone who understood the concept
+- You can have at most 2 blanks in a single sentence to avoid making it too difficult
+- You must have atleast 2 wrong options to ensure the question is challenging enough, you may generate more wrong options if you think the question is too easy
 
 EXAMPLE:
 {
-  "sentance": "A variable is a named container that stores data",
-  "missingWordIndices": [1, 4, 6]
-}
-// This would blank out "variable", "named", and "stores"`,
+    "words": ["A", "$1", "is", "a", "named", "container", "that", "stores", "data."],
+    "answers": ["variable"],
+    "wrongOptions": ["function", "loop", "array"]
+}`,
 	},
 	identify_shown_object_in_image: {
-		schema: z.object({
-			options: z.array(z.string()),
-			correctOptionIndex: z.number(),
-		}),
+		schema: pageContentSchemas.identify_shown_object_in_image,
 		instructions: `Generate an "identify_shown_object_in_image" page for visual identification tasks.
 
 STRUCTURE:
@@ -190,14 +171,7 @@ EXAMPLE (for identifying a Python list in code):
 }`,
 	},
 	matching: {
-		schema: z.object({
-			pairs: z.array(
-				z.object({
-					left: z.string(),
-					right: z.string(),
-				}),
-			),
-		}),
+		schema: pageContentSchemas.matching,
 		instructions: `Generate a "matching" page to connect related concepts.
 
 STRUCTURE:
@@ -222,11 +196,7 @@ EXAMPLE:
 }`,
 	},
 	identify_object_from_images: {
-		schema: z.object({
-			object: z.string(),
-			images: z.array(z.object({ prompt: z.string() })),
-			correctImageIndex: z.number(),
-		}),
+		schema: pageContentSchemas.identify_object_from_images,
 		instructions: `Generate an "identify_object_from_images" page where learners identify which image shows a specific concept.
 
 STRUCTURE:
@@ -264,17 +234,6 @@ const instructionsPrefix = `You are an AI specialized in creating educational co
 
 const instructions = (type: ChapterPageType) =>
 	`${instructionsPrefix} Please create a ${type} page. Here are the detailed instructions for this page type: ${pageContentTypes[type].instructions}`;
-
-const generatePageInputSchema = z.object({
-	type: zChapterPageType,
-	instructions: z.string(),
-	chapter: z.object({
-		title: z.string(),
-		description: z.string(),
-		intent: z.string(),
-		topics: z.array(z.string()),
-	}),
-});
 
 export const generateChapterPage = {
 	example_uses: createAiGenerateFunction(
