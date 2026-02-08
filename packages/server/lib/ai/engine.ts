@@ -1,13 +1,13 @@
 import { jsonStringify } from "@pantha/shared";
-import { chat } from "@tanstack/ai";
-import { createOpenaiChat } from "@tanstack/ai-openai";
+import { chat, generateImage as tanstackGenerateImage } from "@tanstack/ai";
+import { createOpenaiChat, createOpenaiImage } from "@tanstack/ai-openai";
 import type { ZodObject } from "zod";
 import { z } from "zod";
 import env from "../../env";
 import { getCachedResponse, setCachedResponse } from "./cache";
 import { type LanguageCode, languageCodesAndNames } from "./translations";
 
-const aiAdapter = createOpenaiChat(
+const chatAdapter = createOpenaiChat(
 	//@ts-expect-error
 	"openai/gpt-oss-120b",
 	env.GROQ_API_KEY,
@@ -15,6 +15,11 @@ const aiAdapter = createOpenaiChat(
 		baseURL: "https://api.groq.com/openai/v1",
 	},
 );
+
+const imageAdapter = createOpenaiImage("dall-e-3", env.OPENAI_API_KEY, {
+	moderation: "low",
+	quality: "medium",
+});
 
 export function createAiGenerateFunction<
 	T extends ZodObject,
@@ -49,7 +54,7 @@ export function createAiGenerateFunction<
 		}
 
 		const response = await chat({
-			adapter: aiAdapter,
+			adapter: chatAdapter,
 			stream: false,
 			messages: prompt
 				? [{ role: "user", content: prompt }]
@@ -141,4 +146,27 @@ ${input}`,
 		.parse(data);
 
 	return message.content;
+}
+
+export async function generateImage(prompt: string) {
+	const basePrompt = Bun.file("./data/image-prompt.md");
+	const basePromptContent = await basePrompt.text();
+	const response = await tanstackGenerateImage({
+		adapter: imageAdapter,
+		prompt: `${basePromptContent}\n${prompt}`,
+		size: "1024x1024",
+		numberOfImages: 1,
+		modelOptions: {
+			quality: "standard",
+			style: "vivid",
+			response_format: "url",
+		},
+	});
+
+	const imageUrl = response.images.at(0)?.url;
+	if (!imageUrl) {
+		throw new Error("Failed to generate image");
+	}
+
+	return { imageUrl };
 }
