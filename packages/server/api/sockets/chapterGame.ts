@@ -28,7 +28,7 @@ export default new Hono().get(
 		) {
 			throw new Error("User wallet not found");
 		}
-
+		console.log;
 		const { id } = ctx.req.param();
 		if (!id) {
 			throw new Error("Chapter ID is required");
@@ -68,7 +68,7 @@ export default new Hono().get(
 				}
 
 				switch (currentPage.content.type) {
-					case "example_usages": {
+					case "example_uses": {
 					}
 				}
 
