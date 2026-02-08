@@ -1,5 +1,6 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { timestamps, tPageContent, tUuid } from "../helpers";
+import { timestamps, tUuid } from "../helpers.base";
+import { tPageContent } from "../helpers.custom";
 
 export const courses = t.sqliteTable("courses", {
 	id: tUuid("id").primaryKey(),
