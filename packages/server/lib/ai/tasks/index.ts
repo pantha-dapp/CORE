@@ -1,7 +1,7 @@
 export { clarificationQuestionGenerator } from "./clarificationQuestionGenerator";
 export { courseSelectionEvaluator } from "./courseSelectionEvaluator";
 export { generateChapterPage } from "./generateChapterPage";
-export { generateChapterPages } from "./generateChapterPages";
+export { generateChapterPages } from "./generateChapterPages.legacy";
 export { generateChapterPagesOverview } from "./generateChapterPagesOverview";
 export { generateIdealCourseDescriptor } from "./generateIdealCourseDescriptor";
 export { generateNewCourseSkeleton } from "./generateNewCourseSkeleton";
