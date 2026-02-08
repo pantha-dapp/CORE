@@ -16,6 +16,8 @@ DESIGN PRINCIPLES (Duolingo-style):
 4. VARIED INTERACTION: Mix question types to maintain engagement
 5. CONFIDENCE BUILDING: Easy → Medium → Challenging progression within chapter
 6. NO REPETITION: Each page must advance learning — never repeat the same question or explanation
+7. You are given previous chapters' overviews (courseTillNowOverview) to build upon, make connections relevant to them. not every chapter needs to teach something, it might only ask questions to recall previous knowledge.
+8. chapterNo. will also be given but you can ignore it, it is only for your reference to understand the position of the chapter in the course and the previous chapters.
 
 INPUT:
 You receive:
@@ -32,6 +34,8 @@ You receive:
    - intent: Pedagogical approach (see below)
 
 3. minimumPages: Target number of pages
+
+4. chapterNo: Position of chapter in course (for context, not content)
 
 CHAPTER INTENT (strict adherence required):
 
@@ -165,6 +169,7 @@ const generateChapterPagesOverviewInputSchema = z.object({
 			topics: z.array(z.string()),
 		}),
 	),
+	chapterNo: z.number(),
 	chapter: z.object({
 		overview: z.object({
 			title: z.string(),
@@ -191,18 +196,10 @@ const generateChapterPagesOverviewOutputSchema = z.object({
 	),
 });
 
-const generateChapterPagesOverviewRaw = createAiGenerateFunction(
+export const generateChapterPagesOverview = createAiGenerateFunction(
 	{
 		input: generateChapterPagesOverviewInputSchema,
 		output: generateChapterPagesOverviewOutputSchema,
 	},
 	generateChapterPagesOverviewPrompt,
 );
-
-export async function generateChapterPagesOverview(
-	...params: Parameters<typeof generateChapterPagesOverviewRaw>
-) {
-	const [input, prompt] = params;
-	const result = await generateChapterPagesOverviewRaw(input, prompt);
-	return result;
-}
