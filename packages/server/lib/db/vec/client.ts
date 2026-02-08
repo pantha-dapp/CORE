@@ -23,6 +23,13 @@ const collectionDefinitions = {
 			// vectorCacheId: z.string(),
 		}),
 	},
+	"image-prompt-outputs": {
+		size: 768,
+		distance: "Cosine",
+		schema: z.object({
+			imageUrl: z.string(),
+		}),
+	},
 } as const satisfies Record<
 	string,
 	{
