@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { tEvmAddress, timestamps } from "../helpers";
+import { tEvmAddress, timestamps } from "../helpers.base";
 
 export const users = t.sqliteTable("users", {
 	walletAddress: tEvmAddress().primaryKey(),
@@ -14,7 +14,7 @@ export const userCourses = t.sqliteTable("user_courses", {
 	id: t
 		.text("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
+		.$defaultFn(() => crypto.randomUUID()),
 
 	userWallet: tEvmAddress()
 		.notNull()
