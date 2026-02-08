@@ -57,16 +57,11 @@ export default new Hono()
 			pages.forEach((p) => {
 				const { type, content } = p.content;
 				switch (type) {
-					case "example_usages":
+					case "example_uses":
 						return;
 					case "fill_in_the_blanks": {
-						const contentWords = content.sentance.split(" ");
-						content.missingWordIndices.forEach((index: number) => {
-							if (index >= 0 && index < contentWords.length) {
-								contentWords[index] = "[____]";
-							}
-						});
-						content.sentance = contentWords.join(" ");
+						content.wrongOptions = content.wrongOptions.concat(content.answers);
+						content.answers = [];
 						return;
 					}
 					case "identify_object_from_images": {
