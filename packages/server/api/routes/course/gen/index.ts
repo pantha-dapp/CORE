@@ -15,13 +15,13 @@ import {
 	intentClarification,
 } from "../../../../lib/ai/tasks";
 import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
-import db from "../../../../lib/db";
 import { createVectorDbClient } from "../../../../lib/db/vec/client";
 import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import { createJob } from "../../jobs";
+import type { RouterEnv } from "../../types";
 
 const DEFAULT_QUESTIONS_BUDGET = 20;
 const vectorDb = createVectorDbClient("course-embeddings");
@@ -53,7 +53,7 @@ type GenerationState = {
 };
 const sessionStore = new Map<string, GenerationState>();
 
-export default new Hono()
+export default new Hono<RouterEnv>()
 
 	.get("/session", authenticated, async (ctx) => {
 		const { userWallet } = ctx.var;
@@ -131,7 +131,7 @@ export default new Hono()
 				),
 		),
 		async (ctx) => {
-			const { userWallet } = ctx.var;
+			const { userWallet, db } = ctx.var;
 			const action = ctx.req.valid("json");
 
 			const ongoingSession = sessionStore.get(userWallet);
@@ -501,7 +501,7 @@ export default new Hono()
 										});
 									});
 								});
-								prepareChapter(firstChapterId);
+								prepareChapter(db, firstChapterId);
 							})
 							.catch(() => {
 								if (!generatedCourseId || generatedCourseId.length === 0) {
