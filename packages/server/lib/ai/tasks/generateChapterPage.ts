@@ -1,5 +1,4 @@
 import type z from "zod";
-import { createAiGenerateFunction } from "../engine";
 import {
 	type ChapterPageType,
 	generatePageInputSchema,
@@ -236,60 +235,45 @@ const instructions = (type: ChapterPageType) =>
 	`${instructionsPrefix} Please create a ${type} page. Here are the detailed instructions for this page type: ${pageContentTypes[type].instructions}`;
 
 export const generateChapterPage = {
-	example_uses: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.example_uses.schema,
-		},
-		instructions("example_uses"),
-	),
-	fill_in_the_blanks: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.fill_in_the_blanks.schema,
-		},
-		instructions("fill_in_the_blanks"),
-	),
-	quiz: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.quiz.schema,
-		},
-		instructions("quiz"),
-	),
-	teach_and_explain_content: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.teach_and_explain_content.schema,
-		},
-		instructions("teach_and_explain_content"),
-	),
-	true_false: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.true_false.schema,
-		},
-		instructions("true_false"),
-	),
-	identify_shown_object_in_image: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.identify_shown_object_in_image.schema,
-		},
-		instructions("identify_shown_object_in_image"),
-	),
-	matching: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.matching.schema,
-		},
-		instructions("matching"),
-	),
-	identify_object_from_images: createAiGenerateFunction(
-		{
-			input: generatePageInputSchema,
-			output: pageContentTypes.identify_object_from_images.schema,
-		},
-		instructions("identify_object_from_images"),
-	),
+	example_uses: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.example_uses.schema,
+		prompt: instructions("example_uses"),
+	},
+
+	fill_in_the_blanks: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.fill_in_the_blanks.schema,
+		prompt: instructions("fill_in_the_blanks"),
+	},
+	quiz: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.quiz.schema,
+		prompt: instructions("quiz"),
+	},
+	teach_and_explain_content: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.teach_and_explain_content.schema,
+		prompt: instructions("teach_and_explain_content"),
+	},
+	true_false: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.true_false.schema,
+		prompt: instructions("true_false"),
+	},
+	identify_shown_object_in_image: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.identify_shown_object_in_image.schema,
+		prompt: instructions("identify_shown_object_in_image"),
+	},
+	matching: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.matching.schema,
+		prompt: instructions("matching"),
+	},
+	identify_object_from_images: {
+		input: generatePageInputSchema,
+		output: pageContentTypes.identify_object_from_images.schema,
+		prompt: instructions("identify_object_from_images"),
+	},
 } satisfies Record<ChapterPageType, unknown>;
