@@ -133,10 +133,8 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 		.nullable(),
 });
 
-export const courseSelectionEvaluator = createAiGenerateFunction(
-	{
-		input: courseSelectionEvaluatorInputSchema,
-		output: courseSelectionEvaluatorOutputSchema,
-	},
-	courseSelectionEvaluatorPrompt,
-);
+export default {
+	inputSchema: courseSelectionEvaluatorInputSchema,
+	outputSchema: courseSelectionEvaluatorOutputSchema,
+	prompt: courseSelectionEvaluatorPrompt,
+};
