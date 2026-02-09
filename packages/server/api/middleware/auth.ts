@@ -1,7 +1,5 @@
-import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import type { Address } from "viem";
-import db from "../../lib/db";
 import { verifyJwt } from "../../lib/utils/jwt";
 import { respond } from "../../lib/utils/respond";
 
@@ -31,9 +29,4 @@ export const authenticated = createMiddleware<{
 
 	ctx.set("userWallet", payload.sub);
 	await next();
-	// Updated last active time without awaiting, as it's not critical for the response
-	db.update(db.schema.users)
-		.set({ lastActiveAt: new Date() })
-		.where(eq(db.schema.users.walletAddress, payload.sub))
-		.execute();
 });
