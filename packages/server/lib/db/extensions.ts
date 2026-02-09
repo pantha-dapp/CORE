@@ -1,20 +1,20 @@
 // import type { Address } from "viem";
 import { and, eq } from "drizzle-orm";
 import type { Address } from "viem";
-import db from ".";
-import type dbClient from "./client";
+import type { DbClient } from "./client";
+import schema from "./schema";
 
-type DbClient = typeof dbClient;
+// type DbClient = ReturnType<typeof createDbClient>;
 
-export function dbExtensionHelpers(_db: DbClient) {
+export function dbExtensionHelpers(db: DbClient) {
 	async function userEnrollments(args: { userWallet: Address }) {
 		const { userWallet } = args;
 
 		const enrollments = await db
 			.select()
-			.from(db.schema.userCourses)
-			.where(eq(db.schema.userCourses.userWallet, userWallet))
-			.orderBy(db.schema.userCourses.createdAt);
+			.from(schema.userCourses)
+			.where(eq(schema.userCourses.userWallet, userWallet))
+			.orderBy(schema.userCourses.createdAt);
 
 		return enrollments;
 	}
@@ -32,11 +32,11 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const [existingEnrollment] = await db
 			.select()
-			.from(db.schema.userCourses)
+			.from(schema.userCourses)
 			.where(
 				and(
-					eq(db.schema.userCourses.userWallet, userWallet),
-					eq(db.schema.userCourses.courseId, course.id),
+					eq(schema.userCourses.userWallet, userWallet),
+					eq(schema.userCourses.courseId, course.id),
 				),
 			);
 
@@ -45,7 +45,7 @@ export function dbExtensionHelpers(_db: DbClient) {
 		}
 
 		const [enrollment] = await db
-			.insert(db.schema.userCourses)
+			.insert(schema.userCourses)
 			.values({
 				userWallet: userWallet,
 				courseId: courseId,
@@ -62,8 +62,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const [course] = await db
 			.select()
-			.from(db.schema.courses)
-			.where(eq(db.schema.courses.id, courseId));
+			.from(schema.courses)
+			.where(eq(schema.courses.id, courseId));
 
 		if (!course || course.deletedAt) {
 			return null;
@@ -71,8 +71,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const topics = await db
 			.select()
-			.from(db.schema.courseTopics)
-			.where(eq(db.schema.courseTopics.courseId, courseId));
+			.from(schema.courseTopics)
+			.where(eq(schema.courseTopics.courseId, courseId));
 
 		return {
 			...course,
@@ -84,9 +84,9 @@ export function dbExtensionHelpers(_db: DbClient) {
 		const { courseId } = args;
 		const chapters = await db
 			.select()
-			.from(db.schema.courseChapters)
-			.where(eq(db.schema.courseChapters.courseId, courseId))
-			.orderBy(db.schema.courseChapters.order);
+			.from(schema.courseChapters)
+			.where(eq(schema.courseChapters.courseId, courseId))
+			.orderBy(schema.courseChapters.order);
 
 		return chapters;
 	}
@@ -96,8 +96,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const [chapter] = await db
 			.select()
-			.from(db.schema.courseChapters)
-			.where(eq(db.schema.courseChapters.id, chapterId));
+			.from(schema.courseChapters)
+			.where(eq(schema.courseChapters.id, chapterId));
 
 		if (!chapter) {
 			return null;
@@ -105,8 +105,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const [course] = await db
 			.select()
-			.from(db.schema.courses)
-			.where(eq(db.schema.courses.id, chapter.courseId));
+			.from(schema.courses)
+			.where(eq(schema.courses.id, chapter.courseId));
 
 		if (!course || course.deletedAt) {
 			return null;
@@ -114,8 +114,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const chapterTopicsList = await db
 			.select()
-			.from(db.schema.chapterTopics)
-			.where(eq(db.schema.chapterTopics.chapterId, chapter.id));
+			.from(schema.chapterTopics)
+			.where(eq(schema.chapterTopics.chapterId, chapter.id));
 
 		return {
 			...chapter,
@@ -128,9 +128,9 @@ export function dbExtensionHelpers(_db: DbClient) {
 
 		const pages = await db
 			.select()
-			.from(db.schema.chapterPages)
-			.where(eq(db.schema.chapterPages.chapterId, chapterId))
-			.orderBy(db.schema.chapterPages.order);
+			.from(schema.chapterPages)
+			.where(eq(schema.chapterPages.chapterId, chapterId))
+			.orderBy(schema.chapterPages.order);
 
 		return pages;
 	}
@@ -139,10 +139,10 @@ export function dbExtensionHelpers(_db: DbClient) {
 		const { userWallet } = args;
 
 		const following = await db
-			.select({ following: db.schema.followings.following })
-			.from(db.schema.followings)
-			.where(eq(db.schema.followings.follower, userWallet))
-			.orderBy(db.schema.followings.createdAt);
+			.select({ following: schema.followings.following })
+			.from(schema.followings)
+			.where(eq(schema.followings.follower, userWallet))
+			.orderBy(schema.followings.createdAt);
 
 		return following;
 	}
@@ -151,10 +151,10 @@ export function dbExtensionHelpers(_db: DbClient) {
 		const { userWallet } = args;
 
 		const followers = await db
-			.select({ follower: db.schema.followings.follower })
-			.from(db.schema.followings)
-			.where(eq(db.schema.followings.following, userWallet))
-			.orderBy(db.schema.followings.createdAt);
+			.select({ follower: schema.followings.follower })
+			.from(schema.followings)
+			.where(eq(schema.followings.following, userWallet))
+			.orderBy(schema.followings.createdAt);
 
 		return followers;
 	}
