@@ -1,15 +1,19 @@
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import db from "../../../../lib/db";
+import type { Schema } from "../../../../lib/db/schema";
+import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
+import { registerActivityForStreaks } from "../../../../lib/utils/streaks";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
+import type { RouterEnv } from "../../types";
 
 type ChapterGameState = {
 	chapterId: string;
-	pages: Array<typeof db.schema.chapterPages.$inferSelect>;
+	pages: Array<Schema["chapterPages"]["$inferSelect"]>;
 	currentPage: number;
 	correct: number[];
 	incorrect: number[];
@@ -17,7 +21,7 @@ type ChapterGameState = {
 };
 const gameSessions = new Map<string, ChapterGameState>();
 
-export default new Hono()
+export default new Hono<RouterEnv>()
 
 	.get(
 		"/",
@@ -29,7 +33,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet } = ctx.var;
+			const { userWallet, db } = ctx.var;
 			const { chapterId } = ctx.req.valid("query");
 			let session = gameSessions.get(userWallet);
 
@@ -88,7 +92,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet } = ctx.var;
+			const { userWallet, db } = ctx.var;
 			const { answer } = ctx.req.valid("json");
 
 			const session = gameSessions.get(userWallet);
@@ -152,6 +156,35 @@ export default new Hono()
 			session.lastSessionStartedAt = Date.now();
 
 			gameSessions.set(userWallet, session);
+
+			if (session.currentPage >= session.pages.length) {
+				gameSessions.delete(userWallet);
+				const currentChapter = await db.chapterById({
+					chapterId: session.chapterId,
+				});
+				if (!currentChapter) {
+					throw new Error("Unreachable code: Chapter not found");
+				}
+
+				const [nextChapter] = await db
+					.select()
+					.from(db.schema.courseChapters)
+					.where(
+						and(
+							eq(db.schema.courseChapters.courseId, currentChapter.courseId),
+							eq(db.schema.courseChapters.order, currentChapter.order + 1),
+						),
+					);
+				if (nextChapter) prepareChapter(db, nextChapter.id);
+				registerActivityForStreaks(db, userWallet);
+
+				return respond.ok(
+					ctx,
+					{ correct: session.correct.length, total: session.pages.length },
+					"Session completed.",
+					200,
+				);
+			}
 
 			return respond.ok(
 				ctx,
