@@ -1,16 +1,19 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import * as sqliteVec from "sqlite-vec";
-import env from "../../env";
 import schema from "./schema";
 
-const db = new Database(env.SQLITE_FILE_PATH);
-sqliteVec.load(db);
+function createDbClient(filename: string) {
+	const db = new Database(filename);
 
-const dbClient = drizzle({
-	client: db,
-	schema,
-	casing: "snake_case",
-});
+	const dbClient = drizzle({
+		client: db,
+		schema,
+		casing: "snake_case",
+	});
 
-export default dbClient;
+	return dbClient;
+}
+
+export type DbClient = ReturnType<typeof createDbClient>;
+
+export default createDbClient;
