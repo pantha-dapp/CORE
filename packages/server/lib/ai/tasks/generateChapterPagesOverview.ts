@@ -196,10 +196,8 @@ const generateChapterPagesOverviewOutputSchema = z.object({
 	),
 });
 
-export const generateChapterPagesOverview = createAiGenerateFunction(
-	{
-		input: generateChapterPagesOverviewInputSchema,
-		output: generateChapterPagesOverviewOutputSchema,
-	},
-	generateChapterPagesOverviewPrompt,
-);
+export default {
+	inputSchema: generateChapterPagesOverviewInputSchema,
+	outputSchema: generateChapterPagesOverviewOutputSchema,
+	prompt: generateChapterPagesOverviewPrompt,
+};
