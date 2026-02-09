@@ -1,5 +1,6 @@
 import * as cache from "./cache";
 import * as course from "./course";
+import * as engagement from "./engagement";
 import * as social from "./social";
 import * as user from "./user";
 
@@ -7,8 +8,9 @@ import * as user from "./user";
 const schema = {
 	...cache,
 	...course,
-	...user,
+	...engagement,
 	...social,
+	...user,
 };
 
 export default schema;
