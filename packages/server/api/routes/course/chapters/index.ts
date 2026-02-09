@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import z from "zod";
-import db from "../../../../lib/db";
 import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
+import type { RouterEnv } from "../../types";
 import session from "./session";
 
-export default new Hono()
+export default new Hono<RouterEnv>()
 
 	.route("/session", session)
 
@@ -21,6 +21,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
+			const { db } = ctx.var;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
@@ -43,6 +44,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
+			const { db } = ctx.var;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
@@ -50,7 +52,7 @@ export default new Hono()
 				return respond.err(ctx, "Chapter not found.", 404);
 			}
 
-			await prepareChapter(chapter.id);
+			await prepareChapter(db, chapter.id);
 			const pages = await db.chapterPagesById({ chapterId: id });
 
 			//safepages generaton
