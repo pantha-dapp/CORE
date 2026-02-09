@@ -110,10 +110,8 @@ const generateNewCourseSkeletonOutputSchema = z.object({
 	}),
 });
 
-export const generateNewCourseSkeleton = createAiGenerateFunction(
-	{
-		input: generateNewCourseSkeletonInputSchema,
-		output: generateNewCourseSkeletonOutputSchema,
-	},
-	generateNewCourseSkeletonPrompt,
-);
+export default {
+	inputSchema: generateNewCourseSkeletonInputSchema,
+	outputSchema: generateNewCourseSkeletonOutputSchema,
+	prompt: generateNewCourseSkeletonPrompt,
+};
