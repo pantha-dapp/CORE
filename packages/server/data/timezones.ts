@@ -1,5 +1,9 @@
 export type IanaTimezone = (typeof ianaTimeZones)[number];
 
+export function isIanaTimezone(value: string): value is IanaTimezone {
+	return ianaTimeZones.includes(value as IanaTimezone);
+}
+
 export const ianaTimeZones = [
 	"Europe/Andorra",
 	"Asia/Dubai",
