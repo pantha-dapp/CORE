@@ -78,10 +78,8 @@ const generateIdealCourseDescriptorOutputSchema = z.object({
 	topics: z.array(z.string()),
 });
 
-export const generateIdealCourseDescriptor = createAiGenerateFunction(
-	{
-		input: generateIdealCourseDescriptorInputSchema,
-		output: generateIdealCourseDescriptorOutputSchema,
-	},
-	generateIdealCourseDescriptorPrompt,
-);
+export default {
+	inputSchema: generateIdealCourseDescriptorInputSchema,
+	outputSchema: generateIdealCourseDescriptorOutputSchema,
+	prompt: generateIdealCourseDescriptorPrompt,
+};
