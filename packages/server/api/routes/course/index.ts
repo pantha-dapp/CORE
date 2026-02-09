@@ -2,7 +2,6 @@ import { tryCatch } from "@pantha/shared";
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import db from "../../../lib/db";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -16,7 +15,7 @@ export default new Hono()
 	.route("/chapters", chapters)
 
 	.get("/enrolled", authenticated, async (ctx) => {
-		const userWallet = ctx.get("userWallet");
+		const { db, userWallet } = ctx.var;
 		const enrollments = await db.userEnrollments({ userWallet });
 
 		return respond.ok(
@@ -38,6 +37,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
+			const { db } = ctx.var;
 			const { limit, offset } = ctx.req.valid("query");
 
 			const coursesList = await db
@@ -88,7 +88,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const userWallet = ctx.get("userWallet");
+			const { userWallet, db } = ctx.var;
 			const { courseId } = ctx.req.valid("json");
 
 			const enrollmentResult = await tryCatch(
@@ -116,6 +116,7 @@ export default new Hono()
 	)
 
 	.get("/:id", authenticated, async (ctx) => {
+		const { db } = ctx.var;
 		const courseId = ctx.req.param("id");
 
 		const course = await db.courseById({ courseId });
@@ -136,6 +137,7 @@ export default new Hono()
 	})
 
 	.get("/:id", authenticated, async (ctx) => {
+		const { db } = ctx.var;
 		const courseId = ctx.req.param("id");
 
 		const course = await db.courseById({ courseId });
@@ -156,6 +158,8 @@ export default new Hono()
 	})
 
 	.get("/:id/chapters", authenticated, async (ctx) => {
+		const { db } = ctx.var;
+
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
 		return respond.ok(ctx, { chapters }, "Chapters fetched successfully.", 200);
