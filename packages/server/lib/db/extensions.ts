@@ -139,7 +139,7 @@ export function dbExtensionHelpers(_db: DbClient) {
 		const { userWallet } = args;
 
 		const following = await db
-			.select()
+			.select({ following: db.schema.followings.following })
 			.from(db.schema.followings)
 			.where(eq(db.schema.followings.follower, userWallet))
 			.orderBy(db.schema.followings.createdAt);
@@ -151,12 +151,25 @@ export function dbExtensionHelpers(_db: DbClient) {
 		const { userWallet } = args;
 
 		const followers = await db
-			.select()
+			.select({ follower: db.schema.followings.follower })
 			.from(db.schema.followings)
 			.where(eq(db.schema.followings.following, userWallet))
 			.orderBy(db.schema.followings.createdAt);
 
 		return followers;
+	}
+
+	async function userFriends(args: { userWallet: Address }) {
+		const { userWallet } = args;
+		// friends are mutual followers
+		const following = await userFollowing({ userWallet });
+		const followers = await userFollowers({ userWallet });
+
+		const friends = following.filter((followed) =>
+			followers.some((follower) => follower.follower === followed.following),
+		);
+
+		return friends.map((f) => f.following);
 	}
 
 	return {
@@ -166,5 +179,8 @@ export function dbExtensionHelpers(_db: DbClient) {
 		courseChaptersById,
 		courseById,
 		chapterPagesById,
+		userFollowing,
+		userFollowers,
+		userFriends,
 	};
 }
