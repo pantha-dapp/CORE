@@ -1,25 +1,22 @@
 import { tryCatch } from "@pantha/shared";
-import { QdrantClient } from "@qdrant/js-client-rest";
+import type { QdrantClient } from "@qdrant/js-client-rest";
 import z from "zod";
-import env from "../../../env";
-
-const dbClient = new QdrantClient({
-	host: env.QDRANT_HOST,
-	port: Number(env.QDRANT_PORT),
-});
 
 const collectionDefinitions = {
 	"course-embeddings": {
 		size: 768,
 		distance: "Cosine",
 		schema: z.object({
-			//  courseId: z.string()
+			courseId: z.string(),
 		}),
 	},
 	"llm-resp-vec-cache": {
 		size: 768,
 		distance: "Cosine",
 		schema: z.object({
+			content: z.string(),
+			lastHitAt: z.number(),
+			hits: z.number(),
 			// vectorCacheId: z.string(),
 		}),
 	},
@@ -39,25 +36,26 @@ const collectionDefinitions = {
 	}
 >;
 
-type VectorDbClientKey = keyof typeof collectionDefinitions;
+export type VectorDbClientKey = keyof typeof collectionDefinitions;
+export type VectorDbClient = QdrantClient;
 
-async function ensureCollectionsExist() {
-	await Promise.all(
-		Object.entries(collectionDefinitions).map(async ([name, def]) => {
-			const { exists } = await dbClient.collectionExists(name);
-			if (!exists) {
-				await dbClient.createCollection(name, {
-					vectors: { size: def.size, distance: def.distance },
-				});
-			}
-		}),
-	);
-}
+export function createVectorDb<T extends VectorDbClientKey>(
+	vecDbClient: VectorDbClient,
+	key: T,
+) {
+	const def = collectionDefinitions[key];
+	vecDbClient.collectionExists(key).then(({ exists }) => {
+		if (!exists) {
+			vecDbClient.createCollection(key, {
+				vectors: { size: def.size, distance: def.distance },
+			});
+		}
+	});
 
-export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
-	ensureCollectionsExist();
+	type PayloadType = z.infer<(typeof collectionDefinitions)[T]["schema"]>;
+
 	async function readEntry(id: string) {
-		const entry = await dbClient.query(key, {
+		const entry = await vecDbClient.query(key, {
 			query: id,
 		});
 		if (!entry) return null;
@@ -68,14 +66,14 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 			);
 		}
 
-		const parsed = collectionDefinitions[key].schema.safeParse(content.payload);
+		const parsed = def.schema.safeParse(content.payload);
 		if (!parsed.success) {
 			throw new Error("Failed to parse payload:");
 		}
 
 		return {
 			vector: z.array(z.number()).parse(content.vector),
-			payload: parsed.data,
+			payload: parsed.data as PayloadType,
 		};
 	}
 
@@ -83,10 +81,11 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 		id: string,
 		options: {
 			vector: number[];
-			payload: z.infer<(typeof collectionDefinitions)[T]["schema"]>;
+			payload: PayloadType;
 		},
 	) {
-		await dbClient.upsert(key, {
+		def.schema.parse(options.payload);
+		await vecDbClient.upsert(key, {
 			points: [
 				{
 					id,
@@ -100,7 +99,7 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 		const found = await tryCatch(readEntry(id));
 
 		if (found.data) {
-			await dbClient.delete(key, { filter: { must: { has_id: id } } });
+			await vecDbClient.delete(key, { filter: { must: { has_id: id } } });
 		}
 	}
 
@@ -124,8 +123,13 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 	// 		});
 	// }
 
+	async function count() {
+		const { count } = await vecDbClient.count(key);
+		return count;
+	}
+
 	async function querySimilar(vector: number[], k: number = 5) {
-		const entries = await dbClient.query(key, {
+		const entries = await vecDbClient.query(key, {
 			query: vector,
 			limit: k,
 			with_payload: true,
@@ -134,8 +138,26 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 		return entries.points.map((entry) => ({
 			id: String(entry.id),
 			score: z.number().parse(entry.score),
-			payload: collectionDefinitions[key].schema.parse(entry.payload),
+			payload: def.schema.parse(entry.payload) as PayloadType,
 		}));
+	}
+
+	async function updatePayload(id: string, payload: Partial<PayloadType>) {
+		const existing = await readEntry(id);
+		if (!existing) {
+			throw new Error("Entry not found");
+		}
+		def.schema.partial().parse(payload);
+
+		const updatedPayload = {
+			...existing.payload,
+			...payload,
+		} as PayloadType;
+
+		await vecDbClient.setPayload(key, {
+			points: [id],
+			payload: updatedPayload,
+		});
 	}
 
 	const client = {
@@ -143,7 +165,11 @@ export function createVectorDbClient<T extends VectorDbClientKey>(key: T) {
 		writeEntry,
 		deleteEntry,
 		// all,
+		count,
 		querySimilar,
+		updatePayload,
+		$client: vecDbClient,
+		key,
 	};
 
 	return client;
