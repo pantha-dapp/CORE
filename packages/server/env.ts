@@ -10,7 +10,6 @@ const envKeys = [
 	"TG_ANALYTICS_BOT_TOKEN",
 	"EVM_PRIVATE_KEY_SYNAPSE",
 	"TG_ANALYTICS_BOT_GROUP_ID",
-	"EMBEDDINGS_SQLITE_FILE_PATH",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
