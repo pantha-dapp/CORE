@@ -40,10 +40,8 @@ const intentClarificationOutputSchema = z.object({
 	uncertainties: z.array(z.string()),
 });
 
-export const intentClarification = createAiGenerateFunction(
-	{
-		input: intentClarificationInputSchema,
-		output: intentClarificationOutputSchema,
-	},
-	intentClarificationPrompt,
-);
+export default {
+	inputSchema: intentClarificationInputSchema,
+	outputSchema: intentClarificationOutputSchema,
+	prompt: intentClarificationPrompt,
+};
