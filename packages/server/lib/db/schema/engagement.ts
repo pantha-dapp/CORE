@@ -6,7 +6,7 @@ export const userDailyActivity = t.sqliteTable("user_daily_activity", {
 	userWallet: tEvmAddress()
 		.primaryKey()
 		.references(() => users.walletAddress, { onDelete: "cascade" }),
-	date: t.text("date"),
+	date: t.text("date").notNull(),
 	createdAt: timestamps.createdAt,
 });
 
