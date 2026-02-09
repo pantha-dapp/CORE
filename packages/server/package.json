@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"dev": "bun --watch index.ts",
+		"tests": "bun test",
 		"db:studio": "bunx --bun drizzle-kit studio",
 		"db:migrate": "bunx --bun drizzle-kit push"
 	},
