@@ -1,17 +1,22 @@
 import { dateInTimezone, yesterdayOf } from "@pantha/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Address } from "viem";
-import type { IanaTimezone } from "../../data/timezones";
-import db from "../db";
+import type { Db } from "../db";
 
-export async function registerActivity(
-	userWallet: Address,
-	userTimezone: IanaTimezone,
-) {
-	await db
-		.update(db.schema.users)
-		.set({ lastActiveAt: new Date() })
+export async function registerActivityForStreaks(db: Db, userWallet: Address) {
+	const [user] = await db
+		.select()
+		.from(db.schema.users)
 		.where(eq(db.schema.users.walletAddress, userWallet));
+	if (!user) {
+		throw new Error(`User with wallet ${userWallet} not found`);
+	}
+
+	const { timezone: userTimezone } = user;
+	if (!userTimezone) {
+		console.warn(`User with wallet ${userWallet} does not have a timezone set`);
+		return;
+	}
 
 	const today = dateInTimezone(userTimezone);
 	const yesterday = yesterdayOf(today);
