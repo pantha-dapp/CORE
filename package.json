@@ -23,7 +23,8 @@
 		"fmt-lint": "biome check --write",
 		"prepare": "husky",
 		"client:dev": "bun run --cwd packages/web dev",
-		"server:dev": "bun run --cwd packages/server dev"
+		"server:dev": "bun run --cwd packages/server dev",
+		"tests": "bun run --cwd packages/server tests"
 	},
 	"lint-staged": {
 		"*.{js,ts,tsx,jsx,json,css}": "biome check --write"
