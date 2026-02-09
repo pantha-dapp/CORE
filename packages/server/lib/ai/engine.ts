@@ -4,7 +4,6 @@ import { createOpenaiChat } from "@tanstack/ai-openai";
 import type { ZodObject } from "zod";
 import { z } from "zod";
 import env from "../../env";
-import { getCachedResponse, setCachedResponse } from "./cache";
 import { type LanguageCode, languageCodesAndNames } from "./translations";
 
 const chatAdapter = createOpenaiChat(
