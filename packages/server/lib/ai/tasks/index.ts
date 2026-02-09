@@ -1,10 +1,23 @@
-export { clarificationQuestionGenerator } from "./clarificationQuestionGenerator";
-export { courseSelectionEvaluator } from "./courseSelectionEvaluator";
-export { generateChapterPage } from "./generateChapterPage";
-export { generateChapterPages } from "./generateChapterPages.legacy";
-export { generateChapterPagesOverview } from "./generateChapterPagesOverview";
-export { generateIdealCourseDescriptor } from "./generateIdealCourseDescriptor";
-export { generateNewCourseSkeleton } from "./generateNewCourseSkeleton";
-export { intentClarification } from "./intentClarification";
-export { learningIntentSummarizer } from "./learningIntentSummarizer";
-export { generateCanonicalCourseDescriptor } from "./utils";
+import clarificationQuestionGenerator from "./clarificationQuestionGenerator";
+import courseSelectionEvaluator from "./courseSelectionEvaluator";
+import { generateChapterPage } from "./generateChapterPage";
+import generateChapterPages from "./generateChapterPages.legacy";
+import generateChapterPagesOverview from "./generateChapterPagesOverview";
+import generateIdealCourseDescriptor from "./generateIdealCourseDescriptor";
+import generateNewCourseSkeleton from "./generateNewCourseSkeleton";
+import intentClarification from "./intentClarification";
+import learningIntentSummarizer from "./learningIntentSummarizer";
+
+const tasks = {
+	clarificationQuestionGenerator,
+	courseSelectionEvaluator,
+	generateChapterPage,
+	generateChapterPages,
+	generateChapterPagesOverview,
+	generateIdealCourseDescriptor,
+	generateNewCourseSkeleton,
+	intentClarification,
+	learningIntentSummarizer,
+};
+
+export default tasks;
