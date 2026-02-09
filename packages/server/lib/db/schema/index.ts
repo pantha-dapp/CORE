@@ -1,4 +1,4 @@
-import * as cache from "./cache";
+// import * as cache from "./cache";
 import * as course from "./course";
 import * as engagement from "./engagement";
 import * as social from "./social";
@@ -6,7 +6,7 @@ import * as user from "./user";
 
 // Combine all schema parts
 const schema = {
-	...cache,
+	// ...cache,
 	...course,
 	...engagement,
 	...social,
@@ -14,6 +14,8 @@ const schema = {
 };
 
 export default schema;
+
+export type Schema = typeof schema;
 
 // type DBSchema = typeof schema;
 // export type DB = {
