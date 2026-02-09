@@ -105,7 +105,7 @@ const clarificationQuestionGeneratorInputSchema = z.object({
 		.optional(),
 });
 
-export const clarificationQuestionGeneratorOutputSchema = z.object({
+const clarificationQuestionGeneratorOutputSchema = z.object({
 	questions: z.array(
 		z
 			.object({
@@ -124,10 +124,8 @@ export const clarificationQuestionGeneratorOutputSchema = z.object({
 	),
 });
 
-export const clarificationQuestionGenerator = createAiGenerateFunction(
-	{
-		input: clarificationQuestionGeneratorInputSchema,
-		output: clarificationQuestionGeneratorOutputSchema,
-	},
-	clarificationQuestionGeneratorPrompt,
-);
+export default {
+	inputSchema: clarificationQuestionGeneratorInputSchema,
+	outputSchema: clarificationQuestionGeneratorOutputSchema,
+	prompt: clarificationQuestionGeneratorPrompt,
+};
