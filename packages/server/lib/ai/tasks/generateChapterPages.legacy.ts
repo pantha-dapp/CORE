@@ -307,32 +307,30 @@ const generateChapterPagesOutputSchema = z.object({
 	pages: z.array(generateChapterPageOutputFlatSchema),
 });
 
-const generateChapterPagesRaw = createAiGenerateFunction(
-	{
-		input: generateChapterPagesInputSchema,
-		output: generateChapterPagesOutputSchema,
-	},
-	generateChapterPagesPrompt,
-);
-
-export const generateChapterPages = async (
-	args: Parameters<typeof generateChapterPagesRaw>[0],
-) => {
-	const result = await generateChapterPagesRaw(args);
-
-	const parsed = generateChapterPageOutputTypedSchema
-		.array()
-		.safeParse(result.pages);
-
-	if (!parsed.success) {
-		console.error("Failed to validate generated pages", {
-			error: String(parsed.error).slice(0, 255),
-			result: jsonStringify(result),
-		});
-		throw new Error("Failed to validate generated pages");
-	}
-
-	return {
-		pages: parsed.data,
-	};
+export default {
+	inputSchema: generateChapterPagesInputSchema,
+	outputSchema: generateChapterPagesOutputSchema,
+	prompt: generateChapterPagesPrompt,
 };
+
+// export const generateChapterPages = async (
+// 	args: Parameters<typeof generateChapterPagesRaw>[0],
+// ) => {
+// 	const result = await generateChapterPagesRaw(args);
+
+// 	const parsed = generateChapterPageOutputTypedSchema
+// 		.array()
+// 		.safeParse(result.pages);
+
+// 	if (!parsed.success) {
+// 		console.error("Failed to validate generated pages", {
+// 			error: String(parsed.error).slice(0, 255),
+// 			result: jsonStringify(result),
+// 		});
+// 		throw new Error("Failed to validate generated pages");
+// 	}
+
+// 	return {
+// 		pages: parsed.data,
+// 	};
+// };
