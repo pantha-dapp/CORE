@@ -12,6 +12,7 @@ import {
 	isHash,
 	isHex,
 } from "viem";
+import { type IanaTimezone, isIanaTimezone } from "../../data/timezones";
 
 export const timestamps = {
 	createdAt: int("created_at", { mode: "timestamp" })
@@ -116,5 +117,24 @@ export const tBigInt = customType<{
 	},
 	fromDriver(value) {
 		return BigInt(value);
+	},
+});
+
+export const tIanaTimezone = customType<{
+	data: IanaTimezone;
+	driverData: string;
+}>({
+	dataType() {
+		return "text";
+	},
+	toDriver(value) {
+		return value;
+	},
+	fromDriver(value) {
+		if (!isIanaTimezone(value))
+			throw new Error(
+				`Invalid IANA timezone: ${value} already stored in db how to fix `,
+			);
+		return value;
 	},
 });
