@@ -10,13 +10,12 @@ import {
 } from "viem";
 import { mainnet } from "viem/chains";
 import { parseSiweMessage, verifySiweMessage } from "viem/siwe";
-import db from "../../../lib/db";
 import { issueJwtToken } from "../../../lib/utils/jwt";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
+import type { RouterEnv } from "../types";
 
 const nonces: Record<Address, { nonce: string; validTill: number }> = {};
-const { users } = db.schema;
 
 const publicClient = createPublicClient({
 	chain: mainnet,
@@ -33,7 +32,7 @@ function generateNonce(): string {
 	return nonce;
 }
 
-export default new Hono()
+export default new Hono<RouterEnv>()
 
 	.get("/nonce", async (ctx) => {
 		const wallet = ctx.req.query("address");
@@ -48,6 +47,8 @@ export default new Hono()
 	})
 
 	.post("/verify", async (ctx) => {
+		const { db } = ctx.var;
+
 		const { message, signature } = await ctx.req.json<{
 			message: string;
 			signature: Hex;
@@ -88,7 +89,7 @@ export default new Hono()
 		}
 
 		await db
-			.insert(users)
+			.insert(db.schema.users)
 			.values({
 				walletAddress: address,
 				lastActiveAt: new Date(),
