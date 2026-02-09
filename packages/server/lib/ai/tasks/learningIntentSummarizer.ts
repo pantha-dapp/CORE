@@ -40,10 +40,8 @@ const learningIntentSummarizerOutputSchema = z.object({
 	summary: z.string(),
 });
 
-export const learningIntentSummarizer = createAiGenerateFunction(
-	{
-		input: learningIntentSummarizerInputSchema,
-		output: learningIntentSummarizerOutputSchema,
-	},
-	learningIntentSummarizerPrompt,
-);
+export default {
+	inputSchema: learningIntentSummarizerInputSchema,
+	outputSchema: learningIntentSummarizerOutputSchema,
+	prompt: learningIntentSummarizerPrompt,
+};
