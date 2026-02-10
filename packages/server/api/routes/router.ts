@@ -7,6 +7,7 @@ import { attachDb } from "../middleware/attachDb";
 import auth from "./auth";
 import course from "./course";
 import jobs from "./jobs";
+import users from "./users";
 
 export const apiRouter = new Hono()
 	.use(
@@ -29,4 +30,5 @@ export const apiRouter = new Hono()
 	})
 	.route("/jobs", jobs)
 	.route("/auth", auth)
-	.route("/course", course);
+	.route("/course", course)
+	.route("/users", users);
