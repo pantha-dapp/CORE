@@ -2,11 +2,11 @@ import type { AiClient } from "../../../lib/ai/client";
 
 export const testAiAdapter: AiClient = {
 	llm: {
-		text: async () => {
+		text: delayedFn(async () => {
 			const response = "MOCK_RESPONSE";
 
 			return response;
-		},
+		}),
 		json: async () => {
 			const response = {};
 
@@ -19,3 +19,12 @@ export const testAiAdapter: AiClient = {
 		generate: async () => ({ imageUrl: "MOCK_IMAGE_URL" }),
 	},
 };
+
+async function delayedFn(fn: () => Promise<unknown> | unknown, delay?: number) {
+	return (...args: Parameters<typeof fn>) =>
+		new Promise((resolve) => {
+			setTimeout(async () => {
+				resolve(await fn(...args));
+			}, delay ?? 500);
+		});
+}
