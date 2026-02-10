@@ -148,7 +148,7 @@ describe("Auth", () => {
 	});
 });
 
-describe("social", () => {
+describe("Following", () => {
 	it("can fetch empty followers and following", async () => {
 		const followersRes = await api1.users[":wallet"].followers.$get({
 			param: { wallet: userWallet2.account.address },
@@ -200,5 +200,72 @@ describe("social", () => {
 			throw new Error("Failed to fetch followers");
 		}
 		expect(data.data.followers).toEqual([userWallet1.account.address]);
+	});
+
+	it("Follows are idempotent", async () => {
+		const res = await api1.users.follow.$post({
+			json: {
+				walletToFollow: userWallet2.account.address,
+			},
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		expect(data.success).toBe(true);
+
+		const followersRes = await api1.users[":wallet"].followers.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const followersData = await followersRes.json();
+		if (!followersData.success) {
+			throw new Error("Failed to fetch followers");
+		}
+
+		expect(followersData.data.followers).toEqual([userWallet1.account.address]);
+	});
+
+	it("Can not follow self", async () => {
+		const res = await api1.users.follow.$post({
+			json: {
+				walletToFollow: userWallet1.account.address,
+			},
+		});
+		const data = await res.json();
+		expect(res.status).toBe(400);
+		expect(data.success).toBe(false);
+	});
+
+	it("Can unfollow user", async () => {
+		const res = await api1.users.unfollow.$post({
+			json: {
+				walletToUnfollow: userWallet2.account.address,
+			},
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		expect(data.success).toBe(true);
+	});
+
+	it("unfollowed user no longer shows up in self following", async () => {
+		const res = await api1.users[":wallet"].following.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		if (!data.success) {
+			throw new Error("Failed to fetch following");
+		}
+		expect(data.data.following).toEqual([]);
+	});
+
+	it("unfollower user no longer shows up in followers", async () => {
+		const res = await api2.users[":wallet"].followers.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		if (!data.success) {
+			throw new Error("Failed to fetch followers");
+		}
+		expect(data.data.followers).toEqual([]);
 	});
 });
