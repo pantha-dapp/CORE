@@ -1,5 +1,4 @@
 import z from "zod";
-import { createAiGenerateFunction } from "../engine";
 import { zChapterPageType } from "./generateChapterPage";
 
 const generateChapterPagesOverviewPrompt = `You are an expert learning experience designer for a mobile micro-learning platform like Duolingo.
