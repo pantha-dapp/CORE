@@ -1,0 +1,4 @@
+[test]
+preload = ["./api/tests/helpers/setup.ts"]
+# coverage = true
+# coverageReporter = ["text", "lcov"]
