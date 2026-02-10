@@ -4,18 +4,19 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { categories } from "../../../../data/categories";
-import { generateEmbeddings } from "../../../../lib/ai/engine";
-import { generateOrFindImage } from "../../../../lib/ai/image";
-import {
-	clarificationQuestionGenerator,
-	courseSelectionEvaluator,
-	generateCanonicalCourseDescriptor,
-	generateIdealCourseDescriptor,
-	generateNewCourseSkeleton,
-	intentClarification,
-} from "../../../../lib/ai/tasks";
-import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
-import { createVectorDbClient } from "../../../../lib/db/vec/client";
+import type clarificationQuestionGenerator from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
+import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/utils";
+import { createVectorDb } from "../../../../lib/db/vec/client";
+// import {
+// 	clarificationQuestionGenerator,
+// 	courseSelectionEvaluator,
+// 	generateCanonicalCourseDescriptor,
+// 	generateIdealCourseDescriptor,
+// 	generateNewCourseSkeleton,
+// 	intentClarification,
+// } from "../../../../lib/ai/tasks";
+// import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
+// import { createVectorDbClient } from "../../../../lib/db/vec/client";
 import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
@@ -24,7 +25,7 @@ import { createJob } from "../../jobs";
 import type { RouterEnv } from "../../types";
 
 const DEFAULT_QUESTIONS_BUDGET = 20;
-const vectorDb = createVectorDbClient("course-embeddings");
+// const vectorDb = createVectorDbClient("course-embeddings");
 
 type GenerationState = {
 	lastSessionStartedAt: number;
@@ -40,7 +41,7 @@ type GenerationState = {
 	questionsBudget: number;
 	questions: Array<
 		z.infer<
-			typeof clarificationQuestionGeneratorOutputSchema
+			typeof clarificationQuestionGenerator.outputSchema
 		>["questions"][number] & { answer?: string; key: string }
 	>;
 	candidateCourses: Array<{
@@ -131,8 +132,10 @@ export default new Hono<RouterEnv>()
 				),
 		),
 		async (ctx) => {
-			const { userWallet, db } = ctx.var;
+			const { userWallet, db, ai } = ctx.var;
 			const action = ctx.req.valid("json");
+
+			const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
 
 			const ongoingSession = sessionStore.get(userWallet);
 			if (!ongoingSession) {
@@ -170,7 +173,7 @@ export default new Hono<RouterEnv>()
 				ongoingSession.learningIntent = action.intent;
 				const jobId = createJob(async () => {
 					const intentClarificationResult = await tryCatch(
-						intentClarification({
+						ai.llm.intentClarification({
 							majorCategory:
 								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
 							userInput: ongoingSession.learningIntent ?? "",
@@ -190,7 +193,7 @@ export default new Hono<RouterEnv>()
 					ongoingSession.state = "answer_question";
 
 					const clarificationQuestionResult = await tryCatch(
-						clarificationQuestionGenerator({
+						ai.llm.clarificationQuestionGenerator({
 							inferredGoal: intentClarificationData.inferredGoal,
 							uncertainties: ongoingSession.uncertainties,
 							previous: ongoingSession.questions.map((q) => ({
@@ -252,7 +255,7 @@ export default new Hono<RouterEnv>()
 
 				const jobId = createJob(async () => {
 					const idealCourseResult = await tryCatch(
-						generateIdealCourseDescriptor({
+						ai.llm.generateIdealCourseDescriptor({
 							majorCategory:
 								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
 							inferredGoal: ongoingSession.inferredGoal ?? "",
@@ -272,10 +275,10 @@ export default new Hono<RouterEnv>()
 					const idealCourse = idealCourseResult.data;
 					const idealCourseDescriptor =
 						generateCanonicalCourseDescriptor(idealCourse);
-					const idealCourseDescriptorEmbedding = await generateEmbeddings(
+					const idealCourseDescriptorEmbedding = await ai.embedding.text(
 						idealCourseDescriptor,
 					);
-					const similarCoursesToIdeal = await vectorDb.querySimilar(
+					const similarCoursesToIdeal = await coursesVectorDb.querySimilar(
 						idealCourseDescriptorEmbedding,
 						5,
 					);
@@ -310,7 +313,7 @@ export default new Hono<RouterEnv>()
 					}
 
 					const courseSelectionEvaluatorResult = await tryCatch(
-						courseSelectionEvaluator({
+						ai.llm.courseSelectionEvaluator({
 							previous: ongoingSession.questions.map((q) => ({
 								question: q.text,
 								purpose: q.purpose,
@@ -338,7 +341,7 @@ export default new Hono<RouterEnv>()
 							evaluation.uncertantiesRemaining || ongoingSession.uncertainties;
 
 						const clarificationQuestionGeneratorResult = await tryCatch(
-							clarificationQuestionGenerator({
+							ai.llm.clarificationQuestionGenerator({
 								inferredGoal: ongoingSession.inferredGoal ?? "",
 								uncertainties: ongoingSession.uncertainties,
 								previous: ongoingSession.questions.map((q) => ({
@@ -404,7 +407,7 @@ export default new Hono<RouterEnv>()
 									throw "No instructions for course generation";
 								}
 
-								const newCourse = await generateNewCourseSkeleton(
+								const newCourse = await ai.llm.generateNewCourseSkeleton(
 									evaluation.courseGenerationInstructions,
 								);
 
@@ -425,10 +428,10 @@ export default new Hono<RouterEnv>()
 										evaluation.courseGenerationInstructions
 											.assumedPrerequisites,
 								});
-								const embedding = await generateEmbeddings(canonicalDescriptor);
-								vectorDb.writeEntry(courseId, {
+								const embedding = await ai.embedding.text(canonicalDescriptor);
+								coursesVectorDb.writeEntry(courseId, {
 									vector: embedding,
-									payload: {},
+									payload: { courseId },
 								});
 								generatedCourseId = courseId;
 
@@ -478,34 +481,32 @@ export default new Hono<RouterEnv>()
 									courseId: generatedCourseId,
 								});
 
-								generateOrFindImage(
-									`${iconDesignGuideline}\n${newCourse.overview.icon}`,
-									0.9,
-									`Icon: ${newCourse.overview.icon}`,
-								).then((icon) => {
-									db.update(db.schema.courses)
-										.set({ icon: icon.imageUrl })
-										.where(eq(db.schema.courses.id, generatedCourseId))
-										.run();
+								ai.image
+									.generateIconImage({ prompt: newCourse.overview.icon })
+									.then((icon) => {
+										db.update(db.schema.courses)
+											.set({ icon: icon.imageUrl })
+											.where(eq(db.schema.courses.id, generatedCourseId))
+											.run();
 
-									newCourse.overview.chapters.forEach((chapter) => {
-										generateOrFindImage(
-											`${iconDesignGuideline}\n${chapter.icon}`,
-											0.9,
-											`Icon: ${chapter.icon}`,
-										).then((chapterIcon) => {
-											db.update(db.schema.courseChapters)
-												.set({ icon: chapterIcon.imageUrl })
-												.where(eq(db.schema.courseChapters.id, firstChapterId))
-												.run();
+										newCourse.overview.chapters.forEach((chapter) => {
+											ai.image
+												.generateIconImage({ prompt: chapter.icon })
+												.then((chapterIcon) => {
+													db.update(db.schema.courseChapters)
+														.set({ icon: chapterIcon.imageUrl })
+														.where(
+															eq(db.schema.courseChapters.id, firstChapterId),
+														)
+														.run();
+												});
 										});
 									});
-								});
-								prepareChapter(db, firstChapterId);
+								prepareChapter(firstChapterId, { db, ai });
 							})
 							.catch(() => {
 								if (!generatedCourseId || generatedCourseId.length === 0) {
-									vectorDb.deleteEntry(generatedCourseId);
+									coursesVectorDb.deleteEntry(generatedCourseId);
 								}
 							});
 
