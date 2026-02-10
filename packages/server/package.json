@@ -13,8 +13,9 @@
 		"db:migrate": "bunx --bun drizzle-kit push"
 	},
 	"devDependencies": {
+		"@libsql/client": "^0.17.0",
 		"drizzle-kit": "^0.31.8",
-		"@libsql/client": "^0.17.0"
+		"testcontainers": "^11.11.0"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
