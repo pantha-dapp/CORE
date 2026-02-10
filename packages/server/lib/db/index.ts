@@ -17,6 +17,7 @@ export function createDb(filename: string, vectorDbClient: VectorDbClient) {
 		...dbExtensionHelpers(dbClient),
 		schema,
 		vector: vectorDbClient,
+		$db: dbClient, // Expose the raw db client for advanced use cases
 	};
 
 	return db;
