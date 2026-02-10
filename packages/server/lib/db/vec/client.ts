@@ -17,7 +17,6 @@ const collectionDefinitions = {
 			content: z.string(),
 			lastHitAt: z.number(),
 			hits: z.number(),
-			// vectorCacheId: z.string(),
 		}),
 	},
 	"image-prompt-outputs": {
