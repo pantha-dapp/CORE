@@ -1,14 +1,16 @@
 import { jsonStringify } from "@pantha/shared";
 import type { ZodObject, z } from "zod";
-import type { VectorDbClient } from "../db/vec/client";
+import { createVectorDb, type VectorDbClient } from "../db/vec/client";
 import { createAiCache } from "./cache";
 import type { AiClient } from "./client";
 import clarificationQuestionGenerator from "./tasks/clarificationQuestionGenerator";
 import courseSelectionEvaluator from "./tasks/courseSelectionEvaluator";
 import { generateChapterPageOutputTypedSchema } from "./tasks/generateChapterPage.schemas";
 import generateChapterPages from "./tasks/generateChapterPages.legacy";
+import generateIconImage from "./tasks/generateIconImage";
 import generateIdealCourseDescriptor from "./tasks/generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "./tasks/generateNewCourseSkeleton";
+import generatePageImage from "./tasks/generatePageImage";
 import intentClarification from "./tasks/intentClarification";
 import learningIntentSummarizer from "./tasks/learningIntentSummarizer";
 
@@ -17,8 +19,7 @@ export function createAi(args: {
 	vectorDbClient: VectorDbClient;
 }) {
 	const { aiClient, vectorDbClient } = args;
-	const cache = createAiCache(vectorDbClient);
-
+	const llmCache = createAiCache(vectorDbClient);
 	function createLlmGenerateFunction<T extends ZodObject, R extends ZodObject>(
 		schemas: {
 			input: T;
@@ -39,7 +40,7 @@ export function createAi(args: {
 					);
 
 			if (!noCache) {
-				const cachedResponse = await cache.getCachedResponse<z.infer<R>>(
+				const cachedResponse = await llmCache.getCachedResponse<z.infer<R>>(
 					inputEmbedding,
 					schemas.output,
 				);
@@ -56,7 +57,7 @@ export function createAi(args: {
 			});
 
 			if (!noCache) {
-				cache.setCachedResponse(response, inputEmbedding);
+				llmCache.setCachedResponse(response, inputEmbedding);
 			}
 
 			return schemas.output.parse(response);
@@ -138,8 +139,66 @@ export function createAi(args: {
 		),
 	};
 
+	const imagePromptOutputs = createVectorDb(
+		vectorDbClient,
+		"image-prompt-outputs",
+	);
+	async function findSimilarPregeneratedImage(embedding: number[]) {
+		const [cachedEntry] = await imagePromptOutputs.querySimilar(embedding, 1);
+		return cachedEntry;
+	}
+	async function generateOrFindImage(args: {
+		prompt: string;
+		cacheThreshold?: number;
+		similarityQueryOverride?: string;
+	}) {
+		const { prompt, cacheThreshold = 0.95, similarityQueryOverride } = args;
+
+		const inputEmbedding = await aiClient.embedding.text(
+			similarityQueryOverride ?? prompt,
+		);
+		const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
+		if (similarImage && similarImage.score > cacheThreshold) {
+			return { imageUrl: similarImage.payload.imageUrl };
+		}
+
+		const response = await aiClient.image.generate({
+			prompt: prompt,
+		});
+
+		const imageUrl = response.imageUrl;
+		if (!imageUrl) {
+			throw new Error("Failed to generate image");
+		}
+
+		imagePromptOutputs.writeEntry(Bun.hash(prompt).toString(), {
+			vector: inputEmbedding,
+			payload: { imageUrl },
+		});
+
+		return { imageUrl };
+	}
+	type GenerateImageArgs = Parameters<typeof generateOrFindImage>[0];
+
+	const image = {
+		generateIconImage: (args: GenerateImageArgs) =>
+			generateOrFindImage({
+				prompt: `${generateIconImage.prompt}\n${args.prompt}`,
+				cacheThreshold: args.cacheThreshold ?? 0.85,
+				similarityQueryOverride: `Icon: ${args.prompt}`,
+			}),
+
+		generatePageImage: (args: GenerateImageArgs) =>
+			generateOrFindImage({
+				prompt: `${generatePageImage.prompt}\n${args.prompt}`,
+				cacheThreshold: args.cacheThreshold ?? 0.9,
+				similarityQueryOverride: args.prompt,
+			}),
+	};
+
 	return {
 		llm,
+		image,
 		embedding: aiClient.embedding,
 		translate: aiClient.translation.generate,
 		$client: aiClient,
