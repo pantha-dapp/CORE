@@ -16,7 +16,7 @@ export default function Events() {
 				</div>
 
 				{/* Featured Banner */}
-				<div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-2xl p-6 border border-purple-500/30">
+				<div className="bg-linear-to-r from-purple-900 to-blue-900 rounded-2xl p-6 border border-purple-500/30">
 					<div className="flex items-center gap-3 mb-3">
 						<span className="text-2xl">🔗</span>
 						<h3 className="text-xl font-bold">Blockchain-Verified Events</h3>
