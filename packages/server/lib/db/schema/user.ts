@@ -1,13 +1,19 @@
 import * as t from "drizzle-orm/sqlite-core";
+import { generateRandomUsername } from "../../utils/username";
 import { tEvmAddress, tIanaTimezone, timestamps } from "../helpers.base";
 
 export const users = t.sqliteTable("users", {
 	// id: tUuid("id").primaryKey(),
 	walletAddress: tEvmAddress().primaryKey(),
-	username: t.text("username").unique(),
+	username: t
+		.text("username")
+		.unique()
+		.notNull()
+		.$defaultFn(() => generateRandomUsername()),
 	lastActiveAt: t.int("last_active_at", { mode: "timestamp" }).notNull(),
 
-	timezone: tIanaTimezone("timezone"),
+	name: t.text("name"),
+	timezone: tIanaTimezone("timezone").notNull().default("Europe/London"),
 
 	...timestamps,
 });
