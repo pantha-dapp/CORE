@@ -1,5 +1,4 @@
 import z from "zod";
-import { createAiGenerateFunction } from "../engine";
 
 const courseSelectionEvaluatorPrompt = `You are a course-selection decision engine in a mobile learning platform.
 
