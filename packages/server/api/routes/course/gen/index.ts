@@ -397,10 +397,6 @@ export default new Hono<RouterEnv>()
 					if (evaluation.decision === "create_new_course") {
 						let generatedCourseId = "";
 
-						const iconDesignGuideline = await Bun.file(
-							"./data/icon-design-guideline.md",
-						).text();
-
 						await db
 							.transaction(async (tx) => {
 								if (!evaluation.courseGenerationInstructions) {
