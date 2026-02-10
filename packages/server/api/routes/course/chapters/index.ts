@@ -52,8 +52,16 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Chapter not found.", 404);
 			}
 
-			await prepareChapter(chapter.id, { db, ai });
 			const pages = await db.chapterPagesById({ chapterId: id });
+			if (!pages || pages.length === 0) {
+				prepareChapter(chapter.id, { db, ai });
+				return respond.err(
+					ctx,
+					"Chapter pages unavailable at the moment.",
+					503,
+					{ "Retry-After": "30" },
+				);
+			}
 
 			//safepages generaton
 			pages.forEach((p) => {
