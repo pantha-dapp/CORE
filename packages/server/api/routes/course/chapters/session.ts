@@ -92,7 +92,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet, db } = ctx.var;
+			const { userWallet, db, ai } = ctx.var;
 			const { answer } = ctx.req.valid("json");
 
 			const session = gameSessions.get(userWallet);
@@ -175,7 +175,7 @@ export default new Hono<RouterEnv>()
 							eq(db.schema.courseChapters.order, currentChapter.order + 1),
 						),
 					);
-				if (nextChapter) prepareChapter(db, nextChapter.id);
+				if (nextChapter) prepareChapter(nextChapter.id, { db, ai });
 				registerActivityForStreaks(db, userWallet);
 
 				return respond.ok(
