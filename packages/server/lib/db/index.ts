@@ -1,9 +1,14 @@
+import type { RedisClient } from "bun";
 import createDbClient from "./client";
 import { dbExtensionHelpers } from "./extensions";
 import schema from "./schema";
 import type { VectorDbClient } from "./vec/client";
 
-export function createDb(filename: string, vectorDbClient: VectorDbClient) {
+export function createDb(
+	filename: string,
+	config: { vectorDbClient: VectorDbClient; redisClient: RedisClient },
+) {
+	const { vectorDbClient, redisClient } = config;
 	const dbClient = createDbClient(filename);
 
 	const db = {
@@ -17,6 +22,7 @@ export function createDb(filename: string, vectorDbClient: VectorDbClient) {
 		...dbExtensionHelpers(dbClient),
 		schema,
 		vector: vectorDbClient,
+		redis: redisClient,
 		$db: dbClient, // Expose the raw db client for advanced use cases
 	};
 

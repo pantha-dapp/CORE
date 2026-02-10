@@ -1,4 +1,5 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
+import { RedisClient } from "bun";
 import { Hono } from "hono";
 import env from "../../env";
 import { aiAdapter } from "../../lib/ai/engine";
@@ -18,6 +19,7 @@ export const apiRouter = new Hono<RouterEnv>()
 				host: env.QDRANT_HOST,
 				port: parseInt(env.QDRANT_PORT, 10),
 			}),
+			new RedisClient(),
 		),
 	)
 	.use(attachAi(aiAdapter))

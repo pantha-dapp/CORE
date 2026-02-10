@@ -1,14 +1,21 @@
-import { generateTranslation } from "./lib/ai/engine";
+import { GenericContainer, Wait } from "testcontainers";
 
-let responseTime = Date.now();
-const g = await generateTranslation({
-	input:
-		"Hello, My name is foxie, I am a software engineer and I love coding. I have been working in the industry for over 10 years and I have experience with a wide range of programming languages and technologies. In my free time, I enjoy hiking, traveling, and spending time with my family.",
-	sourceLanguage: "en",
-	targetLanguage: "es-AR",
-});
+const qdrant = await new GenericContainer("qdrant/qdrant")
+	.withExposedPorts(6333)
+	.withWaitStrategy(
+		Wait.forHttp("/collections", 6333).withStartupTimeout(160_000),
+	)
+	.start();
 
-console.log(g);
-responseTime = Date.now() - responseTime;
+console.log(qdrant.getMappedPort(6333));
 
-console.log(`Response time: ${responseTime}ms`);
+await qdrant.stop();
+
+const redis = await new GenericContainer("redis:7-alpine")
+	.withExposedPorts(6379)
+	.withWaitStrategy(Wait.forLogMessage("* Ready to accept connections"))
+	.start();
+
+console.log(redis.getMappedPort(6379));
+
+await qdrant.stop();

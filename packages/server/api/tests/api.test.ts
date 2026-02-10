@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { QdrantClient } from "@qdrant/js-client-rest";
+import { RedisClient } from "bun";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { hc } from "hono/client";
 import {
@@ -18,9 +19,8 @@ import { testAiAdapter } from "./helpers/testAiAdapter";
 
 let api: ReturnType<typeof hc<typeof apiRouter>>;
 
-// let container: GenericContainer;
-const TEST_QDRANT_PORT = 6332;
-let container: StartedTestContainer;
+let qdrant: StartedTestContainer;
+let redis: StartedTestContainer;
 
 const userWallet1 = createWalletClient({
 	account: privateKeyToAccount(
@@ -29,7 +29,7 @@ const userWallet1 = createWalletClient({
 	transport: http(),
 	chain: hardhat,
 });
-const userWallet2 = createWalletClient({
+const _userWallet2 = createWalletClient({
 	account: privateKeyToAccount(
 		"0x7b9a333cc8f8558f744fd43bae30c1cf9e33e3f5b1a9e8ca3402edec728dde75",
 	),
@@ -37,21 +37,30 @@ const userWallet2 = createWalletClient({
 	chain: hardhat,
 });
 
-afterAll(async () => {
-	await container?.stop();
-});
-
 beforeAll(async () => {
-	container = await new GenericContainer("qdrant/qdrant")
-		.withExposedPorts(TEST_QDRANT_PORT)
-		.withWaitStrategy(Wait.forHttp("/collections", TEST_QDRANT_PORT))
+	qdrant = await new GenericContainer("qdrant/qdrant")
+		.withExposedPorts(6333)
+		.withWaitStrategy(Wait.forHttp("/collections", 6333))
 		.start();
 
 	const testVecDb = new QdrantClient({
 		host: "localhost",
-		port: container.getMappedPort(TEST_QDRANT_PORT),
+		port: qdrant.getMappedPort(6333),
 	});
-	const testDb = createDb(":memory:", testVecDb);
+
+	redis = await new GenericContainer("redis:7-alpine")
+		.withExposedPorts(6379)
+		.withWaitStrategy(Wait.forLogMessage("* Ready to accept connections"))
+		.start();
+	const testRedis = new RedisClient(
+		`redis://localhost:${redis.getMappedPort(6379)}`,
+		{ maxRetries: 3 },
+	);
+
+	const testDb = createDb(":memory:", {
+		vectorDbClient: testVecDb,
+		redisClient: testRedis,
+	});
 
 	migrate(testDb.$db, {
 		migrationsFolder: "./drizzle",
@@ -84,9 +93,9 @@ beforeAll(async () => {
 	const message = createSiweMessage({
 		address: userWallet1.account.address,
 		chainId: userWallet1.chain.id,
-		domain: "http://localhost",
+		domain: "127.0.0.1",
 		nonce: nonceData.data.nonce,
-		uri: "http://localhost",
+		uri: "http://127.0.0.1",
 		version: "1",
 	});
 	const signature = await userWallet1.signMessage({
@@ -99,6 +108,7 @@ beforeAll(async () => {
 			signature,
 		},
 	});
+
 	const verifyData = await verifyRes.json();
 
 	if (!verifyData.success || !verifyData.data.token) {
@@ -111,6 +121,11 @@ beforeAll(async () => {
 			Authorization: `Bearer ${verifyData.data.token}`,
 		},
 	});
+});
+
+afterAll(async () => {
+	await qdrant.stop();
+	await redis.stop();
 });
 
 describe("API", () => {
