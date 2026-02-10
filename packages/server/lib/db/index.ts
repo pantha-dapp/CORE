@@ -1,8 +1,9 @@
 import createDbClient from "./client";
 import { dbExtensionHelpers } from "./extensions";
 import schema from "./schema";
+import type { VectorDbClient } from "./vec/client";
 
-export function createDb(filename: string) {
+export function createDb(filename: string, vectorDbClient: VectorDbClient) {
 	const dbClient = createDbClient(filename);
 
 	const db = {
@@ -15,6 +16,7 @@ export function createDb(filename: string) {
 		query: dbClient.query,
 		...dbExtensionHelpers(dbClient),
 		schema,
+		vector: vectorDbClient,
 	};
 
 	return db;
