@@ -1,5 +1,4 @@
 import z from "zod";
-import { createAiGenerateFunction } from "../engine";
 
 const generateNewCourseSkeletonPrompt = `You are a course-structure generator for a mobile learning platform.
 
