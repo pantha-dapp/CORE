@@ -44,7 +44,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db, ai } = ctx.var;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
@@ -52,7 +52,7 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Chapter not found.", 404);
 			}
 
-			await prepareChapter(db, chapter.id);
+			await prepareChapter(chapter.id, { db, ai });
 			const pages = await db.chapterPagesById({ chapterId: id });
 
 			//safepages generaton
