@@ -8,6 +8,13 @@
 			"when": 1770720659300,
 			"tag": "0000_tearful_ravenous",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1770753003829,
+			"tag": "0001_pale_deathstrike",
+			"breakpoints": true
 		}
 	]
 }
