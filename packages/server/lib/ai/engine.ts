@@ -1,10 +1,46 @@
-import { jsonStringify } from "@pantha/shared";
-import { chat } from "@tanstack/ai";
-import { createOpenaiChat } from "@tanstack/ai-openai";
-import type { ZodObject } from "zod";
+import { chat, generateImage as tanstackGenerateImage } from "@tanstack/ai";
+import { createOpenaiChat, createOpenaiImage } from "@tanstack/ai-openai";
 import { z } from "zod";
+import { type LanguageCode, languageCodesAndNames } from "../../data/languages";
 import env from "../../env";
-import { type LanguageCode, languageCodesAndNames } from "./translations";
+import type { AiClient } from "./client";
+
+export const aiAdapter: AiClient = {
+	llm: {
+		text: async (args) => {
+			const { prompt, systemPrompts } = args;
+
+			const response = await chat({
+				adapter: chatAdapter,
+				stream: false,
+				messages: [{ role: "user", content: prompt }],
+				systemPrompts,
+			});
+
+			return response;
+		},
+		json: async (args) => {
+			const { prompt, systemPrompts, outputSchema, input } = args;
+
+			const response = await chat({
+				adapter: chatAdapter,
+				stream: false,
+				messages: prompt
+					? [{ role: "user", content: prompt }]
+					: [{ role: "user", content: `${prompt}\n${JSON.stringify(input)}` }],
+				systemPrompts,
+				outputSchema,
+			});
+
+			return response;
+		},
+	},
+	embedding: { text: generateEmbeddings },
+	translation: { generate: generateTranslation },
+	image: {
+		generate: generateImage,
+	},
+};
 
 const chatAdapter = createOpenaiChat(
 	//@ts-expect-error
@@ -15,61 +51,7 @@ const chatAdapter = createOpenaiChat(
 	},
 );
 
-export function createAiGenerateFunction<
-	T extends ZodObject,
-	R extends ZodObject,
->(
-	schemas: {
-		input: T;
-		output: R;
-	},
-	systemPrompt: string,
-) {
-	async function aiGenerate(
-		input: z.infer<T>,
-		prompt?: string,
-		noCache?: boolean,
-	): Promise<z.infer<R>> {
-		schemas.input.parse(input);
-		const inputEmbedding = noCache
-			? []
-			: await generateEmbeddings(
-					jsonStringify({ systemPrompt, prompt, input }),
-				);
-
-		if (!noCache) {
-			const cachedResponse = await getCachedResponse<z.infer<R>>(
-				inputEmbedding,
-				schemas.output,
-			);
-			if (cachedResponse) {
-				return cachedResponse;
-			}
-		}
-
-		const response = await chat({
-			adapter: chatAdapter,
-			stream: false,
-			messages: prompt
-				? [{ role: "user", content: prompt }]
-				: [{ role: "user", content: JSON.stringify(input) }],
-			systemPrompts: [systemPrompt ?? ""],
-			outputSchema: schemas.output,
-		});
-
-		if (!noCache) {
-			setCachedResponse(response, inputEmbedding);
-		}
-
-		return schemas.output.parse(response);
-	}
-
-	return aiGenerate;
-}
-
-export async function generateEmbeddings(
-	input: string | Record<string, unknown>,
-) {
+async function generateEmbeddings(input: string) {
 	const payload = await fetch(`${env.OLLAMA_HOST}/v1/embeddings`, {
 		method: "POST",
 		headers: {
@@ -106,12 +88,12 @@ export async function generateEmbeddings(
 	return embedding;
 }
 
-export async function generateTranslation(args: {
+async function generateTranslation(args: {
 	sourceLanguage: LanguageCode;
 	targetLanguage: LanguageCode;
-	input: string;
+	text: string;
 }) {
-	const { input, sourceLanguage, targetLanguage } = args;
+	const { text, sourceLanguage, targetLanguage } = args;
 
 	const payload = await fetch(`${env.OLLAMA_HOST}/api/chat`, {
 		method: "POST",
@@ -127,7 +109,7 @@ export async function generateTranslation(args: {
 					content: `You are a professional ${languageCodesAndNames[sourceLanguage]} (${sourceLanguage}) to ${languageCodesAndNames[targetLanguage]} (${targetLanguage}) translator. Your goal is to accurately convey the meaning and nuances of the original ${languageCodesAndNames[sourceLanguage]} text while adhering to ${languageCodesAndNames[targetLanguage]} grammar, vocabulary, and cultural sensitivities.
 Produce only the ${languageCodesAndNames[targetLanguage]} translation, without any additional explanations or commentary. Please translate the following ${languageCodesAndNames[sourceLanguage]} text into ${languageCodesAndNames[targetLanguage]}:
 
-${input}`,
+${text}`,
 				},
 			],
 		}),
@@ -141,3 +123,30 @@ ${input}`,
 
 	return message.content;
 }
+
+export async function generateImage(args: { prompt: string }) {
+	const { prompt } = args;
+
+	const response = await tanstackGenerateImage({
+		adapter: imageAdapter,
+		prompt: prompt,
+		size: "1024x1024",
+		numberOfImages: 1,
+		modelOptions: {
+			quality: "standard",
+			style: "vivid",
+			response_format: "url",
+		},
+	});
+
+	const imageUrl = response.images.at(0)?.url;
+	if (!imageUrl) {
+		throw new Error("Failed to generate image");
+	}
+
+	return { imageUrl };
+}
+const imageAdapter = createOpenaiImage("dall-e-3", env.OPENAI_API_KEY, {
+	moderation: "low",
+	quality: "medium",
+});
