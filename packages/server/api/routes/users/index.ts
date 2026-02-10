@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import z from "zod";
-import { ianaTimeZones, isIanaTimezone } from "../../../data/timezones";
+import { ianaTimeZones } from "../../../data/timezones";
 import schema from "../../../lib/db/schema";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
@@ -73,9 +73,6 @@ export default new Hono()
 		async (ctx) => {
 			const { db } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
-			if (!wallet || !isIanaTimezone(wallet)) {
-				return respond.err(ctx, "Invalid wallet address", 400);
-			}
 
 			const user = await db.userByWallet({ userWallet: wallet });
 			if (!user) {
@@ -119,7 +116,7 @@ export default new Hono()
 
 			return respond.ok(
 				ctx,
-				{ followers },
+				{ followers: followers.map((f) => f.follower) },
 				"Followers fetched successfully",
 				200,
 			);
@@ -138,7 +135,7 @@ export default new Hono()
 
 			return respond.ok(
 				ctx,
-				{ following },
+				{ following: following.map((f) => f.following) },
 				"Following fetched successfully",
 				200,
 			);
