@@ -135,6 +135,17 @@ export function dbExtensionHelpers(db: DbClient) {
 		return pages;
 	}
 
+	async function userByWallet(args: { userWallet: Address }) {
+		const { userWallet } = args;
+
+		const [user] = await db
+			.select()
+			.from(schema.users)
+			.where(eq(schema.users.walletAddress, userWallet));
+
+		return user;
+	}
+
 	async function userFollowing(args: { userWallet: Address }) {
 		const { userWallet } = args;
 
@@ -179,6 +190,7 @@ export function dbExtensionHelpers(db: DbClient) {
 		courseChaptersById,
 		courseById,
 		chapterPagesById,
+		userByWallet,
 		userFollowing,
 		userFollowers,
 		userFriends,
