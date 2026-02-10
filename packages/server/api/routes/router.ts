@@ -7,9 +7,10 @@ import { attachDb } from "../middleware/attachDb";
 import auth from "./auth";
 import course from "./course";
 import jobs from "./jobs";
+import type { RouterEnv } from "./types";
 import users from "./users";
 
-export const apiRouter = new Hono()
+export const apiRouter = new Hono<RouterEnv>()
 	.use(
 		attachDb(
 			env.SQLITE_FILE_PATH,
