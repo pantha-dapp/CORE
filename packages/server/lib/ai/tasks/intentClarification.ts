@@ -1,5 +1,4 @@
 import z from "zod";
-import { createAiGenerateFunction } from "../engine";
 
 const intentClarificationPrompt = `You are an intent clarification engine for a learning platform.
 Your job is NOT to generate courses or lessons.
