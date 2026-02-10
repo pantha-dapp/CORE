@@ -1,10 +1,12 @@
 import { and, eq, lte } from "drizzle-orm";
-import { generateChapterPages } from "../ai/tasks";
+import type { Ai } from "../ai";
 import type { Db } from "../db";
 
 const preparing = new Set<string>();
 
-export async function prepareChapter(db: Db, id: string) {
+export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
+	const { db, ai } = config;
+
 	const chapter = await db.chapterById({ chapterId: id });
 	if (!chapter) {
 		throw new Error("Chapter not found.");
@@ -44,7 +46,7 @@ export async function prepareChapter(db: Db, id: string) {
 		}),
 	);
 
-	const { pages: generatedPages } = await generateChapterPages({
+	const { pages: generatedPages } = await ai.llm.generateChapterPages({
 		chapter: {
 			overview: {
 				title: chapter.title,
