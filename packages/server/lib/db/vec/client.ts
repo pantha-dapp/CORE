@@ -44,13 +44,16 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	key: T,
 ) {
 	const def = collectionDefinitions[key];
-	vecDbClient.collectionExists(key).then(({ exists }) => {
-		if (!exists) {
-			vecDbClient.createCollection(key, {
-				vectors: { size: def.size, distance: def.distance },
-			});
-		}
-	});
+	vecDbClient
+		.createCollection(key, {
+			vectors: { size: def.size, distance: def.distance },
+		})
+		.catch((error) => {
+			// Ignore 409 Conflict errors (collection already exists)
+			if (error?.status !== 409) {
+				throw error;
+			}
+		});
 
 	type PayloadType = z.infer<(typeof collectionDefinitions)[T]["schema"]>;
 
