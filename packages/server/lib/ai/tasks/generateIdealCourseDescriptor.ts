@@ -1,5 +1,4 @@
 import z from "zod";
-import { createAiGenerateFunction } from "../engine";
 
 const generateIdealCourseDescriptorPrompt = `You generate a descriptor of an ideal course that would match a user's learning intent.
 
