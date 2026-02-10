@@ -11,13 +11,15 @@ import {
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
-import { createSiweMessage } from "viem/siwe";
 import { createAi } from "../../lib/ai";
 import { createDb } from "../../lib/db";
 import { apiRouter } from "../routes/router";
+import { createAuthenticatedApi } from "./helpers/apiAuth";
 import { testAiAdapter } from "./helpers/testAiAdapter";
 
-let api: ReturnType<typeof hc<typeof apiRouter>>;
+let api0: ReturnType<typeof hc<typeof apiRouter>>;
+let api1: ReturnType<typeof hc<typeof apiRouter>>;
+let api2: ReturnType<typeof hc<typeof apiRouter>>;
 
 let qdrant: StartedTestContainer;
 let redis: StartedTestContainer;
@@ -29,7 +31,7 @@ const userWallet1 = createWalletClient({
 	transport: http(),
 	chain: hardhat,
 });
-const _userWallet2 = createWalletClient({
+const userWallet2 = createWalletClient({
 	account: privateKeyToAccount(
 		"0x7b9a333cc8f8558f744fd43bae30c1cf9e33e3f5b1a9e8ca3402edec728dde75",
 	),
@@ -37,109 +39,158 @@ const _userWallet2 = createWalletClient({
 	chain: hardhat,
 });
 
-beforeAll(async () => {
-	qdrant = await new GenericContainer("qdrant/qdrant")
-		.withExposedPorts(6333)
-		.withWaitStrategy(Wait.forHttp("/collections", 6333))
-		.start();
+beforeAll(
+	async () => {
+		qdrant = await new GenericContainer("qdrant/qdrant")
+			.withExposedPorts(6333)
+			.withWaitStrategy(Wait.forHttp("/collections", 6333))
+			.start();
 
-	const testVecDb = new QdrantClient({
-		host: "localhost",
-		port: qdrant.getMappedPort(6333),
-	});
+		const testVecDb = new QdrantClient({
+			host: "localhost",
+			port: qdrant.getMappedPort(6333),
+		});
 
-	redis = await new GenericContainer("redis:7-alpine")
-		.withExposedPorts(6379)
-		.withWaitStrategy(Wait.forLogMessage("* Ready to accept connections"))
-		.start();
-	const testRedis = new RedisClient(
-		`redis://localhost:${redis.getMappedPort(6379)}`,
-		{ maxRetries: 3 },
-	);
-
-	const testDb = createDb(":memory:", {
-		vectorDbClient: testVecDb,
-		redisClient: testRedis,
-	});
-
-	migrate(testDb.$db, {
-		migrationsFolder: "./drizzle",
-	});
-
-	const testApi = apiRouter.use("*", async (ctx, next) => {
-		ctx.set("db", testDb);
-		ctx.set(
-			"ai",
-			createAi({
-				aiClient: testAiAdapter,
-				vectorDbClient: testVecDb,
-			}),
+		redis = await new GenericContainer("redis:7-alpine")
+			.withExposedPorts(6379)
+			.withWaitStrategy(Wait.forLogMessage("* Ready to accept connections"))
+			.start();
+		const testRedis = new RedisClient(
+			`redis://localhost:${redis.getMappedPort(6379)}`,
+			{ maxRetries: 3 },
 		);
-		await next();
-	});
 
-	api = hc<typeof apiRouter>("", {
-		fetch: (req: unknown) => testApi.request(req),
-	});
+		const testDb = createDb(":memory:", {
+			vectorDbClient: testVecDb,
+			redisClient: testRedis,
+		});
 
-	const nonceRes = await api.auth.nonce.$get({
-		query: { address: userWallet1.account.address },
-	});
-	const nonceData = await nonceRes.json();
-	if (!nonceData.success) {
-		throw new Error("Failed to get nonce");
-	}
+		migrate(testDb.$db, {
+			migrationsFolder: "./drizzle",
+		});
 
-	const message = createSiweMessage({
-		address: userWallet1.account.address,
-		chainId: userWallet1.chain.id,
-		domain: "127.0.0.1",
-		nonce: nonceData.data.nonce,
-		uri: "http://127.0.0.1",
-		version: "1",
-	});
-	const signature = await userWallet1.signMessage({
-		message,
-	});
+		const testApi = apiRouter.use("*", async (ctx, next) => {
+			ctx.set("db", testDb);
+			ctx.set(
+				"ai",
+				createAi({
+					aiClient: testAiAdapter,
+					vectorDbClient: testVecDb,
+				}),
+			);
+			await next();
+		});
 
-	const verifyRes = await api.auth.verify.$post({
-		json: {
-			message,
-			signature,
-		},
-	});
+		api0 = hc<typeof apiRouter>("http://localhost", {
+			fetch: async (input: string, init: RequestInit | undefined) => {
+				const request = new Request(input, init);
+				return testApi.fetch(request);
+			},
+		});
 
-	const verifyData = await verifyRes.json();
-
-	if (!verifyData.success || !verifyData.data.token) {
-		throw new Error("Failed to verify SIWE message");
-	}
-
-	api = hc<typeof apiRouter>("", {
-		fetch: (req: unknown) => testApi.request(req),
-		headers: {
-			Authorization: `Bearer ${verifyData.data.token}`,
-		},
-	});
-});
+		api1 = await createAuthenticatedApi(testApi, userWallet1);
+		api2 = await createAuthenticatedApi(testApi, userWallet2);
+	},
+	{ timeout: 20_000 },
+);
 
 afterAll(async () => {
 	await qdrant.stop();
 	await redis.stop();
 });
 
-describe("API", () => {
+describe("Auth", () => {
 	it("runtime returns uptime", async () => {
-		const res = await api.runtime.$get();
+		const res = await api0.runtime.$get();
 		const data = await res.json();
 		expect(res.status).toBe(200);
 		expect(data.uptime).toBeNumber();
 	});
 
-	it("authenticated", async () => {
-		const res = await api.auth.validate.$get();
+	it("unauthenticated user is not validated", async () => {
+		const res = await api0.auth.validate.$get();
+		expect(res.json).toThrow();
+		expect(res.status).toBe(401);
+	});
+
+	it("authenticated user is validated", async () => {
+		const res = await api1.auth.validate.$get();
 		const data = await res.json();
 		expect(res.status).toBe(200);
 		expect(data.success).toBe(true);
+	});
+
+	it("Can fetch self info", async () => {
+		const res = await api1.users.me.$get();
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		expect(data.success).toBe(true);
+		expect(data.data.walletAddress).toBe(userWallet1.account.address);
+	});
+	it("Can fetch other user's info", async () => {
+		const res = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		if (!data.success) {
+			throw new Error("Failed to fetch user info");
+		}
+		expect(data.data.user.walletAddress).toBe(userWallet2.account.address);
+	});
+});
+
+describe("social", () => {
+	it("can fetch empty followers and following", async () => {
+		const followersRes = await api1.users[":wallet"].followers.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const followingRes = await api1.users[":wallet"].following.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const followersData = await followersRes.json();
+		const followingData = await followingRes.json();
+
+		if (!followersData.success || !followingData.success) {
+			throw new Error("Failed to fetch followers or following");
+		}
+
+		expect(followersData.data.followers).toEqual([]);
+		expect(followingData.data.following).toEqual([]);
+	});
+
+	it("can follow user", async () => {
+		const res = await api1.users.follow.$post({
+			json: {
+				walletToFollow: userWallet2.account.address,
+			},
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		expect(data.success).toBe(true);
+	});
+
+	it("followed user shows up in self following", async () => {
+		const res = await api1.users[":wallet"].following.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		if (!data.success) {
+			throw new Error("Failed to fetch following");
+		}
+		expect(data.data.following).toEqual([userWallet2.account.address]);
+	});
+
+	it("follower user shows up in followers", async () => {
+		const res = await api2.users[":wallet"].followers.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const data = await res.json();
+		expect(res.status).toBe(200);
+		if (!data.success) {
+			throw new Error("Failed to fetch followers");
+		}
+		expect(data.data.followers).toEqual([userWallet1.account.address]);
 	});
 });
