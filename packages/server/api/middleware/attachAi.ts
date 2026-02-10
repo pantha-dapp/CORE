@@ -4,7 +4,7 @@ import type { AiClient } from "../../lib/ai/client";
 
 export function attachAi(aiClient: AiClient): MiddlewareHandler {
 	return async function attachAi(ctx, next) {
-		const vectorDbClient = ctx.var.vecDbClient;
+		const { vector: vectorDbClient } = ctx.var.db;
 		if (!vectorDbClient) {
 			throw new Error(
 				"VectorDbClient not found in context. Make sure attachVecDb middleware is used before attachAi.",
