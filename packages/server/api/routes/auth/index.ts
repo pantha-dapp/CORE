@@ -1,14 +1,7 @@
-import { MINUTE } from "@pantha/shared/constants";
 import { zEvmAddress } from "@pantha/shared/zod";
+import type { RedisClient } from "bun";
 import { Hono } from "hono";
-import {
-	type Address,
-	createPublicClient,
-	type Hex,
-	http,
-	isAddress,
-	isHex,
-} from "viem";
+import { type Address, createPublicClient, http, isAddress, isHex } from "viem";
 import { mainnet } from "viem/chains";
 import { parseSiweMessage, verifySiweMessage } from "viem/siwe";
 import z from "zod";
@@ -17,8 +10,6 @@ import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
 import type { RouterEnv } from "../types";
-
-const nonces: Record<Address, { nonce: string; validTill: number }> = {};
 
 const publicClient = createPublicClient({
 	chain: mainnet,
@@ -41,10 +32,12 @@ export default new Hono<RouterEnv>()
 		"/nonce",
 		validator("query", z.object({ address: zEvmAddress() })),
 		async (ctx) => {
+			const { db } = ctx.var;
+			const nonceStore = getNonceStore(db.redis);
 			const { address: wallet } = ctx.req.valid("query");
 
 			const nonce = generateNonce();
-			nonces[wallet] = { nonce, validTill: Date.now() + 5 * MINUTE };
+			nonceStore.set(wallet, nonce);
 
 			return respond.ok(ctx, { nonce }, "nonce generated", 200);
 		},
@@ -61,6 +54,7 @@ export default new Hono<RouterEnv>()
 		),
 		async (ctx) => {
 			const { db } = ctx.var;
+			const nonceStore = getNonceStore(db.redis);
 
 			const { message, signature } = ctx.req.valid("json");
 
@@ -78,14 +72,15 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Invalid address in SIWE message", 400);
 			}
 
-			const msgData = nonces[address];
-			delete nonces[address];
+			// const msgData = delete nonces[address];
+			const msgData = await nonceStore.get(address);
+			nonceStore.del(address);
 
-			if (!msgData || msgData.validTill < Date.now()) {
+			if (!msgData) {
 				return respond.err(ctx, "Nonce expired or not found", 400);
 			}
 
-			if (siweMessage.nonce !== msgData.nonce) {
+			if (siweMessage.nonce !== msgData) {
 				return respond.err(ctx, "Nonce mismatch", 400);
 			}
 
@@ -123,3 +118,21 @@ export default new Hono<RouterEnv>()
 			200,
 		);
 	});
+
+function getNonceStore(redis: RedisClient) {
+	const identifier = (address: Address) => `siwe-nonce:${address}`;
+
+	async function set(address: Address, nonce: string) {
+		await redis.setex(identifier(address), 120, nonce);
+	}
+
+	async function get(address: Address): Promise<string | null> {
+		return await redis.get(identifier(address));
+	}
+
+	async function del(address: Address) {
+		await redis.del(identifier(address));
+	}
+
+	return { set, get, del };
+}

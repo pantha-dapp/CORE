@@ -1,6 +1,6 @@
 import { tryCatch } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { categories } from "../../../../data/categories";
@@ -485,14 +485,20 @@ export default new Hono<RouterEnv>()
 											.where(eq(db.schema.courses.id, generatedCourseId))
 											.run();
 
-										newCourse.overview.chapters.forEach((chapter) => {
+										newCourse.overview.chapters.forEach((chapter, idx) => {
 											ai.image
 												.generateIconImage({ prompt: chapter.icon })
 												.then((chapterIcon) => {
 													db.update(db.schema.courseChapters)
 														.set({ icon: chapterIcon.imageUrl })
 														.where(
-															eq(db.schema.courseChapters.id, firstChapterId),
+															and(
+																eq(
+																	db.schema.courseChapters.courseId,
+																	generatedCourseId,
+																),
+																eq(db.schema.courseChapters.order, idx),
+															),
 														)
 														.run();
 												});

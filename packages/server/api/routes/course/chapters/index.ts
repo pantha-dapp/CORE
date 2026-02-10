@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { prepareChapter } from "../../../../lib/utils/chapters";
@@ -62,6 +63,17 @@ export default new Hono<RouterEnv>()
 					{ "Retry-After": "30" },
 				);
 			}
+
+			const [nextChapter] = await db
+				.select()
+				.from(db.schema.courseChapters)
+				.where(
+					and(
+						eq(db.schema.courseChapters.courseId, chapter.courseId),
+						eq(db.schema.courseChapters.order, chapter.order + 1),
+					),
+				);
+			nextChapter && prepareChapter(nextChapter.id, { db, ai });
 
 			//safepages generaton
 			pages.forEach((p) => {

@@ -36,7 +36,7 @@ You receive:
    - topics: Sub-concepts to cover (MUST cover ALL)
    - intent: Pedagogical approach (see below)
 
-3. minimumPages: Target number of pages
+3. minimumPages: Target number of pages, you must generate minimum these many pages, but can generate more if needed to meet quality standards. you may only generate 2-3 more pages.
 
 4. chapterNo: Position of chapter in course (for context, not content)
 
