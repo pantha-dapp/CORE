@@ -15,10 +15,12 @@ import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
 import ChapterDetails from "./ChapterDetails";
 import Chapters from "./Chapters";
 import Dashboard from "./Dashboard";
+import Events from "./Events";
 import LandingPage from "./LandingPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
+import Social from "./Social";
 import Test from "./Test";
 
 type ProtectedRouteType = "loggedOutOnly" | "loggedInOnly";
@@ -155,6 +157,32 @@ const profileRoute = createRoute({
 	},
 });
 
+const eventsRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/events",
+	component: function EventsRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Events />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
+const socialRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/social",
+	component: function SocialRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Social />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
 const testRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/test",
@@ -175,6 +203,8 @@ const routeTree = rootRoute.addChildren([
 	dashboardRoute,
 	ChaptersRoute,
 	ChapterDetailRoute,
+	eventsRoute,
+	socialRoute,
 	profileRoute,
 	testRoute,
 ]);

@@ -30,6 +30,7 @@
 		"*.{js,ts,tsx,jsx,json,css}": "biome check --write"
 	},
 	"dependencies": {
+		"@qdrant/js-client-rest": "^1.16.2",
 		"@tanstack/ai": "^0.2.1",
 		"@tanstack/ai-gemini": "^0.3.1",
 		"@tanstack/ai-grok": "^0.1.0",
@@ -38,7 +39,7 @@
 		"jsonwebtoken": "^9.0.3",
 		"sqlite-vec": "^0.1.7-alpha.2",
 		"viem": "^2.44.4",
-		"zod": "^4.3.5",
+		"zod": "^4.3.6",
 		"zod-to-json-schema": "^3.25.1"
 	}
 }
