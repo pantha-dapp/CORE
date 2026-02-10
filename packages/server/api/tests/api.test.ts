@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RedisClient } from "bun";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { Hono } from "hono";
 import { hc } from "hono/client";
 import {
 	GenericContainer,
@@ -13,7 +14,9 @@ import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 import { createAi } from "../../lib/ai";
 import { createDb } from "../../lib/db";
+import { InMemoryEventBus } from "../../lib/events/bus";
 import { apiRouter } from "../routes/router";
+import type { RouterEnv } from "../routes/types";
 import { createAuthenticatedApi } from "./helpers/apiAuth";
 import { testAiAdapter } from "./helpers/testAiAdapter";
 
@@ -49,6 +52,7 @@ beforeAll(
 		const testVecDb = new QdrantClient({
 			host: "localhost",
 			port: qdrant.getMappedPort(6333),
+			checkCompatibility: false,
 		});
 
 		redis = await new GenericContainer("redis:7-alpine")
@@ -69,17 +73,21 @@ beforeAll(
 			migrationsFolder: "./drizzle",
 		});
 
-		const testApi = apiRouter.use("*", async (ctx, next) => {
-			ctx.set("db", testDb);
-			ctx.set(
-				"ai",
-				createAi({
-					aiClient: testAiAdapter,
-					vectorDbClient: testVecDb,
-				}),
-			);
-			await next();
-		});
+		const testApi = new Hono<RouterEnv>()
+			.use("*", async (ctx, next) => {
+				ctx.set("db", testDb);
+				ctx.set(
+					"ai",
+					createAi({
+						aiClient: testAiAdapter,
+						vectorDbClient: testVecDb,
+					}),
+				);
+				ctx.set("eventBus", new InMemoryEventBus());
+
+				await next();
+			})
+			.route("/", apiRouter);
 
 		api0 = hc<typeof apiRouter>("http://localhost", {
 			fetch: async (input: string, init: RequestInit | undefined) => {
