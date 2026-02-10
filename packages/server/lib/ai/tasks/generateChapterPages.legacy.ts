@@ -20,6 +20,7 @@ DESIGN PRINCIPLES (Duolingo-style):
 6. NO REPETITION: Each page must advance learning — never repeat the same question or explanation
 7. You are given previous chapters' overviews (courseTillNowOverview) to build upon, make connections relevant to them
 8. chapterNo will be provided for context about the chapter's position in the course
+9. Optimize for short attention spans, don't force long bookish reading sessions. Quick and dopamine triggering gamified learning experience must be preserved.
 
 INPUT:
 You receive:
@@ -227,6 +228,9 @@ ANTI-PATTERNS (avoid these):
 
 ✗ Identical questions: Same concept tested twice identically
 ✓ Progressive questions: Definition → Usage → Application → Edge case
+
+✗ Long/Boring/Theoretical text: Long boring deep dives without clear examples or applications
+✓ Gamified Dopamine trigerring text: 'example_uses', 'teach_and_explain_content' etc is small and optimized for short attention spans
 
 OUTPUT 'CONTENT' field format MUST strictly adhere to the following JSON schema, where "type" determines the structure of "content". Ensure all content is complete, specific, and ready-to-use as-is.:
 ${String(pageContentSchemas)}
