@@ -43,7 +43,8 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	key: T,
 ) {
 	const def = collectionDefinitions[key];
-	vecDbClient
+
+	const ready = vecDbClient
 		.createCollection(key, {
 			vectors: { size: def.size, distance: def.distance },
 		})
@@ -57,9 +58,17 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	type PayloadType = z.infer<(typeof collectionDefinitions)[T]["schema"]>;
 
 	async function readEntry(id: string) {
-		const entry = await vecDbClient.query(key, {
-			query: id,
-		});
+		await ready;
+		const res = await tryCatch(
+			vecDbClient.query(key, {
+				query: id,
+			}),
+		);
+		if (!res.data) {
+			throw new Error(`Failed to read entry with id ${id}: ${res.error}`);
+		}
+		const entry = res.data;
+
 		if (!entry) return null;
 		const content = entry.points[0];
 		if (entry.points.length > 1 || entry.points.length === 0 || !content) {
@@ -86,6 +95,7 @@ export function createVectorDb<T extends VectorDbClientKey>(
 			payload: PayloadType;
 		},
 	) {
+		await ready;
 		def.schema.parse(options.payload);
 		await vecDbClient.upsert(key, {
 			points: [
@@ -98,6 +108,7 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	}
 
 	async function deleteEntry(id: string) {
+		await ready;
 		const found = await tryCatch(readEntry(id));
 
 		if (found.data) {
@@ -126,11 +137,13 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	// }
 
 	async function count() {
+		await ready;
 		const { count } = await vecDbClient.count(key);
 		return count;
 	}
 
 	async function querySimilar(vector: number[], k: number = 5) {
+		await ready;
 		const entries = await vecDbClient.query(key, {
 			query: vector,
 			limit: k,
@@ -145,6 +158,7 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	}
 
 	async function updatePayload(id: string, payload: Partial<PayloadType>) {
+		await ready;
 		const existing = await readEntry(id);
 		if (!existing) {
 			throw new Error("Entry not found");
