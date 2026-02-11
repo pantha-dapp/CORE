@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm/sql/expressions/conditions";
 import { createMiddleware } from "hono/factory";
 import type { Address } from "viem";
 import { verifyJwt } from "../../lib/utils/jwt";
@@ -38,7 +37,15 @@ export const authenticated = createMiddleware<{
 	ctx.set("userWallet", payload.sub);
 	await next();
 
-	db.update(db.schema.users)
-		.set({ lastActiveAt: new Date() })
-		.where(eq(db.schema.users.walletAddress, payload.sub));
+	db.insert(db.schema.users)
+		.values({
+			walletAddress: payload.sub,
+			lastActiveAt: new Date(),
+		})
+		.onConflictDoUpdate({
+			target: db.schema.users.walletAddress,
+			set: {
+				lastActiveAt: new Date(),
+			},
+		});
 });
