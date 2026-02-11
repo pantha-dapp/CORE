@@ -1,41 +1,60 @@
+import type { RedisClient } from "bun";
 import { Hono } from "hono";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
+import type { RouterEnv } from "../types";
 
 type Job = {
 	state: "pending" | "success" | "failed";
 	error?: string;
 };
-const JobStorage: Record<string, Job> = {};
 
-export function createJob(fn: () => Promise<void>): string {
+function getJobStore(redis: RedisClient) {
+	const identifier = (id: string) => `job:${id}`;
+
+	async function set(id: string, job: Job) {
+		await redis.set(identifier(id), JSON.stringify(job));
+	}
+
+	async function get(id: string): Promise<Job | null> {
+		const data = await redis.get(identifier(id));
+		return data ? JSON.parse(data) : null;
+	}
+
+	async function update(id: string, updates: Partial<Job>) {
+		const job = await get(id);
+		if (!job) return;
+		const newJob = { ...job, ...updates };
+		await set(id, newJob);
+	}
+
+	return { set, get, update };
+}
+
+export function createJob(redis: RedisClient, fn: () => Promise<void>): string {
+	const jobStore = getJobStore(redis);
 	const id = crypto.randomUUID();
-	JobStorage[id] = { state: "pending" };
+
+	jobStore.set(id, { state: "pending" });
 
 	fn()
 		.then(() => {
-			const jobRecord = JobStorage[id];
-			if (!jobRecord) return;
-
-			jobRecord.state = "success";
+			jobStore.update(id, { state: "success" });
 		})
 		.catch((err) => {
 			console.error("Job failed:", err);
-
-			const jobRecord = JobStorage[id];
-			if (!jobRecord) return;
-
-			jobRecord.state = "failed";
-			jobRecord.error = String(err);
+			jobStore.update(id, { state: "failed", error: String(err) });
 		});
 
 	return id;
 }
 
-export default new Hono().get("/:id", authenticated, async (ctx) => {
+export default new Hono<RouterEnv>().get("/:id", authenticated, async (ctx) => {
+	const { db } = ctx.var;
+	const jobStore = getJobStore(db.redis);
 	const { id } = ctx.req.param();
 
-	const job = JobStorage[id];
+	const job = await jobStore.get(id);
 	if (!job) {
 		return respond.err(ctx, "Job not found", 404);
 	}
