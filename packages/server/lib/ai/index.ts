@@ -101,6 +101,9 @@ export function createAi(args: {
 				console.error("Failed to validate generated pages", {
 					error: String(parsed.error).slice(0, 255),
 					result: jsonStringify(result),
+					expectedSchema: generateChapterPageOutputTypedSchema
+						.array()
+						.toString(),
 				});
 				throw new Error("Failed to validate generated pages");
 			}
@@ -171,7 +174,10 @@ export function createAi(args: {
 			throw new Error("Failed to generate image");
 		}
 
-		imagePromptOutputs.writeEntry(Bun.hash(prompt).toString(), {
+		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
+		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+
+		await imagePromptOutputs.writeEntry(uuid, {
 			vector: inputEmbedding,
 			payload: { imageUrl },
 		});
