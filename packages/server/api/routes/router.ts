@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import auth from "./auth";
-import course from "./course";
+import courses from "./courses";
 import jobs from "./jobs";
 import type { RouterEnv } from "./types";
 import users from "./users";
@@ -17,5 +17,5 @@ export const apiRouter = new Hono<RouterEnv>()
 	})
 	.route("/jobs", jobs)
 	.route("/auth", auth)
-	.route("/course", course)
+	.route("/courses", courses)
 	.route("/users", users);
