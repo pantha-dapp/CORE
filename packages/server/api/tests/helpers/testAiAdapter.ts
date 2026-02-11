@@ -3,7 +3,9 @@ import type z from "zod";
 import type { AiClient } from "../../../lib/ai/client";
 import clarificationQuestionGenerator from "../../../lib/ai/tasks/clarificationQuestionGenerator";
 import courseSelectionEvaluator from "../../../lib/ai/tasks/courseSelectionEvaluator";
+import generateChapterPagesLegacy from "../../../lib/ai/tasks/generateChapterPages.legacy";
 import generateIdealCourseDescriptor from "../../../lib/ai/tasks/generateIdealCourseDescriptor";
+import generateNewCourseSkeleton from "../../../lib/ai/tasks/generateNewCourseSkeleton";
 import intentClarification from "../../../lib/ai/tasks/intentClarification";
 import learningIntentSummarizer from "../../../lib/ai/tasks/learningIntentSummarizer";
 
@@ -11,18 +13,18 @@ export const testAiAdapter: AiClient = {
 	llm: {
 		text: async () => {
 			const response = "MOCK_RESPONSE";
-			await sleep(500);
+			await sleep(50);
 			return response;
 		},
 		json: async (args) => {
 			const response = getMockLlmResponse(args.outputSchema, args.input);
-			await sleep(500);
+			await sleep(50);
 			return response;
 		},
 	},
 	embedding: {
 		text: async () => {
-			return [1, 2, 3];
+			return new Array(768).fill(0).map(() => Math.random());
 		},
 	},
 	translation: {
@@ -32,7 +34,7 @@ export const testAiAdapter: AiClient = {
 	},
 	image: {
 		generate: async () => {
-			await sleep(500);
+			await sleep(50);
 			return { imageUrl: "MOCK_IMAGE_URL" };
 		},
 	},
@@ -62,7 +64,9 @@ function getMockLlmResponse<T extends z.ZodTypeAny>(
 ) {
 	const response = mockLlmResponses[jsonStringify(outputSchema)];
 	if (!response) {
-		throw new Error(`No mock response registered for schema: ${outputSchema}`);
+		throw new Error(
+			`No mock response registered for schema: ${jsonStringify(outputSchema)}`,
+		);
 	}
 	const found = response[input ? jsonStringify(input) : "default"];
 	return outputSchema.parse(found ?? response.default);
@@ -81,10 +85,11 @@ registerMockResponse(intentClarification, {
 });
 registerMockResponse(clarificationQuestionGenerator, {
 	input: {
-		questionsToGenerate: 2,
-		previous: [],
 		inferredGoal: "MOCK_INFERRED_GOAL",
 		uncertainties: ["MOCK_UNCERTAINTY_1", "MOCK_UNCERTAINTY_2"],
+		previous: [],
+		questionsToGenerate: 3,
+		courses: [],
 	},
 	response: {
 		questions: [
@@ -98,6 +103,11 @@ registerMockResponse(clarificationQuestionGenerator, {
 				purpose: "MOCK_PURPOSE_2",
 				text: "MOCK_QUESTION_2",
 			},
+			{
+				type: "yes_no",
+				purpose: "MOCK_PURPOSE_3",
+				text: "MOCK_QUESTION_3",
+			},
 		],
 	},
 });
@@ -109,8 +119,63 @@ registerMockResponse(generateIdealCourseDescriptor, {
 	},
 });
 registerMockResponse(courseSelectionEvaluator, {
+	input: {
+		previous: [],
+		currentCandidateCourses: [],
+		questionBudgetRemaining: 20,
+		questionsAsked: 0,
+		remainingUncertainties: ["MOCK_UNCERTAINTY_1", "MOCK_UNCERTAINTY_2"],
+	},
 	response: {
 		decision: "ask_more_questions",
 		uncertantiesRemaining: ["MOCK_UNCERTAINTY_1", "MOCK_UNCERTAINTY_2"],
+	},
+});
+registerMockResponse(courseSelectionEvaluator, {
+	response: {
+		decision: "create_new_course",
+		courseGenerationInstructions: {
+			assumedPrerequisites: ["MOCK_PREREQUISITE_1", "MOCK_PREREQUISITE_2"],
+			constraints: {
+				focus: "MOCK_FOCUS",
+				granularity: "MOCK_GRANULARITY",
+				minimumChapters: 50,
+			},
+			courseDescription: "MOCK_COURSE_DESCRIPTION",
+			courseTitle: "MOCK_COURSE_TITLE",
+			targetAudience: "MOCK_TARGET_AUDIENCE",
+		},
+	},
+});
+registerMockResponse(generateNewCourseSkeleton, {
+	response: {
+		overview: {
+			title: "MOCK_COURSE_TITLE",
+			description: "MOCK_COURSE_DESCRIPTION",
+			topics: ["MOCK_TOPIC_1", "MOCK_TOPIC_2"],
+			icon: "MOCK_ICON",
+			chapters: [
+				{
+					title: "MOCK_CHAPTER_TITLE",
+					description: "MOCK_CHAPTER_DESCRIPTION",
+					topics: ["MOCK_TOPIC_1", "MOCK_TOPIC_2"],
+					icon: "MOCK_ICON",
+					intent: "introduce",
+				},
+			],
+		},
+	},
+});
+registerMockResponse(generateChapterPagesLegacy, {
+	response: {
+		pages: [
+			{
+				type: "teach_and_explain_content",
+				content: {
+					topic: "MOCK_TOPIC",
+					markdown: "MOCK_MARKDOWN_CONTENT",
+				},
+			},
+		],
 	},
 });
