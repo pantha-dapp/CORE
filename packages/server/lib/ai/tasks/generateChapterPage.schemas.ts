@@ -68,53 +68,43 @@ export const generateChapterPageOutputFlatSchema = z.object({
 	content: z.any(),
 });
 
-export const generateChapterPageOutputTypedSchema = z
-	.object({
-		type: z.literal("example_uses"),
-		content: pageContentSchemas.example_uses,
-	})
-	.or(
+export const generateChapterPageOutputTypedSchema = z.discriminatedUnion(
+	"type",
+	[
+		z.object({
+			type: z.literal("example_uses"),
+			content: pageContentSchemas.example_uses,
+		}),
 		z.object({
 			type: z.literal("quiz"),
 			content: pageContentSchemas.quiz,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("teach_and_explain_content"),
 			content: pageContentSchemas.teach_and_explain_content,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("true_false"),
 			content: pageContentSchemas.true_false,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("fill_in_the_blanks"),
 			content: pageContentSchemas.fill_in_the_blanks,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("identify_shown_object_in_image"),
 			content: pageContentSchemas.identify_shown_object_in_image,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("matching"),
 			content: pageContentSchemas.matching,
 		}),
-	)
-	.or(
 		z.object({
 			type: z.literal("identify_object_from_images"),
 			content: pageContentSchemas.identify_object_from_images,
 		}),
-	);
+	],
+);
 
 export const generatePageInputSchema = z.object({
 	type: zChapterPageType,
