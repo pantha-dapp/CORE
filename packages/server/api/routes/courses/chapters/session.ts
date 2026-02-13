@@ -103,7 +103,7 @@ export default new Hono<RouterEnv>()
 					404,
 				);
 			}
-			if (!answer[0]) {
+			if (answer[0] === undefined) {
 				return respond.err(ctx, "Answer cannot be empty", 400);
 			}
 
@@ -180,7 +180,14 @@ export default new Hono<RouterEnv>()
 
 				return respond.ok(
 					ctx,
-					{ correct: session.correct.length, total: session.pages.length },
+					{
+						complete: true,
+						correct,
+						report: {
+							correct: session.correct.length,
+							total: session.pages.length,
+						},
+					},
 					"Session completed.",
 					200,
 				);
@@ -189,6 +196,7 @@ export default new Hono<RouterEnv>()
 			return respond.ok(
 				ctx,
 				{
+					complete: false,
 					correct,
 					currentPage: session.currentPage,
 				},
