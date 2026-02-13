@@ -131,7 +131,7 @@ describe("Courses Generation & Entrollment", () => {
 	});
 });
 
-describe("Chapter Info", async () => {
+describe("Chapter & game Sessions", async () => {
 	const session = async (api: typeof testGlobals.api1 = testGlobals.api1) => {
 		const res = await api.courses.chapters.session.$get({
 			query: { chapterId: firstChapterId },
@@ -217,6 +217,7 @@ describe("Chapter Info", async () => {
 
 	it("correct answers are accepted and session progresses", async () => {
 		let tries = 0;
+		let pageNumber = 0;
 		while (!complete) {
 			tries++;
 			if (tries > 100) {
@@ -224,6 +225,9 @@ describe("Chapter Info", async () => {
 					"Too many tries, something might be wrong with the test",
 				);
 			}
+
+			expect(pageNumber).toBe((await session()).currentPage);
+			pageNumber++;
 
 			const page = await currentPage();
 			const matchingPage = findMatchingPage(testChapterGenerationPages, page);
@@ -284,6 +288,19 @@ describe("Chapter Info", async () => {
 				complete = resp.complete;
 			}
 		}
+	});
+
+	it("rejects answers when no seesion", async () => {
+		expect(async () => await answer(["incorrect answer"])).toThrow();
+	});
+
+	it("progresses but rejects incorrect answers", async () => {
+		const { currentPage: pageBefore } = await session();
+		await answer([""]);
+		const resp = await answer(["incorrect answer"]);
+		expect(resp.correct).toBe(false);
+		const { currentPage: pageAfter } = await session();
+		expect(pageAfter).toBe(pageBefore + 2);
 	});
 });
 
