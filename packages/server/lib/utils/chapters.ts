@@ -65,24 +65,16 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 		minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
 	});
 
-	await db.transaction(async (tx) => {
-		const inserted = [];
-		for (let i = 0; i < generatedPages.length; i++) {
-			const page = generatedPages[i];
-
-			if (!page) continue;
-
-			const [insertedPage] = await tx
-				.insert(db.schema.chapterPages)
-				.values({
-					chapterId: id,
-					order: i + 1,
-					content: page,
-				})
-				.returning();
-			inserted.push(insertedPage);
-		}
-	});
+	await db
+		.insert(db.schema.chapterPages)
+		.values(
+			generatedPages.map((page, index) => ({
+				chapterId: id,
+				order: index + 1,
+				content: page,
+			})),
+		)
+		.returning();
 
 	preparing.delete(id);
 
