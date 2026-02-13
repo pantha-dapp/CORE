@@ -240,10 +240,10 @@ OUTPUT FORMAT:
   "pages": [
     {
       "type": "teach_and_explain_content",
-      "image" : {prompt: ""},
       "content": {
         "topic": "...",
         "markdown": "..."
+        "image" : {prompt: ""},
       }
     },
     {
