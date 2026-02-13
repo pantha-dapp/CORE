@@ -10,9 +10,9 @@ import gen from "./gen";
 
 export default new Hono()
 
-	.route("/gen", gen)
-
 	.route("/chapters", chapters)
+
+	.route("/gen", gen)
 
 	.get("/enrolled", authenticated, async (ctx) => {
 		const { db, userWallet } = ctx.var;
@@ -115,52 +115,31 @@ export default new Hono()
 		},
 	)
 
-	.get("/:id", authenticated, async (ctx) => {
-		const { db } = ctx.var;
-		const courseId = ctx.req.param("id");
-
-		const course = await db.courseById({ courseId });
-		if (!course) {
-			return respond.err(ctx, "Course not found.", 404);
-		}
-
-		return respond.ok(
-			ctx,
-			{
-				id: course.id,
-				title: course.title,
-				description: course.description,
-			},
-			"Course fetched successfully.",
-			200,
-		);
-	})
-
-	.get("/:id", authenticated, async (ctx) => {
-		const { db } = ctx.var;
-		const courseId = ctx.req.param("id");
-
-		const course = await db.courseById({ courseId });
-		if (!course) {
-			return respond.err(ctx, "Course not found.", 404);
-		}
-
-		return respond.ok(
-			ctx,
-			{
-				id: course.id,
-				title: course.title,
-				description: course.description,
-			},
-			"Course fetched successfully.",
-			200,
-		);
-	})
-
 	.get("/:id/chapters", authenticated, async (ctx) => {
 		const { db } = ctx.var;
 
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
 		return respond.ok(ctx, { chapters }, "Chapters fetched successfully.", 200);
+	})
+
+	.get("/:id", authenticated, async (ctx) => {
+		const { db } = ctx.var;
+		const courseId = ctx.req.param("id");
+
+		const course = await db.courseById({ courseId });
+		if (!course) {
+			return respond.err(ctx, "Course not found.", 404);
+		}
+
+		return respond.ok(
+			ctx,
+			{
+				id: course.id,
+				title: course.title,
+				description: course.description,
+			},
+			"Course fetched successfully.",
+			200,
+		);
 	});
