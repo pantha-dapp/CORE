@@ -166,16 +166,65 @@ registerMockResponse(generateNewCourseSkeleton, {
 		},
 	},
 });
+export const testChapterGenerationPages = [
+	{
+		type: "example_uses",
+		content: {
+			topic: "MOCK_TOPIC",
+			text: "MOCK_EXAMPLE_TEXT",
+			examples: ["MOCK_EXAMPLE_1", "MOCK_EXAMPLE_2"],
+		},
+	},
+	{
+		type: "quiz",
+		content: {
+			question: "MOCK_QUESTION",
+			options: ["MOCK_OPTION_1", "MOCK_OPTION_2", "MOCK_OPTION_3"],
+			correctOptionIndex: 1,
+		},
+	},
+	{
+		type: "teach_and_explain_content",
+		content: {
+			topic: "MOCK_TOPIC",
+			markdown: "MOCK_MARKDOWN_CONTENT",
+		},
+	},
+	{
+		type: "true_false",
+		content: {
+			statement: "MOCK_STATEMENT",
+			isTrue: true,
+		},
+	},
+	{
+		type: "identify_shown_object_in_image",
+		content: {
+			image: { prompt: "MOCK_PROMPT" },
+			options: ["MOCK_OPTION_1", "MOCK_OPTION_2", "MOCK_OPTION_3"],
+			correctOptionIndex: 1,
+		},
+	},
+	{
+		type: "matching",
+		content: {
+			pairs: [
+				{ left: "MOCK_LEFT_1", right: "MOCK_RIGHT_1" },
+				{ left: "MOCK_LEFT_2", right: "MOCK_RIGHT_2" },
+			],
+		},
+	},
+	{
+		type: "identify_object_from_images",
+		content: {
+			object: "MOCK_OBJECT",
+			images: [{ prompt: "MOCK_PROMPT_1" }, { prompt: "MOCK_PROMPT_2" }],
+			correctImageIndex: 1,
+		},
+	},
+] satisfies z.infer<typeof generateChapterPagesLegacy.outputSchema>["pages"];
 registerMockResponse(generateChapterPagesLegacy, {
 	response: {
-		pages: [
-			{
-				type: "teach_and_explain_content",
-				content: {
-					topic: "MOCK_TOPIC",
-					markdown: "MOCK_MARKDOWN_CONTENT",
-				},
-			},
-		],
+		pages: testChapterGenerationPages,
 	},
 });
