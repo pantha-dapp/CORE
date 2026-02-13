@@ -116,80 +116,100 @@ export default new Hono<RouterEnv>()
 
 			let correct = false;
 
-			switch (type) {
-				case "example_uses":
-					correct = true;
-					break;
-				case "fill_in_the_blanks":
-					correct = jsonStringify(content.answers) === jsonStringify(answer);
-					break;
-				case "identify_object_from_images":
-					correct = content.correctImageIndex === parseInt(answer[0], 10);
-					break;
-				case "identify_shown_object_in_image":
-					correct = content.correctOptionIndex === parseInt(answer[0], 10);
-					break;
-				case "matching":
-					correct =
-						jsonStringify(content.pairs) ===
-						jsonStringify(jsonParse(answer[0]));
-					break;
-				case "quiz":
-					correct = content.correctOptionIndex === parseInt(answer[0], 10);
-					break;
-				case "true_false":
-					correct = content.isTrue === (answer[0].toLowerCase() === "true");
-					break;
-				case "teach_and_explain_content":
-					correct = true;
-					break;
-				default:
-					break;
-			}
-
-			if (correct) {
-				session.correct.push(session.currentPage);
-			} else {
-				session.incorrect.push(session.currentPage);
-			}
-			session.currentPage += 1;
-			session.lastSessionStartedAt = Date.now();
-
-			gameSessions.set(userWallet, session);
-
-			if (session.currentPage >= session.pages.length) {
-				gameSessions.delete(userWallet);
-				const currentChapter = await db.chapterById({
-					chapterId: session.chapterId,
-				});
-				if (!currentChapter) {
-					throw new Error("Unreachable code: Chapter not found");
+			try {
+				switch (type) {
+					case "example_uses":
+						correct = true;
+						break;
+					case "fill_in_the_blanks":
+						correct = jsonStringify(content.answers) === jsonStringify(answer);
+						break;
+					case "identify_object_from_images":
+						correct = content.correctImageIndex === parseInt(answer[0], 10);
+						break;
+					case "identify_shown_object_in_image":
+						correct = content.correctOptionIndex === parseInt(answer[0], 10);
+						break;
+					case "matching":
+						correct =
+							jsonStringify(
+								content.pairs.sort((a, b) =>
+									jsonStringify(a) < jsonStringify(b) ? -1 : 1,
+								),
+							) ===
+							jsonStringify(
+								z
+									.array(z.any())
+									.parse(jsonParse(answer[0]))
+									.sort((a, b) =>
+										jsonStringify(a) < jsonStringify(b) ? -1 : 1,
+									),
+							);
+						break;
+					case "quiz":
+						correct = content.correctOptionIndex === parseInt(answer[0], 10);
+						break;
+					case "true_false":
+						correct = content.isTrue === (answer[0].toLowerCase() === "true");
+						break;
+					case "teach_and_explain_content":
+						correct = true;
+						break;
+					default:
+						break;
 				}
 
-				const [nextChapter] = await db
-					.select()
-					.from(db.schema.courseChapters)
-					.where(
-						and(
-							eq(db.schema.courseChapters.courseId, currentChapter.courseId),
-							eq(db.schema.courseChapters.order, currentChapter.order + 1),
-						),
-					);
-				if (nextChapter) prepareChapter(nextChapter.id, { db, ai });
-				registerActivityForStreaks(db, userWallet);
+				if (correct) {
+					session.correct.push(session.currentPage);
+				} else {
+					session.incorrect.push(session.currentPage);
+				}
+				session.currentPage += 1;
+				session.lastSessionStartedAt = Date.now();
 
-				return respond.ok(
-					ctx,
-					{
-						complete: true,
-						correct,
-						report: {
-							correct: session.correct.length,
-							total: session.pages.length,
+				gameSessions.set(userWallet, session);
+
+				if (session.currentPage >= session.pages.length) {
+					gameSessions.delete(userWallet);
+					const currentChapter = await db.chapterById({
+						chapterId: session.chapterId,
+					});
+					if (!currentChapter) {
+						throw new Error("Unreachable code: Chapter not found");
+					}
+
+					const [nextChapter] = await db
+						.select()
+						.from(db.schema.courseChapters)
+						.where(
+							and(
+								eq(db.schema.courseChapters.courseId, currentChapter.courseId),
+								eq(db.schema.courseChapters.order, currentChapter.order + 1),
+							),
+						);
+					if (nextChapter) prepareChapter(nextChapter.id, { db, ai });
+					registerActivityForStreaks(db, userWallet);
+
+					return respond.ok(
+						ctx,
+						{
+							complete: true,
+							correct,
+							report: {
+								correct: session.correct.length,
+								total: session.pages.length,
+							},
 						},
-					},
-					"Session completed.",
-					200,
+						"Session completed.",
+						200,
+					);
+				}
+			} catch (error) {
+				return respond.err(
+					ctx,
+					"Error processing answer: " +
+						(error instanceof Error ? error.message : String(error)),
+					500,
 				);
 			}
 
