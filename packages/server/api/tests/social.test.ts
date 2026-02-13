@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { zeroAddress } from "viem";
 import { testGlobals } from "./helpers/globals";
 import { userWallet1, userWallet2 } from "./helpers/setup";
 
@@ -130,5 +131,17 @@ describe("Following Users", () => {
 			throw new Error("Failed to fetch followers");
 		}
 		expect(data.data.followers).toEqual([]);
+	});
+
+	it("Can not follow non-existent user", async () => {
+		const { api1 } = testGlobals;
+		const res = await api1.users.follow.$post({
+			json: {
+				walletToFollow: zeroAddress,
+			},
+		});
+		const data = await res.json();
+		expect(res.status).toBe(404);
+		expect(data.success).toBe(false);
 	});
 });
