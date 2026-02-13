@@ -481,8 +481,6 @@ export default new Hono<RouterEnv>()
 							userWallet: userWallet,
 							courseId: generatedCourseId,
 						});
-						ongoingSession.state = "finished";
-						ongoingSession.courseId = generatedCourseId;
 
 						ai.image
 							.generateIconImage({ prompt: newCourse.overview.icon })
@@ -512,6 +510,8 @@ export default new Hono<RouterEnv>()
 								});
 							});
 						await prepareChapter(firstChapterId, { db, ai });
+						ongoingSession.state = "finished";
+						ongoingSession.courseId = generatedCourseId;
 					}
 				});
 
