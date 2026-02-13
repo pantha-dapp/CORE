@@ -93,6 +93,18 @@ export function createAi(args: {
 		) => {
 			const result = await generateChapterPagesRaw(args);
 
+			for (const page of result.pages) {
+				const { success: parseSuccess, error: parseError } =
+					generateChapterPageOutputTypedSchema.safeParse(page);
+				if (!parseSuccess) {
+					console.error("Failed to validate generated page", {
+						error: String(parseError).slice(0, 255),
+						page: jsonStringify(page),
+					});
+					throw new Error("Failed to validate generated page");
+				}
+			}
+
 			const parsed = generateChapterPageOutputTypedSchema
 				.array()
 				.safeParse(result.pages);
@@ -101,9 +113,6 @@ export function createAi(args: {
 				console.error("Failed to validate generated pages", {
 					error: String(parsed.error).slice(0, 255),
 					result: jsonStringify(result),
-					expectedSchema: generateChapterPageOutputTypedSchema
-						.array()
-						.toString(),
 				});
 				throw new Error("Failed to validate generated pages");
 			}
