@@ -15,7 +15,8 @@ export default new Hono()
 	.route("/gen", gen)
 
 	.get("/enrolled", authenticated, async (ctx) => {
-		const { db, userWallet } = ctx.var;
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
 		const enrollments = await db.userEnrollments({ userWallet });
 
 		return respond.ok(
@@ -37,7 +38,7 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db } = ctx.var.appState;
 			const { limit, offset } = ctx.req.valid("query");
 
 			const coursesList = await db
@@ -88,7 +89,8 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet, db } = ctx.var;
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { courseId } = ctx.req.valid("json");
 
 			const enrollmentResult = await tryCatch(
@@ -116,7 +118,7 @@ export default new Hono()
 	)
 
 	.get("/:id/chapters", authenticated, async (ctx) => {
-		const { db } = ctx.var;
+		const { db } = ctx.var.appState;
 
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
@@ -124,7 +126,7 @@ export default new Hono()
 	})
 
 	.get("/:id", authenticated, async (ctx) => {
-		const { db } = ctx.var;
+		const { db } = ctx.var.appState;
 		const courseId = ctx.req.param("id");
 
 		const course = await db.courseById({ courseId });
