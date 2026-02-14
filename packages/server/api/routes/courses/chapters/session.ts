@@ -33,7 +33,8 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet, db } = ctx.var;
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { chapterId } = ctx.req.valid("query");
 			let session = gameSessions.get(userWallet);
 
@@ -92,7 +93,8 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet, db, ai } = ctx.var;
+			const { db, ai } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { answer } = ctx.req.valid("json");
 
 			const session = gameSessions.get(userWallet);
