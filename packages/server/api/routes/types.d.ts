@@ -4,8 +4,12 @@ import type { EventBus } from "../../lib/events/bus";
 
 export type RouterEnv = {
 	Variables: {
-		eventBus: EventBus;
-		db: Db;
-		ai: Ai;
+		appState: AppState;
 	};
 };
+
+export interface AppState {
+	eventBus: EventBus;
+	db: Db;
+	ai: Ai;
+}
