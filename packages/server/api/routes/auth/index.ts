@@ -32,7 +32,7 @@ export default new Hono<RouterEnv>()
 		"/nonce",
 		validator("query", z.object({ address: zEvmAddress() })),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db } = ctx.var.appState;
 			const nonceStore = getNonceStore(db.redis);
 			const { address: wallet } = ctx.req.valid("query");
 
@@ -53,7 +53,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db, eventBus } = ctx.var.appState;
 			const nonceStore = getNonceStore(db.redis);
 
 			const { message, signature } = ctx.req.valid("json");
@@ -93,18 +93,11 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Invalid signature", 400);
 			}
 
-			await db
-				.insert(db.schema.users)
-				.values({
-					walletAddress: address,
-					lastActiveAt: new Date(),
-				})
-				.onConflictDoNothing()
-				.catch((err) => {
-					return respond.err(ctx, `Database error ${String(err)}`, 500);
-				});
-
 			const token = issueJwtToken(address);
+
+			eventBus.emit("user.login", {
+				walletAddress: address,
+			});
 
 			return respond.ok(ctx, { valid, token }, "Signature verified", 200);
 		},
