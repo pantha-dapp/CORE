@@ -1,8 +1,13 @@
+import { zEvmAddress } from "@pantha/shared/zod";
 import z from "zod";
+import type { AppState } from "../../api/routes/types";
 
 const eventPayloads = {
 	"user.register": z.object({
-		walletAddress: z.string(),
+		walletAddress: zEvmAddress(),
+	}),
+	"user.login": z.object({
+		walletAddress: zEvmAddress(),
 	}),
 };
 type EventType = keyof typeof eventPayloads;
@@ -14,9 +19,13 @@ type DomainEvent<T extends EventType> = {
 	version: number;
 };
 
+type AppStateReduced = Omit<AppState, "eventBus">;
+
 export interface EventBus {
 	emit<T extends EventType>(
-		event: Omit<DomainEvent<T>, "timestamp"> & { version?: number },
+		type: T,
+		payload: EventPayload<T>,
+		version?: number,
 	): void;
 
 	on<T extends EventType>(
@@ -27,26 +36,36 @@ export interface EventBus {
 
 export class InMemoryEventBus implements EventBus {
 	private handlers: {
-		[K in EventType]?: Array<(payload: EventPayload<K>) => void>;
+		[K in EventType]?: Array<
+			(payload: EventPayload<K>, app: AppStateReduced) => void
+		>;
 	} = {};
+	private app: AppStateReduced;
+
+	constructor(appState: AppStateReduced) {
+		this.app = { ...appState };
+	}
 
 	emit<T extends EventType>(
-		event: Omit<DomainEvent<T>, "timestamp"> & { version?: number },
+		type: T,
+		payload: EventPayload<T>,
+		version?: number,
 	): void {
 		const domainEvent: DomainEvent<T> = {
-			...event,
+			type,
+			payload,
 			timestamp: Date.now(),
-			version: event.version ?? 1,
+			version: version ?? 1,
 		};
-		const eventHandlers = this.handlers[event.type] ?? [];
+		const eventHandlers = this.handlers[type] ?? [];
 		Promise.allSettled(
-			eventHandlers.map((handler) => handler(domainEvent.payload)),
+			eventHandlers.map((handler) => handler(domainEvent.payload, this.app)),
 		);
 	}
 
 	on<T extends EventType>(
 		eventType: T,
-		handler: (payload: EventPayload<T>) => void,
+		handler: (payload: EventPayload<T>, app: AppStateReduced) => void,
 	): void {
 		if (!this.handlers[eventType]) {
 			this.handlers[eventType] = [];
