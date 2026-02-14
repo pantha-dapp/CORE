@@ -132,7 +132,8 @@ export default new Hono<RouterEnv>()
 				),
 		),
 		async (ctx) => {
-			const { userWallet, db, ai } = ctx.var;
+			const { db, ai } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const action = ctx.req.valid("json");
 
 			const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
@@ -171,7 +172,7 @@ export default new Hono<RouterEnv>()
 
 			if (action.type === "learning_intent_freetext") {
 				ongoingSession.learningIntent = action.intent;
-				const jobId = createJob(ctx.var.db.redis, async () => {
+				const jobId = createJob(ctx.var.appState.db.redis, async () => {
 					const intentClarificationResult = await tryCatch(
 						ai.llm.intentClarification({
 							majorCategory:
@@ -253,7 +254,7 @@ export default new Hono<RouterEnv>()
 					);
 				}
 
-				const jobId = createJob(ctx.var.db.redis, async () => {
+				const jobId = createJob(ctx.var.appState.db.redis, async () => {
 					const idealCourseResult = await tryCatch(
 						ai.llm.generateIdealCourseDescriptor({
 							majorCategory:
