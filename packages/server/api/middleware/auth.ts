@@ -9,7 +9,7 @@ export const authenticated = createMiddleware<{
 		userWallet: Address;
 	} & RouterEnv["Variables"];
 }>(async (ctx, next) => {
-	const { db } = ctx.var;
+	const { db, eventBus } = ctx.var.appState;
 	if (!db) {
 		throw new Error(
 			"Database instance not found in context, instantiate attachDb middleware before authenticated middleware",
@@ -37,15 +37,15 @@ export const authenticated = createMiddleware<{
 	ctx.set("userWallet", payload.sub);
 	await next();
 
-	db.insert(db.schema.users)
-		.values({
-			walletAddress: payload.sub,
-			lastActiveAt: new Date(),
-		})
-		.onConflictDoUpdate({
-			target: db.schema.users.walletAddress,
-			set: {
-				lastActiveAt: new Date(),
-			},
-		});
+	// db.insert(db.schema.users)
+	// 	.values({
+	// 		walletAddress: payload.sub,
+	// 		lastActiveAt: new Date(),
+	// 	})
+	// 	.onConflictDoUpdate({
+	// 		target: db.schema.users.walletAddress,
+	// 		set: {
+	// 			lastActiveAt: new Date(),
+	// 		},
+	// 	});
 });
