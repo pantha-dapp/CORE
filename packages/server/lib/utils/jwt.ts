@@ -1,19 +1,11 @@
 import jwt from "jsonwebtoken";
-import { type Address, isAddress } from "viem";
 import { z } from "zod";
 import { JWTalgorithm, JWTexpiration, JWTKeypair } from "../../constants";
-
-const zEvmAddress = z
-	.string()
-	.refine((value) => isAddress(value), {
-		message: "Invalid EVM address format",
-	})
-	.transform((value) => value as Address);
 
 export const zJwtPayload = () =>
 	z.object({
 		iss: z.string(), // issuer
-		sub: zEvmAddress, // subject (wallet address)
+		sub: z.string(), // subject (sesion id)
 		iat: z.number(), // issued at
 		exp: z.number(), // expires at
 		nbf: z.number(), // not before
@@ -21,12 +13,12 @@ export const zJwtPayload = () =>
 
 export type JwtPayload = z.infer<ReturnType<typeof zJwtPayload>>;
 
-export function createJwtPayload(walletAddress: Address): JwtPayload {
+export function createJwtPayload(sessionId: string): JwtPayload {
 	const now = Math.floor(Date.now() / 1000);
 
 	return {
 		iss: JWTKeypair.public,
-		sub: walletAddress,
+		sub: sessionId,
 		iat: now - 2,
 		exp: now + JWTexpiration,
 		nbf: now - 1,
@@ -47,7 +39,7 @@ export function verifyJwt(token: string): JwtPayload {
 	return zJwtPayload().parse(decoded);
 }
 
-export function issueJwtToken(walletAddress: Address): string {
-	const payload = createJwtPayload(walletAddress);
+export function issueJwtToken(sessionId: string): string {
+	const payload = createJwtPayload(sessionId);
 	return signJwt(payload);
 }
