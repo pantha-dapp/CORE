@@ -15,6 +15,13 @@
 			"when": 1770753003829,
 			"tag": "0001_pale_deathstrike",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1771116207172,
+			"tag": "0002_nasty_gateway",
+			"breakpoints": true
 		}
 	]
 }
