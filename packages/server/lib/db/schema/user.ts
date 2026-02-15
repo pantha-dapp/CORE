@@ -38,7 +38,5 @@ export const userSessions = t.sqliteTable("user_sessions", {
 		.text("id")
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
-	userWallet: tEvmAddress()
-		.notNull()
-		.references(() => users.walletAddress, { onDelete: "cascade" }),
+	userWallet: tEvmAddress().notNull(),
 });
