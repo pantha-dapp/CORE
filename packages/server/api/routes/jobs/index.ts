@@ -50,7 +50,7 @@ export function createJob(redis: RedisClient, fn: () => Promise<void>): string {
 }
 
 export default new Hono<RouterEnv>().get("/:id", authenticated, async (ctx) => {
-	const { db } = ctx.var;
+	const { db } = ctx.var.appState;
 	const jobStore = getJobStore(db.redis);
 	const { id } = ctx.req.param();
 
