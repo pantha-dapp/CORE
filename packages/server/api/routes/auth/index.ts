@@ -17,7 +17,7 @@ const publicClient = createPublicClient({
 });
 
 function generateNonce(): string {
-	return Bun.randomUUIDv7();
+	return Bun.randomUUIDv7().replaceAll("-", "");
 }
 
 export default new Hono<RouterEnv>()
