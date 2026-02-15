@@ -1,4 +1,6 @@
 // import * as cache from "./cache";
+
+import { createSelectSchema } from "drizzle-zod";
 import * as course from "./course";
 import * as engagement from "./engagement";
 import * as social from "./social";
@@ -15,7 +17,7 @@ const schema = {
 
 export default schema;
 
-export type Schema = typeof schema;
+export type DbSchema = typeof schema;
 
 // type DBSchema = typeof schema;
 // export type DB = {
@@ -29,3 +31,12 @@ export type Schema = typeof schema;
 //       : never
 //     : never;
 // };
+
+export const zDbSchema = () => {
+	return {
+		user: () => createSelectSchema(schema.users),
+		course: () => createSelectSchema(schema.courses),
+		chapter: () => createSelectSchema(schema.courseChapters),
+		chapterPage: () => createSelectSchema(schema.chapterPages),
+	};
+};
