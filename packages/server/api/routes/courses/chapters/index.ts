@@ -22,7 +22,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db } = ctx.var.appState;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
@@ -45,7 +45,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db, ai } = ctx.var;
+			const { db, ai } = ctx.var.appState;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
