@@ -26,7 +26,8 @@ export default new Hono()
 	})
 
 	.get("/me/friends", authenticated, async (ctx) => {
-		const { db, userWallet } = ctx.var;
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
 
 		const friends = await db.userFriends({ userWallet });
 
@@ -51,7 +52,8 @@ export default new Hono()
 			}),
 		),
 		async (ctx) => {
-			const { userWallet, db } = ctx.var;
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const updateData = ctx.req.valid("json");
 
 			const [updatedUser] = await db
@@ -67,11 +69,109 @@ export default new Hono()
 	)
 
 	.get(
+		"/:wallet/followers",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { wallet } = ctx.req.valid("param");
+
+			const followers = await db.userFollowers({ userWallet: wallet });
+
+			return respond.ok(
+				ctx,
+				{ followers: followers.map((f) => f.follower) },
+				"Followers fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.get(
+		"/:wallet/following",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { wallet } = ctx.req.valid("param");
+
+			const following = await db.userFollowing({ userWallet: wallet });
+
+			return respond.ok(
+				ctx,
+				{ following: following.map((f) => f.following) },
+				"Following fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.post(
+		"/follow",
+		authenticated,
+		validator("json", z.object({ walletToFollow: zEvmAddress() })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { walletToFollow } = ctx.req.valid("json");
+
+			const userToFollow = await db.userByWallet({
+				userWallet: walletToFollow,
+			});
+			if (!userToFollow) {
+				return respond.err(ctx, "User to follow not found", 404);
+			}
+			if (walletToFollow === userWallet) {
+				return respond.err(ctx, "Cannot follow yourself", 400);
+			}
+
+			await db
+				.insert(db.schema.followings)
+				.values({ follower: userWallet, following: walletToFollow })
+				.onConflictDoNothing();
+
+			return respond.ok(ctx, {}, "User followed successfully", 200);
+		},
+	)
+
+	.post(
+		"/unfollow",
+		authenticated,
+		validator("json", z.object({ walletToUnfollow: zEvmAddress() })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { walletToUnfollow } = ctx.req.valid("json");
+
+			const userToUnfollow = await db.userByWallet({
+				userWallet: walletToUnfollow,
+			});
+			if (!userToUnfollow) {
+				return respond.err(ctx, "User to unfollow not found", 404);
+			}
+			if (walletToUnfollow === userWallet) {
+				return respond.err(ctx, "Cannot unfollow yourself", 400);
+			}
+
+			await db
+				.delete(db.schema.followings)
+				.where(
+					and(
+						eq(db.schema.followings.follower, userWallet),
+						eq(db.schema.followings.following, walletToUnfollow),
+					),
+				);
+
+			return respond.ok(ctx, {}, "User unfollowed successfully", 200);
+		},
+	)
+
+	.get(
 		"/:wallet",
 		authenticated,
 		validator("param", z.object({ wallet: zEvmAddress() })),
 		async (ctx) => {
-			const { db } = ctx.var;
+			const { db } = ctx.var.appState;
 			const { wallet } = ctx.req.valid("param");
 
 			const user = await db.userByWallet({ userWallet: wallet });
@@ -101,101 +201,5 @@ export default new Hono()
 				"User fetched successfully",
 				200,
 			);
-		},
-	)
-
-	.get(
-		"/:wallet/followers",
-		authenticated,
-		validator("param", z.object({ wallet: zEvmAddress() })),
-		async (ctx) => {
-			const { db } = ctx.var;
-			const { wallet } = ctx.req.valid("param");
-
-			const followers = await db.userFollowers({ userWallet: wallet });
-
-			return respond.ok(
-				ctx,
-				{ followers: followers.map((f) => f.follower) },
-				"Followers fetched successfully",
-				200,
-			);
-		},
-	)
-
-	.get(
-		"/:wallet/following",
-		authenticated,
-		validator("param", z.object({ wallet: zEvmAddress() })),
-		async (ctx) => {
-			const { db } = ctx.var;
-			const { wallet } = ctx.req.valid("param");
-
-			const following = await db.userFollowing({ userWallet: wallet });
-
-			return respond.ok(
-				ctx,
-				{ following: following.map((f) => f.following) },
-				"Following fetched successfully",
-				200,
-			);
-		},
-	)
-
-	.post(
-		"/follow",
-		authenticated,
-		validator("json", z.object({ walletToFollow: zEvmAddress() })),
-		async (ctx) => {
-			const { db, userWallet } = ctx.var;
-			const { walletToFollow } = ctx.req.valid("json");
-
-			const userToFollow = await db.userByWallet({
-				userWallet: walletToFollow,
-			});
-			if (!userToFollow) {
-				return respond.err(ctx, "User to follow not found", 404);
-			}
-			if (walletToFollow === userWallet) {
-				return respond.err(ctx, "Cannot follow yourself", 400);
-			}
-
-			await db
-				.insert(db.schema.followings)
-				.values({ follower: userWallet, following: walletToFollow })
-				.onConflictDoNothing();
-
-			return respond.ok(ctx, {}, "User followed successfully", 200);
-		},
-	)
-
-	.post(
-		"/unfollow",
-		authenticated,
-		validator("json", z.object({ walletToUnfollow: zEvmAddress() })),
-		async (ctx) => {
-			const { db, userWallet } = ctx.var;
-			const { walletToUnfollow } = ctx.req.valid("json");
-
-			const userToUnfollow = await db.userByWallet({
-				userWallet: walletToUnfollow,
-			});
-			if (!userToUnfollow) {
-				return respond.err(ctx, "User to unfollow not found", 404);
-			}
-			if (walletToUnfollow === userWallet) {
-				return respond.err(ctx, "Cannot unfollow yourself", 400);
-			}
-
-			await db
-				.delete(db.schema.followings)
-				.where(
-					and(
-						eq(db.schema.followings.follower, userWallet),
-						eq(db.schema.followings.following, walletToUnfollow),
-					),
-				);
-
-			return respond.ok(ctx, {}, "User unfollowed successfully", 200);
 		},
 	);
