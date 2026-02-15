@@ -10,7 +10,7 @@ export const authenticated = createMiddleware<{
 		userWallet: Address;
 	} & RouterEnv["Variables"];
 }>(async (ctx, next) => {
-	const { db, eventBus } = ctx.var.appState;
+	const { db } = ctx.var.appState;
 	const cache = db.redis;
 
 	if (!db) {
@@ -39,18 +39,11 @@ export const authenticated = createMiddleware<{
 	const cachedSessionWallet = await cache.get(
 		`user_session:wallet:${payload.sub}`,
 	);
-	const cachedSessionExpiry = await cache.get(
-		`user_session:expiry:${payload.sub}`,
-	);
-	if (cachedSessionWallet && cachedSessionExpiry) {
-		if (
-			parseInt(cachedSessionExpiry, 10) > Date.now() &&
-			isAddress(cachedSessionWallet)
-		) {
+	if (cachedSessionWallet) {
+		if (isAddress(cachedSessionWallet)) {
 			ctx.set("userWallet", cachedSessionWallet);
 		} else {
 			await cache.del(`user_session:wallet:${payload.sub}`);
-			await cache.del(`user_session:expiry:${payload.sub}`);
 			return respond.err(ctx, "Invalid or expired session", 401);
 		}
 	} else {
@@ -66,15 +59,16 @@ export const authenticated = createMiddleware<{
 
 		ctx.set("userWallet", session.userWallet);
 
-		cache.setex(
+		const ttl = payload.exp - Math.floor(Date.now() / 1000);
+
+		if (ttl <= 0) {
+			return respond.err(ctx, "Token expired", 401);
+		}
+
+		await cache.setex(
 			`user_session:wallet:${payload.sub}`,
-			payload.exp,
+			ttl,
 			session.userWallet,
-		);
-		cache.setex(
-			`user_session:expiry:${payload.sub}`,
-			payload.exp,
-			payload.exp.toString(),
 		);
 	}
 
