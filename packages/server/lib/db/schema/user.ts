@@ -32,3 +32,13 @@ export const userCourses = t.sqliteTable("user_courses", {
 
 	...timestamps,
 });
+
+export const userSessions = t.sqliteTable("user_sessions", {
+	id: t
+		.text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	userWallet: tEvmAddress()
+		.notNull()
+		.references(() => users.walletAddress, { onDelete: "cascade" }),
+});
