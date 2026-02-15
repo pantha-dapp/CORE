@@ -75,15 +75,14 @@ beforeAll(
 
 		const testApi = new Hono<RouterEnv>()
 			.use("*", async (ctx, next) => {
-				ctx.set("db", testDb);
-				ctx.set(
-					"ai",
-					createAi({
+				ctx.set("appState", {
+					db: testDb,
+					ai: createAi({
 						aiClient: testAiAdapter,
 						vectorDbClient: testVecDb,
 					}),
-				);
-				ctx.set("eventBus", new InMemoryEventBus());
+					eventBus: new InMemoryEventBus(),
+				});
 
 				await next();
 			})
