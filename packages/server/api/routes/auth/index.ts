@@ -17,13 +17,7 @@ const publicClient = createPublicClient({
 });
 
 function generateNonce(): string {
-	const chars =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	let nonce = "";
-	for (let i = 0; i < 16; i++) {
-		nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-	}
-	return nonce;
+	return Bun.randomUUIDv7();
 }
 
 export default new Hono<RouterEnv>()
@@ -72,7 +66,6 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Invalid address in SIWE message", 400);
 			}
 
-			// const msgData = delete nonces[address];
 			const msgData = await nonceStore.get(address);
 			nonceStore.del(address);
 
@@ -93,9 +86,19 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Invalid signature", 400);
 			}
 
-			const token = issueJwtToken(address);
+			const [session] = await db
+				.insert(db.schema.userSessions)
+				.values({
+					userWallet: address,
+				})
+				.returning();
+			if (!session) {
+				return respond.err(ctx, "Failed to start new jser session", 500);
+			}
 
-			eventBus.emit("user.login", {
+			const token = issueJwtToken(session.id);
+
+			eventBus.emit("user.logged_in", {
 				walletAddress: address,
 			});
 
