@@ -1,19 +1,16 @@
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
-import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import type { Schema } from "../../../../lib/db/schema";
-import { prepareChapter } from "../../../../lib/utils/chapters";
+import type { DbSchema } from "../../../../lib/db/schema";
 import { respond } from "../../../../lib/utils/respond";
-import { registerActivityForStreaks } from "../../../../lib/utils/streaks";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import type { RouterEnv } from "../../types";
 
 type ChapterGameState = {
 	chapterId: string;
-	pages: Array<Schema["chapterPages"]["$inferSelect"]>;
+	pages: Array<DbSchema["chapterPages"]["$inferSelect"]>;
 	currentPage: number;
 	correct: number[];
 	incorrect: number[];
@@ -93,7 +90,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db, ai } = ctx.var.appState;
+			const { db } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { answer } = ctx.req.valid("json");
 
@@ -179,18 +176,6 @@ export default new Hono<RouterEnv>()
 					if (!currentChapter) {
 						throw new Error("Unreachable code: Chapter not found");
 					}
-
-					const [nextChapter] = await db
-						.select()
-						.from(db.schema.courseChapters)
-						.where(
-							and(
-								eq(db.schema.courseChapters.courseId, currentChapter.courseId),
-								eq(db.schema.courseChapters.order, currentChapter.order + 1),
-							),
-						);
-					if (nextChapter) prepareChapter(nextChapter.id, { db, ai });
-					registerActivityForStreaks(db, userWallet);
 
 					return respond.ok(
 						ctx,
