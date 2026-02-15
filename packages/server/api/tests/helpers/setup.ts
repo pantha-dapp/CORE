@@ -15,8 +15,9 @@ import { hardhat } from "viem/chains";
 import { createAi } from "../../../lib/ai";
 import { createDb } from "../../../lib/db";
 import { InMemoryEventBus } from "../../../lib/events/bus";
+import { registerEventHandlers } from "../../../lib/events/handlers";
 import { apiRouter } from "../../routes/router";
-import type { RouterEnv } from "../../routes/types";
+import type { AppState, RouterEnv } from "../../routes/types";
 import { createAuthenticatedApi } from "./apiAuth";
 import { testGlobals } from "./globals";
 import { testAiAdapter } from "./testAiAdapter";
@@ -73,16 +74,22 @@ beforeAll(
 			migrationsFolder: "./drizzle",
 		});
 
+		const testEventBus = new InMemoryEventBus();
+
+		const appState: AppState = {
+			db: testDb,
+			ai: createAi({
+				aiClient: testAiAdapter,
+				vectorDbClient: testVecDb,
+			}),
+			eventBus: testEventBus,
+		};
+
+		registerEventHandlers(appState);
+
 		const testApi = new Hono<RouterEnv>()
 			.use("*", async (ctx, next) => {
-				ctx.set("appState", {
-					db: testDb,
-					ai: createAi({
-						aiClient: testAiAdapter,
-						vectorDbClient: testVecDb,
-					}),
-					eventBus: new InMemoryEventBus(),
-				});
+				ctx.set("appState", appState);
 
 				await next();
 			})
