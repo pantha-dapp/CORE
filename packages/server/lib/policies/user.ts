@@ -36,6 +36,20 @@ const enforcers: Enforcers<"user"> = {
 			"You do not have permission to follow this user.",
 		);
 	},
+
+	"user.unfollow": async (user, resource, app) => {
+		const { db } = app;
+
+		if (user === resource.userWallet)
+			throw new UnauthorizedError("You cannot unfollow yourself.");
+
+		const target = await db.userByWallet({ userWallet: resource.userWallet });
+		if (!target) throw new NotFoundError("User not found.");
+
+		throw new UnauthorizedError(
+			"You do not have permission to unfollow this user.",
+		);
+	},
 };
 
 export default enforcers;
