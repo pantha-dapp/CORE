@@ -14,6 +14,16 @@ export const users = t.sqliteTable("users", {
 
 	name: t.text("name"),
 	timezone: tIanaTimezone("timezone").notNull().default("Europe/London"),
+	profileVisibility: t
+		.text("profile_visibility", { enum: ["private", "public"] })
+		.notNull()
+		.default("public"),
+	followPolicy: t
+		.text("follow_policy", {
+			enum: ["anyone", "manual-approve", "noone"],
+		})
+		.notNull()
+		.default("anyone"),
 
 	...timestamps,
 });
