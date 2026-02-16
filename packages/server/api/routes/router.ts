@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { AppError } from "../../lib/errors/app";
+import { respond } from "../../lib/utils/respond";
 import auth from "./auth";
 import courses from "./courses";
 import jobs from "./jobs";
@@ -18,4 +20,18 @@ export const apiRouter = new Hono<RouterEnv>()
 	.route("/jobs", jobs)
 	.route("/auth", auth)
 	.route("/courses", courses)
-	.route("/users", users);
+	.route("/users", users)
+
+	.onError((err, ctx) => {
+		if (err instanceof AppError) {
+			return respond.err(ctx, err.message ?? err.code, err.status);
+		}
+
+		console.error(err);
+
+		return respond.err(
+			ctx,
+			err.message ?? "INTERNAL_SERVER_ERROR: Something went wrong",
+			500,
+		);
+	});
