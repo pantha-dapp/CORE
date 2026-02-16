@@ -183,6 +183,25 @@ export function dbExtensionHelpers(db: DbClient) {
 		return friends.map((f) => f.following);
 	}
 
+	async function isUserFollowing(args: {
+		userWallet: Address;
+		targetWallet: Address;
+	}) {
+		const { userWallet, targetWallet } = args;
+
+		const [following] = await db
+			.select()
+			.from(schema.followings)
+			.where(
+				and(
+					eq(schema.followings.follower, userWallet),
+					eq(schema.followings.following, targetWallet),
+				),
+			);
+
+		return !!following;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -194,5 +213,6 @@ export function dbExtensionHelpers(db: DbClient) {
 		userFollowing,
 		userFollowers,
 		userFriends,
+		isUserFollowing,
 	};
 }
