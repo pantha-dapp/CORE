@@ -14,31 +14,6 @@ export default new Hono()
 
 	.route("/social", social)
 
-	.get("/me", authenticated, async (ctx) => {
-		const { userWallet } = ctx.var;
-
-		return respond.ok(
-			ctx,
-			{ walletAddress: userWallet },
-			"User info fetched successfully",
-			200,
-		);
-	})
-
-	.get("/me/friends", authenticated, async (ctx) => {
-		const { db } = ctx.var.appState;
-		const { userWallet } = ctx.var;
-
-		const friends = await db.userFriends({ userWallet });
-
-		return respond.ok(
-			ctx,
-			{ friends },
-			"User's friends fetched successfully",
-			200,
-		);
-	})
-
 	.put(
 		"/me",
 		authenticated,
@@ -171,8 +146,13 @@ export default new Hono()
 		authenticated,
 		validator("param", z.object({ wallet: zEvmAddress() })),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
+
+			policyManager.assertCan(userWallet, "user.view", {
+				userWallet: wallet,
+			});
 
 			const user = await db.userByWallet({ userWallet: wallet });
 			if (!user) {
@@ -199,6 +179,30 @@ export default new Hono()
 					},
 				},
 				"User fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.get(
+		"/:wallet/friends",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { wallet } = ctx.req.valid("param");
+
+			policyManager.assertCan(userWallet, "user.view", {
+				userWallet: wallet,
+			});
+
+			const friends = await db.userFriends({ userWallet: wallet });
+
+			return respond.ok(
+				ctx,
+				{ friends },
+				"User's friends fetched successfully",
 				200,
 			);
 		},
