@@ -46,6 +46,13 @@ const enforcers: Enforcers<"user"> = {
 		const target = await db.userByWallet({ userWallet: resource.userWallet });
 		if (!target) throw new NotFoundError("User not found.");
 
+		const isFollowing = await db.isUserFollowing({
+			userWallet: user,
+			targetWallet: resource.userWallet,
+		});
+
+		if (isFollowing) return true;
+
 		throw new UnauthorizedError(
 			"You do not have permission to unfollow this user.",
 		);
