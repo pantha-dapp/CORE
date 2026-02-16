@@ -10,6 +10,7 @@ export type RouterEnv = {
 
 export interface AppState {
 	eventBus: EventBus;
+	policyManager: DefaultPolicyManager;
 	db: Db;
 	ai: Ai;
 }
