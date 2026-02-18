@@ -17,3 +17,9 @@ export class NotImplementedError extends AppError {
 		super(message, "NOT_IMPLEMENTED", 501);
 	}
 }
+
+export class BadRequestError extends AppError {
+	constructor(message = "Bad request") {
+		super(message, "BAD_REQUEST", 400);
+	}
+}

@@ -1,4 +1,4 @@
-import { NotFoundError, UnauthorizedError } from "../errors";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"user"> = {
@@ -27,10 +27,12 @@ const enforcers: Enforcers<"user"> = {
 		const { db } = app;
 
 		if (user === resource.userWallet)
-			throw new UnauthorizedError("You cannot follow yourself.");
+			throw new BadRequestError("You cannot follow yourself.");
 
 		const target = await db.userByWallet({ userWallet: resource.userWallet });
 		if (!target) throw new NotFoundError("User not found.");
+
+		if (target.followPolicy === "anyone") return true;
 
 		throw new UnauthorizedError(
 			"You do not have permission to follow this user.",

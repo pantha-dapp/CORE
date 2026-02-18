@@ -28,11 +28,15 @@ describe("Auth", () => {
 
 	it("Can fetch self info", async () => {
 		const { api1 } = testGlobals;
-		const res = await api1.users.me.$get();
+		const res = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet1.account.address },
+		});
 		const data = await res.json();
 		expect(res.status).toBe(200);
-		expect(data.success).toBe(true);
-		expect(data.data.walletAddress).toBe(userWallet1.account.address);
+		if (!data.success) {
+			throw new Error("Failed to fetch user info");
+		}
+		expect(data.data.user.walletAddress).toBe(userWallet1.account.address);
 	});
 	it("Can fetch other user's info", async () => {
 		const { api1 } = testGlobals;
