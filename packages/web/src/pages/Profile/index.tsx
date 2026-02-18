@@ -1,4 +1,11 @@
-import { useLogout } from "@pantha/react/hooks";
+import { usePanthaContext } from "@pantha/react";
+import {
+	useLogout,
+	useSelfFriends,
+	useUserFollowers,
+	useUserFollowing,
+	useUserInfo,
+} from "@pantha/react/hooks";
 import { useLogout as usePrivyLogout } from "@privy-io/react-auth";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -11,7 +18,21 @@ export default function Profile(): JSX.Element {
 	const router = useRouter();
 	const [openSettings, setOpenSettings] = useState(false);
 	const { mutateAsync: logoutPantha } = useLogout();
+	const { wallet } = usePanthaContext();
+	const walletAddress = wallet?.account.address;
+	const { data: userInfo } = useUserInfo({ walletAddress });
+	const { data: userFollowers } = useUserFollowers({
+		walletAddress,
+	});
+	const { data: userFollowing } = useUserFollowing({
+		walletAddress,
+	});
+	const { data: selfFriends } = useSelfFriends();
 
+	console.log("User Info:", userInfo);
+	console.log("User Followers:", userFollowers);
+	console.log("User Following:", userFollowing);
+	console.log("Self Friends:", selfFriends);
 	return (
 		<>
 			<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-6 py-8 pb-24">
@@ -30,7 +51,7 @@ export default function Profile(): JSX.Element {
 						{/* Avatar */}
 						<div className="relative">
 							<img
-								src="https://api.dicebear.com/7.x/bottts/svg?seed=abhishek"
+								src={`https://api.dicebear.com/7.x/bottts/svg?seed=${userInfo?.user?.walletAddress ?? "abhishek"}`}
 								alt="User avatar"
 								className="w-28 h-28 rounded-full border-4 border-primary bg-background"
 							/>
@@ -41,16 +62,29 @@ export default function Profile(): JSX.Element {
 
 						{/* User Info */}
 						<div className="flex-1 text-center md:text-left">
-							<h1 className="text-2xl font-bold">Abhishek</h1>
-							<p className="text-white/70">@abhishek_ai</p>
+							<h1 className="text-2xl font-bold">
+								{userInfo?.user?.name ?? "Abhishek"}
+							</h1>
+							<p className="text-white/70">
+								@{userInfo?.user?.username ?? "abhishek_ai"}
+							</p>
 							<p className="text-sm text-white/60 mt-1">
 								Joined Jan 2026 • Learning every day 🚀
 							</p>
 
 							<div className="flex justify-center md:justify-start gap-6 mt-4">
-								<Stat label="Followers" value={124} />
-								<Stat label="Following" value={87} />
-								<Stat label="Friends" value={12} />
+								<Stat
+									label="Followers"
+									value={userFollowers?.followers.length ?? 0}
+								/>
+								<Stat
+									label="Following"
+									value={userFollowing?.following.length ?? 0}
+								/>
+								<Stat
+									label="Friends"
+									value={selfFriends?.friends.length ?? 0}
+								/>
 							</div>
 						</div>
 

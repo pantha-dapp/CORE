@@ -1,11 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
+import type { Address } from "viem/accounts";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export function useUnfollowUser() {
 	const { wallet, api } = usePanthaContext();
 
 	return useMutation({
-		mutationFn: async (args: { walletToUnfollow: string }) => {
+		mutationFn: async (args: { walletToUnfollow: Address }) => {
 			const { walletToUnfollow } = args;
 
 			if (!wallet) {

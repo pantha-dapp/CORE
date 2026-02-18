@@ -1,5 +1,15 @@
-import { useState } from "react";
+import { usePanthaContext } from "@pantha/react";
+import {
+	useFollowUser,
+	useSearchUsers,
+	useUnfollowUser,
+	useUserFollowing,
+} from "@pantha/react/hooks";
+import { useEffect, useRef, useState } from "react";
+import type { Address } from "viem";
 import Button from "../../shared/components/Button";
+import Icon from "../../shared/components/Icon";
+import Input from "../../shared/components/Input";
 
 type Tab = "feed" | "chats" | "friends";
 
@@ -40,13 +50,154 @@ function SectionCard({
 	);
 }
 
+function UserSearchBar() {
+	const [searchQuery, setSearchQuery] = useState("");
+	const [isOpen, setIsOpen] = useState(false);
+	const [followedWallets, setFollowedWallets] = useState<Set<string>>(
+		new Set(),
+	);
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	const { wallet } = usePanthaContext();
+	const { data: searchResults, isLoading } = useSearchUsers({
+		query: searchQuery,
+	});
+	const { data: followingData } = useUserFollowing({
+		walletAddress: wallet?.account.address,
+	});
+	const followUser = useFollowUser();
+	const unfollowUser = useUnfollowUser();
+
+	// Build set of wallets the current user follows
+	const followingSet = new Set([
+		...(followingData?.following ?? []),
+		...followedWallets,
+	]);
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		function handleClickOutside(e: MouseEvent) {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(e.target as Node)
+			) {
+				setIsOpen(false);
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
+
+	function handleFollow(walletAddress: Address) {
+		setFollowedWallets((prev) => new Set([...prev, walletAddress]));
+		followUser.mutate({ walletToFollow: walletAddress });
+	}
+
+	function handleUnfollow(walletAddress: Address) {
+		setFollowedWallets((prev) => {
+			const next = new Set(prev);
+			next.delete(walletAddress);
+			return next;
+		});
+		unfollowUser.mutate({ walletToUnfollow: walletAddress });
+	}
+
+	const users = searchResults?.users ?? [];
+	const showDropdown = isOpen && searchQuery.length > 0;
+
+	return (
+		<div ref={containerRef} className="relative mb-6">
+			<Input
+				icon="search"
+				iconPosition="left"
+				placeholder="Search users by username..."
+				size="lg"
+				fullWidth
+				value={searchQuery}
+				onChange={(e) => {
+					setSearchQuery(e.target.value);
+					setIsOpen(true);
+				}}
+				onFocus={() => setIsOpen(true)}
+				className="rounded-2xl!"
+			/>
+
+			{showDropdown && (
+				<div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl z-50">
+					{isLoading ? (
+						<div className="flex items-center justify-center py-6 text-gray-400 text-sm">
+							<Icon name="loader" size={18} className="animate-spin mr-2" />
+							Searching...
+						</div>
+					) : users.length === 0 ? (
+						<div className="flex flex-col items-center justify-center py-8 text-gray-400">
+							<Icon name="user-x" size={32} className="mb-2 opacity-50" />
+							<p className="text-sm">No users found for "{searchQuery}"</p>
+						</div>
+					) : (
+						<div className="max-h-80 overflow-y-auto">
+							{users.map((user) => {
+								const isFollowing = followingSet.has(user.walletAddress);
+								const isSelf = wallet?.account.address === user.walletAddress;
+
+								return (
+									<div
+										key={user.walletAddress}
+										className="flex items-center gap-4 px-4 py-3 hover:bg-gray-700/50 transition"
+									>
+										<div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center font-bold text-sm shrink-0">
+											{(user.username ?? "?").charAt(0).toUpperCase()}
+										</div>
+										<div className="flex-1 min-w-0">
+											<p className="font-semibold text-white truncate">
+												{user.username}
+											</p>
+											{user.name && (
+												<p className="text-xs text-gray-400 truncate">
+													{user.name}
+												</p>
+											)}
+										</div>
+										{!isSelf &&
+											(isFollowing ? (
+												<Button
+													onClick={() =>
+														handleUnfollow(user.walletAddress as Address)
+													}
+													className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-300 px-4 py-2 rounded-xl text-sm font-semibold transition"
+												>
+													Unfollow
+												</Button>
+											) : (
+												<Button
+													onClick={() =>
+														handleFollow(user.walletAddress as Address)
+													}
+													className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition"
+												>
+													Follow
+												</Button>
+											))}
+									</div>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
 export default function Social() {
 	const [activeTab, setActiveTab] = useState<Tab>("feed");
-
 	return (
 		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-4 pb-24">
 			<div className="max-w-4xl mx-auto">
 				<div className="h-20" />
+
+				{/* User Search */}
+				<UserSearchBar />
 
 				{/* Tabs */}
 				<div className="bg-gray-800/50 rounded-full p-1.5 border border-gray-700/50 mb-6 flex gap-2">
