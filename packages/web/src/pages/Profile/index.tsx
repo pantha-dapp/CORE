@@ -1,4 +1,5 @@
-import { usePrivy } from "@privy-io/react-auth";
+import { useLogout } from "@pantha/react/hooks";
+import { useLogout as usePrivyLogout } from "@privy-io/react-auth";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -6,9 +7,10 @@ import type { JSX } from "react/jsx-runtime";
 import Button from "../../shared/components/Button";
 
 export default function Profile(): JSX.Element {
-	const { logout } = usePrivy();
+	const { logout: logoutPrivy } = usePrivyLogout();
 	const router = useRouter();
 	const [openSettings, setOpenSettings] = useState(false);
+	const { mutateAsync: logoutPantha } = useLogout();
 
 	return (
 		<>
@@ -57,6 +59,17 @@ export default function Profile(): JSX.Element {
 							onClick={() => router.navigate({ to: "/login", replace: true })}
 						>
 							+ Add Friends
+						</Button>
+
+						<Button
+							className="bg-accent2 text-white px-4 py-2 rounded-xl font-semibold"
+							onClick={async () => {
+								console.log("Logging out...");
+								await Promise.all([logoutPrivy(), logoutPantha()]);
+								router.navigate({ to: "/login", replace: true });
+							}}
+						>
+							Sign Out
 						</Button>
 					</div>
 
@@ -133,7 +146,7 @@ export default function Profile(): JSX.Element {
 
 						<Button
 							onClick={async () => {
-								await logout();
+								await Promise.all([logoutPrivy(), logoutPantha()]);
 								router.navigate({ to: "/login", replace: true });
 							}}
 							className="w-full bg-accent2 text-white py-3 rounded-xl font-semibold"
