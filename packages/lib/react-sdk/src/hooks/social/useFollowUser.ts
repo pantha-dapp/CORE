@@ -1,11 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
+import type { Address } from "viem";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export function useFollowUser() {
 	const { wallet, api } = usePanthaContext();
 
 	return useMutation({
-		mutationFn: async (args: { walletToFollow: string }) => {
+		mutationFn: async (args: { walletToFollow: Address }) => {
 			const { walletToFollow } = args;
 
 			if (!wallet) {

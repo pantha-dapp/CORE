@@ -15,6 +15,20 @@ export default new Hono()
 
 	.route("/social", social)
 
+	.get(
+		"/search",
+		authenticated,
+		validator("query", z.object({ q: z.string().min(1).max(50) })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { q } = ctx.req.valid("query");
+
+			const users = await db.searchUsersByUsername({ query: q });
+
+			return respond.ok(ctx, { users }, "Users search completed", 200);
+		},
+	)
+
 	.put(
 		"/me",
 		authenticated,

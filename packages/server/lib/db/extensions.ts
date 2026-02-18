@@ -1,5 +1,5 @@
 // import type { Address } from "viem";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import type { Address } from "viem";
 import type { DbClient } from "./client";
 import schema from "./schema";
@@ -202,6 +202,25 @@ export function dbExtensionHelpers(db: DbClient) {
 		return !!following;
 	}
 
+	async function searchUsersByUsername(args: {
+		query: string;
+		limit?: number;
+	}) {
+		const { query, limit = 10 } = args;
+
+		const users = await db
+			.select({
+				walletAddress: schema.users.walletAddress,
+				username: schema.users.username,
+				name: schema.users.name,
+			})
+			.from(schema.users)
+			.where(like(schema.users.username, `%${query}%`))
+			.limit(limit);
+
+		return users;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -214,5 +233,6 @@ export function dbExtensionHelpers(db: DbClient) {
 		userFollowers,
 		userFriends,
 		isUserFollowing,
+		searchUsersByUsername,
 	};
 }

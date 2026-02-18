@@ -12,7 +12,11 @@ export function useSelfFriends() {
 				throw new Error("not connected");
 			}
 
-			const friendsResponseRaw = await api.rpc.users.me.friends.$get();
+			const friendsResponseRaw = await api.rpc.users[":wallet"].friends.$get({
+				param: {
+					wallet: wallet.account.address,
+				},
+			});
 			const friendsResponse = await friendsResponseRaw.json();
 
 			if (!friendsResponse.success) {
