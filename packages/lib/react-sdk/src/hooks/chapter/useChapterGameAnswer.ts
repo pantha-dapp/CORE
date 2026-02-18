@@ -35,7 +35,7 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 			}
 
 			const actionResponseRaw =
-				await api.rpc.course.chapters.session.answer.$post({
+				await api.rpc.courses.chapters.session.answer.$post({
 					json: { answer },
 				});
 			const actionResponse = await actionResponseRaw.json();

@@ -12,7 +12,7 @@ export function useEnrollForCourse() {
 				throw new Error("not connected");
 			}
 
-			const enrollResponseRaw = await api.rpc.course.enroll.$post({
+			const enrollResponseRaw = await api.rpc.courses.enroll.$post({
 				json: {
 					courseId,
 				},

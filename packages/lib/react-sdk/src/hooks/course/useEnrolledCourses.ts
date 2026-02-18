@@ -11,7 +11,7 @@ export function useEnrolledCourses() {
 				throw new Error("not connected");
 			}
 
-			const enrollmentsResponseRaw = await api.rpc.course.enrolled.$get();
+			const enrollmentsResponseRaw = await api.rpc.courses.enrolled.$get();
 			const enrollmentsResponse = await enrollmentsResponseRaw.json();
 
 			if (!enrollmentsResponse.success) {

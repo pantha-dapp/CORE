@@ -13,9 +13,11 @@ export function useChapterPages(args: { chapterId: string }) {
 				throw new Error("not connected");
 			}
 
-			const pagesResponseRaw = await api.rpc.course.chapters[":id"].pages.$get({
-				param: { id: chapterId },
-			});
+			const pagesResponseRaw = await api.rpc.courses.chapters[":id"].pages.$get(
+				{
+					param: { id: chapterId },
+				},
+			);
 			const pagesResponse = await pagesResponseRaw.json();
 
 			if (!pagesResponse.success) {

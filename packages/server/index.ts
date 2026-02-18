@@ -6,27 +6,39 @@ ensureEnv();
 
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RedisClient } from "bun";
-import { attachAi } from "./api/middleware/attachAi";
-import { attachEventBus } from "./api/middleware/attachAppState";
-import { attachDb } from "./api/middleware/attachDb";
+import { attachAppState } from "./api/middleware/attachAppState";
+import { createAi } from "./lib/ai";
 import { aiAdapter } from "./lib/ai/engine";
+import { createDb } from "./lib/db";
 import { InMemoryEventBus } from "./lib/events/bus";
+import { DefaultPolicyManager } from "./lib/policies";
 import { app } from "./server";
 
-app
-	.use(
-		attachDb(
-			env.SQLITE_FILE_PATH,
-			new QdrantClient({
-				host: env.QDRANT_HOST,
-				port: parseInt(env.QDRANT_PORT, 10),
-				checkCompatibility: false,
-			}),
-			new RedisClient(),
-		),
-	)
-	.use(attachAi(aiAdapter))
-	.use(attachEventBus(new InMemoryEventBus()));
+const vectorDbClient = new QdrantClient({
+	host: env.QDRANT_HOST,
+	port: parseInt(env.QDRANT_PORT, 10),
+	checkCompatibility: false,
+});
+
+const db = createDb(env.SQLITE_FILE_PATH, {
+	vectorDbClient,
+	redisClient: new RedisClient(),
+});
+
+const ai = createAi({ aiClient: aiAdapter, vectorDbClient });
+
+const eventBus = new InMemoryEventBus();
+
+const policyManager = new DefaultPolicyManager({ db });
+
+app.use(
+	attachAppState({
+		db,
+		ai,
+		eventBus,
+		policyManager,
+	}),
+);
 
 //@ts-expect-error
 BigInt.prototype.toJSON = function () {

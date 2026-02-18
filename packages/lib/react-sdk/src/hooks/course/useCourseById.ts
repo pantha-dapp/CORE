@@ -12,7 +12,7 @@ export function useCourseById(args: { id: string }) {
 				throw new Error("not connected");
 			}
 
-			const courseResponseRaw = await api.rpc.course[":id"].$get({
+			const courseResponseRaw = await api.rpc.courses[":id"].$get({
 				param: { id },
 			});
 			const courseResponse = await courseResponseRaw.json();

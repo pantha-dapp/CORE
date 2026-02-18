@@ -13,7 +13,7 @@ export function useChapterGameSession(args: { chapterId: string }) {
 				throw new Error("not connected");
 			}
 
-			const sessionResponseRaw = await api.rpc.course.chapters.session.$get({
+			const sessionResponseRaw = await api.rpc.courses.chapters.session.$get({
 				query: { chapterId },
 			});
 			const sessionResponse = await sessionResponseRaw.json();
