@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import z from "zod";
 import { ianaTimeZones } from "../../../data/timezones";
 import schema from "../../../lib/db/schema";
+import { NotFoundError } from "../../../lib/errors";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -86,19 +87,13 @@ export default new Hono()
 		authenticated,
 		validator("json", z.object({ walletToFollow: zEvmAddress() })),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { db, policyManager } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { walletToFollow } = ctx.req.valid("json");
 
-			const userToFollow = await db.userByWallet({
+			await policyManager.assertCan(userWallet, "user.follow", {
 				userWallet: walletToFollow,
 			});
-			if (!userToFollow) {
-				return respond.err(ctx, "User to follow not found", 404);
-			}
-			if (walletToFollow === userWallet) {
-				return respond.err(ctx, "Cannot follow yourself", 400);
-			}
 
 			await db
 				.insert(db.schema.followings)
@@ -114,19 +109,13 @@ export default new Hono()
 		authenticated,
 		validator("json", z.object({ walletToUnfollow: zEvmAddress() })),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { db, policyManager } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { walletToUnfollow } = ctx.req.valid("json");
 
-			const userToUnfollow = await db.userByWallet({
+			await policyManager.assertCan(userWallet, "user.unfollow", {
 				userWallet: walletToUnfollow,
 			});
-			if (!userToUnfollow) {
-				return respond.err(ctx, "User to unfollow not found", 404);
-			}
-			if (walletToUnfollow === userWallet) {
-				return respond.err(ctx, "Cannot unfollow yourself", 400);
-			}
 
 			await db
 				.delete(db.schema.followings)
@@ -150,13 +139,13 @@ export default new Hono()
 			const { userWallet } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
 
-			policyManager.assertCan(userWallet, "user.view", {
+			await policyManager.assertCan(userWallet, "user.view", {
 				userWallet: wallet,
 			});
 
 			const user = await db.userByWallet({ userWallet: wallet });
 			if (!user) {
-				return respond.err(ctx, "User not found", 404);
+				throw new NotFoundError("User not found");
 			}
 
 			const [streak] = await db
@@ -193,7 +182,7 @@ export default new Hono()
 			const { userWallet } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
 
-			policyManager.assertCan(userWallet, "user.view", {
+			await policyManager.assertCan(userWallet, "user.view", {
 				userWallet: wallet,
 			});
 

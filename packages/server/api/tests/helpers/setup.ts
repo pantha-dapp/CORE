@@ -16,6 +16,7 @@ import { createAi } from "../../../lib/ai";
 import { createDb } from "../../../lib/db";
 import { InMemoryEventBus } from "../../../lib/events/bus";
 import { registerEventHandlers } from "../../../lib/events/handlers";
+import { DefaultPolicyManager } from "../../../lib/policies";
 import { apiRouter } from "../../routes/router";
 import type { AppState, RouterEnv } from "../../routes/types";
 import { createAuthenticatedApi } from "./apiAuth";
@@ -76,6 +77,8 @@ beforeAll(
 
 		const testEventBus = new InMemoryEventBus();
 
+		const testPolicyManager = new DefaultPolicyManager({ db: testDb });
+
 		const appState: AppState = {
 			db: testDb,
 			ai: createAi({
@@ -83,6 +86,7 @@ beforeAll(
 				vectorDbClient: testVecDb,
 			}),
 			eventBus: testEventBus,
+			policyManager: testPolicyManager,
 		};
 
 		registerEventHandlers(appState);
