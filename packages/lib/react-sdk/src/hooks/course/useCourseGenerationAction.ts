@@ -36,7 +36,7 @@ export function useCourseGenerationAction() {
 
 	return useMutation({
 		mutationFn: async (args: {
-			action: InferRequestType<typeof api.rpc.course.gen.action.$post>["json"];
+			action: InferRequestType<typeof api.rpc.courses.gen.action.$post>["json"];
 		}) => {
 			const { action } = args;
 
@@ -44,7 +44,7 @@ export function useCourseGenerationAction() {
 				throw new Error("not connected");
 			}
 
-			const actionResponseRaw = await api.rpc.course.gen.action.$post({
+			const actionResponseRaw = await api.rpc.courses.gen.action.$post({
 				json: action,
 			});
 			const actionResponse = await actionResponseRaw.json();

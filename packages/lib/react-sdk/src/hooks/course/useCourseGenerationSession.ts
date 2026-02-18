@@ -12,7 +12,7 @@ export function useCourseGenerationSession() {
 				throw new Error("not connected");
 			}
 
-			const sessionResponseRaw = await api.rpc.course.gen.session.$get();
+			const sessionResponseRaw = await api.rpc.courses.gen.session.$get();
 			const sessionResponse = await sessionResponseRaw.json();
 
 			if (!sessionResponse.success) {

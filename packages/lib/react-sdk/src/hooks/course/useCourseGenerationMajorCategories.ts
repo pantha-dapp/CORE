@@ -12,7 +12,7 @@ export function useCourseGenerationMajorCategories() {
 				throw new Error("not connected");
 			}
 
-			const categoriesResponseRaw = await api.rpc.course.gen.categories.$get();
+			const categoriesResponseRaw = await api.rpc.courses.gen.categories.$get();
 			const categoriesResponse = await categoriesResponseRaw.json();
 
 			if (!categoriesResponse.success) {
