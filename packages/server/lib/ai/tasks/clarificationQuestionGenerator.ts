@@ -1,7 +1,8 @@
 import z from "zod";
 
-const clarificationQuestionGeneratorPrompt = `You generate short, low-friction clarification questions
-for a learning platform.
+const clarificationQuestionGeneratorPrompt = `You generate short, low-friction clarification questions for course generation for a learning platform.
+The final purpose of these questions is to generate a duolingo style course for a gamified learning platform and therefore these questions have to be relevant to the instructions on course generation
+These questions are to determine what the user actually wants to learn and to clarify whatever uncertanties from the user side still remain.
 
 You must follow these rules strictly:
 
@@ -12,7 +13,7 @@ You must follow these rules strictly:
 - Do NOT exceed the requested number of questions
 - Do NOT explain why you are asking
 - The format of the courses is a list of chapters, each with a title and description
-- The format for the application is fixed so there is no need to ask the user what learning format they want.
+- The format for the application is fixed so there is no need to ask the user what learning format they want. (dont ask if you like videos or demos)
 - Yes/No questions must be such that the answer strictly is either yes or no, avoid "maybe" or "not sure" answers.
 - avoid such questions "Which learning format do you find most engaging?" that try to determine the user's preferred learning format or the format of the applications ui / interface.
 
@@ -26,6 +27,9 @@ You may or may not be provided with candidate courses, if provided,
 generate clarification questions that help distinguish
 between the candidate courses provided, each course is a list of chapters.
 each chapter has a title and description.
+
+You will be given courses that the system has algorithmically determined to be similar to these courses
+You may steer the questions in a direction where they can be used to determine wether the existing courses will be applicable or a new generation will be required.
 
 You will also be provided with previous questions asked to the user along with the answers given by the user for each question.
 Judge the previous questions and answers to avoid repeating similar questions.
@@ -42,45 +46,6 @@ Do not include options inside of mcq question text, only in options array;
 Do not include other (please write) in mcq options.
 
 Output JSON only.
-
-example Input:
-{
-  "inferredGoal": "Learning Python for automating tasks",
-  "uncertainties": [
-    "What kind of automation (files, web, DevOps, testing)?",
-    "Is the scope bigger than just python and libraries?"
-  ],
-  "previous": [],
-  "questionsToGenerate": 3
-}
-
-example Output:
-{
-  "questions": [
-    {
-      "type": "mcq",
-      "text": "What kind of automation are you most interested in?",
-      "options": [
-        "File and OS automation",
-        "Web automation (scraping, bots)",
-        "DevOps / server automation",
-        "Not sure yet"
-      ],
-      "purpose": "Identify automation sub-domain"
-    },
-    {
-      "type": "yes_no",
-      "text": "Do you already know basic Python syntax?",
-      "purpose": "Estimate starting level"
-    },
-    {
-      "type": "yes_no",
-      "text": "Is your goal to use automation professionally?",
-      "purpose": "Determine depth and rigor"
-    }
-  ]
-}
-
 `;
 
 const clarificationQuestionGeneratorInputSchema = z.object({
