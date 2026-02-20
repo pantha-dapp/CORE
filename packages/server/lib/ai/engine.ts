@@ -4,6 +4,7 @@ import { z } from "zod";
 import { type LanguageCode, languageCodesAndNames } from "../../data/languages";
 import env from "../../env";
 import type { AiClient } from "./client";
+import { structuralRepairPrompt } from "./corrections";
 
 export const aiAdapter: AiClient = {
 	llm: {
@@ -32,6 +33,62 @@ export const aiAdapter: AiClient = {
 				outputSchema,
 			});
 
+			const parsed = outputSchema.safeParse(response);
+
+			if (!parsed.success) {
+				const structurallyRepaired = await chat({
+					adapter: correctionAdapter,
+					stream: false,
+					messages: [
+						{
+							role: "user",
+							content: JSON.stringify({
+								response,
+								// expectedSchema: outputSchema.def,
+							}),
+						},
+					],
+					systemPrompts: [structuralRepairPrompt],
+					outputSchema,
+				});
+				const repairedParsed = outputSchema.safeParse(structurallyRepaired);
+				if (!repairedParsed.success) {
+					const contextuallyStructurallyRepaired = await chat({
+						adapter: correctionAdapter,
+						stream: false,
+						messages: [
+							{
+								role: "user",
+								content: JSON.stringify({
+									originalPrompt: prompt,
+									originalInput: input,
+									// expectedSchema: outputSchema.def,
+									previouslyGeneratedOutput: response,
+									validationErrorDetails: parsed.error.format(),
+								}),
+							},
+						],
+						systemPrompts: [structuralRepairPrompt],
+						outputSchema,
+					});
+
+					const contextuallyRepairedParsed = outputSchema.safeParse(
+						contextuallyStructurallyRepaired,
+					);
+					if (!contextuallyRepairedParsed.success) {
+						console.error("Failed to structurally repair JSON output", {
+							originalResponse: response,
+							structurallyRepaired,
+							contextuallyStructurallyRepaired,
+							originalPrompt: prompt,
+							validationErrorDetails: parsed.error.format(),
+						});
+						throw new Error("Failed to structurally repair JSON output");
+					}
+					return contextuallyRepairedParsed.data;
+				}
+			}
+
 			return response;
 		},
 	},
@@ -45,6 +102,15 @@ export const aiAdapter: AiClient = {
 const chatAdapter = createOpenaiChat(
 	//@ts-expect-error
 	"openai/gpt-oss-120b",
+	env.GROQ_API_KEY,
+	{
+		baseURL: "https://api.groq.com/openai/v1",
+	},
+);
+
+const correctionAdapter = createOpenaiChat(
+	//@ts-expect-error
+	"openai/gpt-oss-20b",
 	env.GROQ_API_KEY,
 	{
 		baseURL: "https://api.groq.com/openai/v1",
