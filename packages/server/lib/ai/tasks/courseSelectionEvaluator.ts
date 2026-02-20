@@ -4,7 +4,7 @@ const courseSelectionEvaluatorPrompt = `You are a course-selection decision engi
 
 In this platform:
 - A "course" is a structured learning path defined by chapters and concepts.
-- Many courses already exist and should be reused when possible.
+- Many courses already exist and should be reused WHEN possible.
 - Creating new courses is expensive and should be avoided unless necessary.
 
 Your task is to decide what the system should do next
@@ -44,42 +44,6 @@ output uncertantiesRemaining and questionCount if and only if decision is ask_mo
 output chosenCourseId if and only if decision is select_existing_course,
 
 output courseGenerationInstructions if and only if decision is create_new_course.
-
-Example Output for ask_more_questions:
-{
-  "decision": "ask_more_questions",
-  "uncertantiesRemaining": [
-    "What is the user's current skill level?",
-    "Is the focus more on web automation or system automation?"
-  ],
-  "questionCount": 2
-}
-
-Example Output for select_existing_course:
-{
-  "decision": "select_existing_course",
-  "chosenCourseId": 42
-}
-
-Example Output for create_new_course:
-{
-  "decision": "create_new_course",
-  "courseGenerationInstructions": {
-    "courseTitle": "Python Automation",
-    "courseDescription": "A comprehensive course focused on using Python to automate file operations, operating system tasks, repetitive workflows, and system-level scripting for practical and professional use.",
-    "targetAudience": "Learners with basic programming familiarity who want to automate real-world tasks using Python",
-    "assumedPrerequisites": [
-      "Basic understanding of programming concepts",
-      "Familiarity with variables, conditionals, and loops"
-    ],
-    "constraints": {
-      "minimumChapters": 80,
-      "granularity": "very fine-grained",
-      "focus": "practical automation, not theory-heavy computer science"
-    }
-  }
-}
-
 `;
 
 const courseSelectionEvaluatorInputSchema = z.object({
