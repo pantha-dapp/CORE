@@ -7,16 +7,6 @@ import { categories } from "../../../../data/categories";
 import type clarificationQuestionGenerator from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
 import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/utils";
 import { createVectorDb } from "../../../../lib/db/vec/client";
-// import {
-// 	clarificationQuestionGenerator,
-// 	courseSelectionEvaluator,
-// 	generateCanonicalCourseDescriptor,
-// 	generateIdealCourseDescriptor,
-// 	generateNewCourseSkeleton,
-// 	intentClarification,
-// } from "../../../../lib/ai/tasks";
-// import type { clarificationQuestionGeneratorOutputSchema } from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
-// import { createVectorDbClient } from "../../../../lib/db/vec/client";
 import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
