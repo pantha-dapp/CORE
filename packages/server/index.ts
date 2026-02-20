@@ -7,6 +7,7 @@ ensureEnv();
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RedisClient } from "bun";
 import { attachAppState } from "./api/middleware/attachAppState";
+import type { AppState } from "./api/routes/types";
 import { createAi } from "./lib/ai";
 import { aiAdapter } from "./lib/ai/engine";
 import { createDb } from "./lib/db";
@@ -17,28 +18,22 @@ import { app } from "./server";
 const vectorDbClient = new QdrantClient({
 	host: env.QDRANT_HOST,
 	port: parseInt(env.QDRANT_PORT, 10),
-	checkCompatibility: false,
+	checkCompatibility: true,
 });
-
-const db = createDb(env.SQLITE_FILE_PATH, {
-	vectorDbClient,
-	redisClient: new RedisClient(),
-});
-
-const ai = createAi({ aiClient: aiAdapter, vectorDbClient });
-
+const redisClient = new RedisClient();
+const db = createDb(env.SQLITE_FILE_PATH, { vectorDbClient, redisClient });
+const ai = createAi({ vectorDbClient, aiClient: aiAdapter });
 const eventBus = new InMemoryEventBus();
-
 const policyManager = new DefaultPolicyManager({ db });
 
-app.use(
-	attachAppState({
-		db,
-		ai,
-		eventBus,
-		policyManager,
-	}),
-);
+const appState: AppState = {
+	ai,
+	db,
+	eventBus,
+	policyManager,
+};
+
+app.use(attachAppState(appState));
 
 //@ts-expect-error
 BigInt.prototype.toJSON = function () {
