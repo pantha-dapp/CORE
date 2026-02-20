@@ -40,38 +40,7 @@ Icons must be generic and not specific / chapter content related. They are only 
 
 Output ONLY valid JSON matching the schema.
 Do NOT include commentary, explanations, or markdown formatting.
-
-Example Output:
-{
-  "overview": {
-    "title": "Python Automation Mastery",
-    "description": "A comprehensive course covering Python scripting and automation techniques from fundamentals to advanced applications.",
-    "icon": "Python language",
-    "topics": ["Python scripting", "Task automation", "File operations", "API integration", "Web scraping"],
-    "chapters": [
-      {
-        "title": "Setting Up Your Python Environment",
-        "description": "Learn how to install Python, set up a virtual environment, and manage packages using pip.",
-        "topics": [
-          "Installing Python",
-          "Creating virtual environments",
-          "Using pip for package management"
-        ],
-        "intent": "introduce"
-      },
-      {
-        "title": "Understanding Variables and Data Types",
-        "description": "Master the fundamentals of Python variables, data types, and basic operations.",
-        "topics": [
-          "Variable declaration",
-          "Strings, integers, floats",
-          "Type conversion"
-        ],
-        "intent": "introduce"
-      }
-    ]
-  }
-}`;
+`;
 
 const generateNewCourseSkeletonInputSchema = z.object({
 	courseTitle: z.string(),
