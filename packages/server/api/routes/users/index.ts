@@ -96,6 +96,30 @@ export default new Hono()
 		},
 	)
 
+	.get(
+		"/:wallet/courses",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { wallet } = ctx.req.valid("param");
+
+			await policyManager.assertCan(userWallet, "user.view", {
+				userWallet: wallet,
+			});
+
+			const courses = await db.userEnrollments({ userWallet: wallet });
+
+			return respond.ok(
+				ctx,
+				{ courses },
+				"User's courses fetched successfully",
+				200,
+			);
+		},
+	)
+
 	.post(
 		"/follow",
 		authenticated,

@@ -22,7 +22,8 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
@@ -30,6 +31,10 @@ export default new Hono<RouterEnv>()
 			if (!chapter) {
 				return respond.err(ctx, "Chapter not found.", 404);
 			}
+
+			await policyManager.assertCan(userWallet, "chapter.view", {
+				chapterId: id,
+			});
 
 			return respond.ok(ctx, { chapter }, "Chapter fetched successfully.", 200);
 		},
@@ -45,13 +50,18 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db, ai } = ctx.var.appState;
+			const { db, ai, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
 			const { id } = ctx.req.valid("param");
 
 			const chapter = await db.chapterById({ chapterId: id });
 			if (!chapter) {
 				return respond.err(ctx, "Chapter not found.", 404);
 			}
+
+			await policyManager.assertCan(userWallet, "chapter.view", {
+				chapterId: id,
+			});
 
 			const pages = await db.chapterPagesById({ chapterId: id });
 			if (!pages || pages.length === 0) {
