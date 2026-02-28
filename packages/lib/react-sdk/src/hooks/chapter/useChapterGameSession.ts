@@ -1,16 +1,17 @@
-import { MINUTE } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useChapterGameSession(args: { chapterId: string }) {
+export function useChapterGameSession(args: { chapterId?: string }) {
 	const { wallet, api } = usePanthaContext();
 	const { chapterId } = args;
+
+	const enabled = !!wallet && !!chapterId;
 
 	return useQuery({
 		queryKey: ["last-chapter-game-session", chapterId],
 		queryFn: async () => {
-			if (!wallet) {
-				throw new Error("not connected");
+			if (!enabled) {
+				throw new Error("unreachable");
 			}
 
 			const sessionResponseRaw = await api.rpc.courses.chapters.session.$get({
@@ -26,6 +27,6 @@ export function useChapterGameSession(args: { chapterId: string }) {
 
 			return sessionResponse.data;
 		},
-		staleTime: 2 * MINUTE,
+		enabled,
 	});
 }

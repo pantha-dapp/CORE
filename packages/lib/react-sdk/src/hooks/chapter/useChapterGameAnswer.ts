@@ -40,15 +40,26 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 				});
 			const actionResponse = await actionResponseRaw.json();
 
-			if (actionResponse.success) {
-				refreshSession();
-			} else {
+			if (!actionResponse.success) {
 				throw new Error("Failed to perform action", {
 					cause: actionResponse.error,
 				});
 			}
 
-			return actionResponse.data;
+			const data = actionResponse.data;
+
+			if (data.complete) {
+				refreshSession();
+			} else {
+				if (chapterId) {
+					queryClient.setQueryData(["last-chapter-game-session", chapterId], {
+						chapterId,
+						currentPage: data.currentPage,
+					});
+				}
+			}
+
+			return data;
 		},
 	});
 }
