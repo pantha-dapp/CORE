@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../../shared/components/Button";
 
 interface Props {
@@ -19,6 +19,13 @@ export function Quiz({
 	const [selectedOption, setSelectedOption] = useState<number | null>(null);
 	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Reset local state when a new question is provided by the parent/back-end.
+	useEffect(() => {
+		setSelectedOption(null);
+		setShowResult(false);
+		setIsSubmitting(false);
+	}, [question, correctOptionIndex]);
 
 	const isCorrect = selectedOption === correctOptionIndex;
 

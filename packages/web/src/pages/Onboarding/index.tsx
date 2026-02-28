@@ -2,8 +2,8 @@ import {
 	useCourseGenerationAction,
 	useCourseGenerationMajorCategories,
 	useCourseGenerationSession,
-	useEnrolledCourses,
 	useJobStatus,
+	useUserCourses,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
@@ -15,7 +15,7 @@ export default function Onboarding() {
 	const jobState = useJobStatus({ jobId: actionData?.awaitedJobId });
 	const majorCategories = useCourseGenerationMajorCategories();
 	const router = useRouter();
-	const enrolledCourses = useEnrolledCourses();
+	const enrolledCourses = useUserCourses();
 	const currentQuestion = useMemo(
 		() => session.data?.session.questions.find((q) => !q.answer),
 		[session.data],
