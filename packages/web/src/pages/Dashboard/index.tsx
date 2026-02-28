@@ -38,7 +38,7 @@ function CourseIcon({
 			<div
 				className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${
 					isActive
-						? "bg-green-500 scale-105 shadow-lg shadow-green-500/50"
+						? "bg-gray-500 scale-105 shadow-lg shadow-gray-500/50"
 						: "bg-gray-700 hover:bg-gray-600"
 				}`}
 			>
@@ -159,9 +159,9 @@ export default function Dashboard() {
 					{/* Course Icon Button - Opens drawer */}
 					<Button
 						onClick={() => setShowCourseDrawer(!showCourseDrawer)}
-						className="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
+						variant="quantum"
 					>
-						<span className="text-white font-bold text-xl">📚</span>
+						<span className="text-white  font-bold text-xl">📚</span>
 					</Button>
 
 					{/* Streak */}
@@ -210,8 +210,8 @@ export default function Dashboard() {
 						{/* Add Course Button */}
 						<div className="flex flex-col items-center gap-2 min-w-20">
 							<Button
+								variant="tertiary"
 								onClick={() => router.navigate({ to: "/onboarding" })}
-								className="w-14 h-14 rounded-xl bg-gray-700 hover:bg-green-600 flex items-center justify-center cursor-pointer transition-all border-2 border-dashed border-gray-500 hover:border-green-500"
 							>
 								<span className="text-white font-bold text-2xl">+</span>
 							</Button>
