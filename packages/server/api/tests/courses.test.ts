@@ -1,6 +1,7 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setSystemTime } from "bun:test";
 import { jsonStringify } from "@pantha/shared";
 import { testGlobals } from "./helpers/globals";
+import { userWallet1 } from "./helpers/setup";
 import { testChapterGenerationPages } from "./helpers/testAiAdapter";
 
 async function awaitJob(jobId: string) {
@@ -31,13 +32,15 @@ let firstChapterId: string;
 describe("Courses Generation & Entrollment", () => {
 	it("initially user has no enrollments", async () => {
 		const { api1 } = testGlobals;
-		const enrolledRes = await api1.courses.enrolled.$get();
+		const enrolledRes = await api1.users[":wallet"].courses.$get({
+			param: { wallet: userWallet1.account.address },
+		});
 		const enrolledData = await enrolledRes.json();
 		expect(enrolledRes.status).toBe(200);
 		if (!enrolledData.success) {
 			throw new Error("Failed to fetch enrolled courses");
 		}
-		expect(enrolledData.data.enrollments).toEqual([]);
+		expect(enrolledData.data.courses).toEqual([]);
 	});
 
 	const session = async (api: typeof testGlobals.api1 = testGlobals.api1) => {
@@ -119,15 +122,17 @@ describe("Courses Generation & Entrollment", () => {
 
 	it("Enrolls in generated course", async () => {
 		const { api1 } = testGlobals;
-		const enrolledRes = await api1.courses.enrolled.$get();
+		const enrolledRes = await api1.users[":wallet"].courses.$get({
+			param: { wallet: userWallet1.account.address },
+		});
 		const enrolledData = await enrolledRes.json();
 		expect(enrolledRes.status).toBe(200);
 		if (!enrolledData.success) {
 			throw new Error("Failed to fetch enrolled courses");
 		}
-		expect(enrolledData.data.enrollments.length).toBe(1);
+		expect(enrolledData.data.courses.length).toBe(1);
 
-		courseId = enrolledData.data.enrollments[0]?.courseId ?? "";
+		courseId = enrolledData.data.courses[0]?.courseId ?? "";
 	});
 });
 
@@ -215,9 +220,23 @@ describe("Chapter & game Sessions", async () => {
 		expect(data.data.currentPage).toBe(0);
 	});
 
-	it("correct answers are accepted and session progresses", async () => {
+	it("correct answers are accepted, pages in session move and progress is updated after completion", async () => {
+		const { api1 } = testGlobals;
+
 		let tries = 0;
 		let pageNumber = 0;
+		const initialProgressRaw = await api1.users[":wallet"].courses.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const initialProgressData = await initialProgressRaw.json();
+		if (!initialProgressData.success) {
+			throw new Error("Failed to fetch user courses");
+		}
+		const initialProgress = initialProgressData.data.courses.find(
+			(c) => c.courseId === courseId,
+		)?.progress;
+		expect(initialProgress).toBe(0);
+
 		while (!complete) {
 			tries++;
 			if (tries > 100) {
@@ -288,19 +307,60 @@ describe("Chapter & game Sessions", async () => {
 				complete = resp.complete;
 			}
 		}
+
+		const sessionEnd = await session();
+
+		expect(sessionEnd.currentPage).toBe(pageNumber);
+
+		const finalProgressRaw = await api1.users[":wallet"].courses.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const finalProgressData = await finalProgressRaw.json();
+		if (!finalProgressData.success) {
+			throw new Error("Failed to fetch user courses");
+		}
+		const finalProgress = finalProgressData.data.courses.find(
+			(c) => c.courseId === courseId,
+		)?.progress;
+		expect(finalProgress).toBe(1);
 	});
 
 	it("rejects answers when no seesion", async () => {
 		expect(async () => await answer(["incorrect answer"])).toThrow();
 	});
 
+	it("terminates session on delete endpoint", async () => {
+		const { api1 } = testGlobals;
+		await api1.courses.chapters.session.$delete();
+		expect(async () => await answer(["incorrect answer"])).toThrow();
+	});
+
 	it("progresses but rejects incorrect answers", async () => {
+		const { api1 } = testGlobals;
+		await api1.courses.chapters.session.$delete(); //terminate existing session
 		const { currentPage: pageBefore } = await session();
 		await answer([""]);
 		const resp = await answer(["incorrect answer"]);
 		expect(resp.correct).toBe(false);
 		const { currentPage: pageAfter } = await session();
 		expect(pageAfter).toBe(pageBefore + 2);
+	});
+
+	it("session expires and is deleted after expiry duration", async () => {
+		const { api1 } = testGlobals;
+		await api1.courses.chapters.session.$delete(); //terminate existing session
+		await session(); // start new session
+		await answer([""]);
+		const { currentPage: pageBefore } = await session();
+		expect(pageBefore).toBe(1);
+
+		setSystemTime(Date.now() + 31 * 60 * 1000); // move time forward by 31 minutes
+
+		expect(async () => await answer([""])).toThrow();
+		const { currentPage: pageAfter } = await session();
+		expect(pageAfter).toBe(0);
+
+		setSystemTime();
 	});
 });
 

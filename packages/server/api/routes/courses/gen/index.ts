@@ -172,6 +172,7 @@ export default new Hono<RouterEnv>()
 					);
 
 					if (intentClarificationResult.error) {
+						console.error(intentClarificationResult.error);
 						throw "Failed to clarify user learning intent.";
 					}
 
@@ -322,6 +323,7 @@ export default new Hono<RouterEnv>()
 						}),
 					);
 					if (courseSelectionEvaluatorResult.error) {
+						console.error(courseSelectionEvaluatorResult.error);
 						throw "Failed to evaluate course selection.";
 					}
 					const evaluation = courseSelectionEvaluatorResult.data;
@@ -361,7 +363,10 @@ export default new Hono<RouterEnv>()
 					}
 
 					if (evaluation.decision === "select_existing_course") {
-						if (!evaluation.chosenCourseId) {
+						if (
+							evaluation.chosenCourseId === null ||
+							evaluation.chosenCourseId === undefined
+						) {
 							throw "No course ID chosen for enrollment";
 						}
 						const chosenCourseId =

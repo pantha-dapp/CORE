@@ -14,19 +14,6 @@ export default new Hono()
 
 	.route("/gen", gen)
 
-	.get("/enrolled", authenticated, async (ctx) => {
-		const { db } = ctx.var.appState;
-		const { userWallet } = ctx.var;
-		const enrollments = await db.userEnrollments({ userWallet });
-
-		return respond.ok(
-			ctx,
-			{ enrollments },
-			"Enrollments fetched successfully.",
-			200,
-		);
-	})
-
 	.get(
 		"/",
 		authenticated,

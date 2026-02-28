@@ -18,6 +18,17 @@ type ChapterGameState = {
 };
 const gameSessions = new Map<string, ChapterGameState>();
 
+const SESSION_TIMEOUT = 30 * MINUTE;
+
+function checkSessionExpiry(userWallet: string) {
+	const session = gameSessions.get(userWallet);
+	if (!session) return false;
+	const now = Date.now();
+	const expired = now - session.lastSessionStartedAt > SESSION_TIMEOUT;
+	if (expired) gameSessions.delete(userWallet);
+	return expired;
+}
+
 export default new Hono<RouterEnv>()
 
 	.get(
@@ -62,23 +73,27 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Failed to create session", 500);
 			}
 
-			const { lastSessionStartedAt } = session;
-			if (lastSessionStartedAt + 10 * MINUTE > Date.now()) {
-				return respond.ok(
-					ctx,
-					{
-						chapterId: session.chapterId,
-						currentPage: session.currentPage,
-					},
-					"Session state retrieved successfully.",
-					200,
-				);
-			} else {
-				gameSessions.delete(userWallet);
-				return respond.err(ctx, "Session expired", 410);
-			}
+			const expired = checkSessionExpiry(userWallet);
+			if (expired) return respond.err(ctx, "Session expired", 404);
+
+			return respond.ok(
+				ctx,
+				{
+					chapterId: session.chapterId,
+					currentPage: session.currentPage,
+					complete: session.currentPage >= session.pages.length,
+				},
+				"Session state retrieved successfully.",
+				200,
+			);
 		},
 	)
+
+	.delete("/", authenticated, async (ctx) => {
+		const { userWallet } = ctx.var;
+		gameSessions.delete(userWallet);
+		return respond.ok(ctx, {}, "Session reset successfully.", 200);
+	})
 
 	.post(
 		"/answer",
@@ -90,9 +105,12 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { eventBus } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { answer } = ctx.req.valid("json");
+
+			const expired = checkSessionExpiry(userWallet);
+			if (expired) return respond.err(ctx, "Session expired", 404);
 
 			const session = gameSessions.get(userWallet);
 			if (!session) {
@@ -114,7 +132,6 @@ export default new Hono<RouterEnv>()
 			const { content, type } = page.content;
 
 			let correct = false;
-
 			try {
 				switch (type) {
 					case "example_uses":
@@ -129,22 +146,22 @@ export default new Hono<RouterEnv>()
 					case "identify_shown_object_in_image":
 						correct = content.correctOptionIndex === parseInt(answer[0], 10);
 						break;
-					case "matching":
+					case "matching": {
+						// Use spread copies so we never mutate the stored page data
+						const parsedAnswer = z.array(z.any()).parse(jsonParse(answer[0]));
 						correct =
 							jsonStringify(
-								content.pairs.sort((a, b) =>
+								[...content.pairs].sort((a, b) =>
 									jsonStringify(a) < jsonStringify(b) ? -1 : 1,
 								),
 							) ===
 							jsonStringify(
-								z
-									.array(z.any())
-									.parse(jsonParse(answer[0]))
-									.sort((a, b) =>
-										jsonStringify(a) < jsonStringify(b) ? -1 : 1,
-									),
+								[...parsedAnswer].sort((a, b) =>
+									jsonStringify(a) < jsonStringify(b) ? -1 : 1,
+								),
 							);
 						break;
+					}
 					case "quiz":
 						correct = content.correctOptionIndex === parseInt(answer[0], 10);
 						break;
@@ -157,46 +174,39 @@ export default new Hono<RouterEnv>()
 					default:
 						break;
 				}
+			} catch {
+				correct = false;
+			}
 
-				if (correct) {
-					session.correct.push(session.currentPage);
-				} else {
-					session.incorrect.push(session.currentPage);
-				}
-				session.currentPage += 1;
-				session.lastSessionStartedAt = Date.now();
+			session[correct ? "correct" : "incorrect"].push(session.currentPage);
+			session.currentPage += 1;
 
-				gameSessions.set(userWallet, session);
+			gameSessions.set(userWallet, session);
 
-				if (session.currentPage >= session.pages.length) {
-					gameSessions.delete(userWallet);
-					const currentChapter = await db.chapterById({
-						chapterId: session.chapterId,
-					});
-					if (!currentChapter) {
-						throw new Error("Unreachable code: Chapter not found");
-					}
+			// console.log("Session state after answer:", { session, answer });
+			// console.log("Answer correctness:", { correct });
+			// console.log("current page number", session.currentPage);
+			// console.log("pages length", session.pages.length);
+			// console.log("has session?", gameSessions.has(userWallet));
 
-					return respond.ok(
-						ctx,
-						{
-							complete: true,
-							correct,
-							report: {
-								correct: session.correct.length,
-								total: session.pages.length,
-							},
-						},
-						"Session completed.",
-						200,
-					);
-				}
-			} catch (error) {
-				return respond.err(
+			if (session.currentPage >= session.pages.length) {
+				eventBus.emit("chapter.completed", {
+					chapterId: session.chapterId,
+					walletAddress: userWallet,
+				});
+
+				return respond.ok(
 					ctx,
-					"Error processing answer: " +
-						(error instanceof Error ? error.message : String(error)),
-					500,
+					{
+						complete: true,
+						correct,
+						report: {
+							correct: session.correct.length,
+							total: session.pages.length,
+						},
+					},
+					"Session completed.",
+					200,
 				);
 			}
 
