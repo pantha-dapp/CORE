@@ -7,6 +7,7 @@ import Icon, { type IconName } from "./Icon";
 type ButtonVariant =
 	| "primary"
 	| "tertiary"
+	| "quantum"
 	| "secondary"
 	| "danger"
 	| "outline"
@@ -44,6 +45,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 	outline:
 		"bg-white text-gray-700 border-2 border-gray-300 border-b-4 border-b-gray-400 hover:bg-gray-50 active:border-b-2",
 	ghost: "bg-transparent text-gray-700 hover:bg-gray-100 active:bg-gray-200",
+	quantum:
+		"w-12 h-12 rounded-xl  flex items-center justify-center cursor-pointer transition-all shrink-0",
 	success:
 		"bg-emerald-500 text-white border-b-4 border-emerald-700 hover:bg-emerald-600 active:border-b-0",
 };
