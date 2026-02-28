@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useCourseById(args: { id: string }) {
+export function useCourseById(args: { id?: string }) {
 	const { id } = args;
 	const { wallet, api } = usePanthaContext();
+
+	const enabled = !!wallet && !!id;
 
 	return useQuery({
 		queryKey: ["courseById", id],
 		queryFn: async () => {
-			if (!wallet) {
+			if (!enabled) {
 				throw new Error("not connected");
 			}
 
@@ -23,5 +25,6 @@ export function useCourseById(args: { id: string }) {
 
 			return courseResponse.data;
 		},
+		enabled,
 	});
 }

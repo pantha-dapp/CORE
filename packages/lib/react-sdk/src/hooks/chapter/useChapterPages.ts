@@ -2,15 +2,17 @@ import { DAY } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useChapterPages(args: { chapterId: string }) {
+export function useChapterPages(args: { chapterId?: string }) {
 	const { wallet, api } = usePanthaContext();
 	const { chapterId } = args;
+
+	const enabled = !!wallet && !!chapterId;
 
 	return useQuery({
 		queryKey: ["chapterPages", chapterId],
 		queryFn: async () => {
-			if (!wallet) {
-				throw new Error("not connected");
+			if (!enabled) {
+				throw new Error("unreachable");
 			}
 
 			const pagesResponseRaw = await api.rpc.courses.chapters[":id"].pages.$get(
@@ -26,6 +28,7 @@ export function useChapterPages(args: { chapterId: string }) {
 
 			return pagesResponse.data;
 		},
+		enabled,
 		staleTime: 7 * DAY,
 	});
 }
