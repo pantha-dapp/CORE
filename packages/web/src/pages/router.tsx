@@ -13,7 +13,6 @@ import { useEffect, useState } from "react";
 import Navigation from "../shared/components/Navigation";
 import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
 import ChapterDetails from "./ChapterDetails";
-// import Chapters from "./Chapters";
 import Dashboard from "./Dashboard";
 import Events from "./Events";
 import LandingPage from "./LandingPage";
@@ -115,20 +114,6 @@ const dashboardRoute = createRoute({
 		);
 	},
 });
-
-// const ChaptersRoute = createRoute({
-// 	getParentRoute: () => rootRoute,
-// 	path: "/chapters/$courseId",
-// 	component: function ChaptersRoute() {
-// 		return (
-// 			<ProtectedRoute type="loggedInOnly">
-// 				{/* Add your Courses component here */}
-// 				{/* <Chapters /> */}
-// 				<Navigation />
-// 			</ProtectedRoute>
-// 		);
-// 	},
-// });
 
 const ChapterDetailRoute = createRoute({
 	getParentRoute: () => rootRoute,

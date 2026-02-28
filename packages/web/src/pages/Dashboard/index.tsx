@@ -1,7 +1,8 @@
+import { usePanthaContext } from "@pantha/react";
 import {
 	useCourseById,
 	useCourseChaptersByCourseId,
-	useEnrolledCourses,
+	useUserCourses,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -53,9 +54,13 @@ function CourseIcon({
 }
 
 export default function Dashboard() {
-	const enrolledCourses = useEnrolledCourses();
+	const { wallet } = usePanthaContext();
+
+	const enrolledCourses = useUserCourses({
+		walletAddress: wallet?.account.address,
+	});
 	const router = useRouter();
-	const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+	const [selectedCourseId, setSelectedCourseId] = useState<string>();
 	const [showCourseDrawer, setShowCourseDrawer] = useState(false);
 	const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
 
@@ -71,29 +76,29 @@ export default function Dashboard() {
 
 	// Fetch selected course details
 	const selectedCourseDetails = useCourseById({
-		id: selectedCourseId || "",
+		id: selectedCourseId,
 	});
 
 	// Fetch chapters for selected course
 	const courseChapters = useCourseChaptersByCourseId({
-		courseId: selectedCourseId || "",
+		courseId: selectedCourseId,
 	});
 
 	// Set first course as selected by default
 	useEffect(() => {
 		if (
 			enrolledCourses.data &&
-			enrolledCourses.data.enrollments.length > 0 &&
+			enrolledCourses.data.courses.length > 0 &&
 			!selectedCourseId
 		) {
-			setSelectedCourseId(enrolledCourses.data.enrollments[0].courseId);
+			setSelectedCourseId(enrolledCourses.data.courses[0].courseId);
 		}
 	}, [enrolledCourses.data, selectedCourseId]);
 
 	useEffect(() => {
 		if (
 			enrolledCourses.data !== undefined &&
-			enrolledCourses.data.enrollments.length === 0
+			enrolledCourses.data.courses.length === 0
 		) {
 			router.navigate({ to: "/onboarding" });
 		}
@@ -138,7 +143,7 @@ export default function Dashboard() {
 	}
 
 	// Filter enrollments for selected course
-	const selectedEnrollment = enrolledCourses.data?.enrollments.find(
+	const selectedEnrollment = enrolledCourses.data?.courses.find(
 		(e) => e.courseId === selectedCourseId,
 	);
 
@@ -190,13 +195,13 @@ export default function Dashboard() {
 						Your Courses
 					</h3>
 					<div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-						{enrolledCourses.data?.enrollments.map((enrollment) => (
+						{enrolledCourses.data?.courses.map((course) => (
 							<CourseIcon
-								key={enrollment.courseId}
-								courseId={enrollment.courseId}
-								isActive={selectedCourseId === enrollment.courseId}
+								key={course.courseId}
+								courseId={course.courseId}
+								isActive={selectedCourseId === course.courseId}
 								onClick={() => {
-									setSelectedCourseId(enrollment.courseId);
+									setSelectedCourseId(course.courseId);
 									setShowCourseDrawer(false);
 								}}
 							/>
