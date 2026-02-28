@@ -6,6 +6,7 @@ import Icon, { type IconName } from "./Icon";
 
 type ButtonVariant =
 	| "primary"
+	| "tertiary"
 	| "secondary"
 	| "danger"
 	| "outline"
@@ -36,6 +37,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 		"bg-green-500 text-white border-b-4 border-green-700 hover:bg-green-600 active:border-b-0",
 	secondary:
 		"bg-blue-500 text-white border-b-4 border-blue-700 hover:bg-blue-600 active:border-b-0",
+	tertiary:
+		"w-full flex items-center gap-3 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all duration-200 border border-gray-700/50",
 	danger:
 		"bg-red-500 text-white border-b-4 border-red-700 hover:bg-red-600 active:border-b-0",
 	outline:
