@@ -20,7 +20,7 @@ const vectorDbClient = new QdrantClient({
 	port: parseInt(env.QDRANT_PORT, 10),
 	checkCompatibility: true,
 });
-const redisClient = new RedisClient();
+const redisClient = new RedisClient(env.REDIS_CONNECTION_URI);
 const db = createDb(env.SQLITE_FILE_PATH, { vectorDbClient, redisClient });
 const ai = createAi({ vectorDbClient, aiClient: aiAdapter });
 const eventBus = new InMemoryEventBus();
