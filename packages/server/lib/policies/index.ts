@@ -2,7 +2,7 @@
 import type { Address } from "viem";
 import type { Db } from "../db";
 import { ForbiddenError, NotImplementedError } from "../errors";
-
+import chapterEnforcers from "./chapter";
 import userEnforcers from "./user";
 
 type PolicyManagerConfig = {
@@ -75,6 +75,7 @@ export class DefaultPolicyManager implements PolicyManager {
 		this._config = config;
 		this._enforcers = {
 			...userEnforcers,
+			...chapterEnforcers,
 		};
 	}
 

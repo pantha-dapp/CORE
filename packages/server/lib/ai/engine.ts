@@ -1,95 +1,23 @@
-import { chat, generateImage as tanstackGenerateImage } from "@tanstack/ai";
-import { createOpenaiChat, createOpenaiImage } from "@tanstack/ai-openai";
-import { z } from "zod";
+import {
+	//  chat,
+	generateImage as tanstackGenerateImage,
+} from "@tanstack/ai";
+import {
+	//  createOpenaiChat,
+	createOpenaiImage,
+} from "@tanstack/ai-openai";
+import { toJSONSchema, z } from "zod";
 import { type LanguageCode, languageCodesAndNames } from "../../data/languages";
 import env from "../../env";
 import type { AiClient } from "./client";
-import { structuralRepairPrompt } from "./corrections";
+// import { structuralRepairPrompt } from "./corrections";
 
 export const aiAdapter: AiClient = {
 	llm: {
-		text: async (args) => {
-			const { prompt, systemPrompts } = args;
-
-			const response = await chat({
-				adapter: chatAdapter,
-				stream: false,
-				messages: [{ role: "user", content: prompt }],
-				systemPrompts,
-			});
-
-			return response;
-		},
+		text: llmText,
 		json: async (args) => {
-			const { prompt, systemPrompts, outputSchema, input } = args;
-
-			const response = await chat({
-				adapter: chatAdapter,
-				stream: false,
-				messages: prompt
-					? [{ role: "user", content: prompt }]
-					: [{ role: "user", content: `${prompt}\n${JSON.stringify(input)}` }],
-				systemPrompts,
-				outputSchema,
-			});
-
-			const parsed = outputSchema.safeParse(response);
-
-			if (!parsed.success) {
-				const structurallyRepaired = await chat({
-					adapter: correctionAdapter,
-					stream: false,
-					messages: [
-						{
-							role: "user",
-							content: JSON.stringify({
-								response,
-								// expectedSchema: outputSchema.def,
-							}),
-						},
-					],
-					systemPrompts: [structuralRepairPrompt],
-					outputSchema,
-				});
-				const repairedParsed = outputSchema.safeParse(structurallyRepaired);
-				if (!repairedParsed.success) {
-					const contextuallyStructurallyRepaired = await chat({
-						adapter: correctionAdapter,
-						stream: false,
-						messages: [
-							{
-								role: "user",
-								content: JSON.stringify({
-									originalPrompt: prompt,
-									originalInput: input,
-									// expectedSchema: outputSchema.def,
-									previouslyGeneratedOutput: response,
-									validationErrorDetails: parsed.error.format(),
-								}),
-							},
-						],
-						systemPrompts: [structuralRepairPrompt],
-						outputSchema,
-					});
-
-					const contextuallyRepairedParsed = outputSchema.safeParse(
-						contextuallyStructurallyRepaired,
-					);
-					if (!contextuallyRepairedParsed.success) {
-						console.error("Failed to structurally repair JSON output", {
-							originalResponse: response,
-							structurallyRepaired,
-							contextuallyStructurallyRepaired,
-							originalPrompt: prompt,
-							validationErrorDetails: parsed.error.format(),
-						});
-						throw new Error("Failed to structurally repair JSON output");
-					}
-					return contextuallyRepairedParsed.data;
-				}
-			}
-
-			return response;
+			const resposne = await llmJson(args);
+			return args.outputSchema.parse(JSON.parse(resposne));
 		},
 	},
 	embedding: { text: generateEmbeddings },
@@ -99,23 +27,147 @@ export const aiAdapter: AiClient = {
 	},
 };
 
-const chatAdapter = createOpenaiChat(
-	//@ts-expect-error
-	"openai/gpt-oss-120b",
-	env.GROQ_API_KEY,
-	{
-		baseURL: "https://api.groq.com/openai/v1",
-	},
-);
+// const chatAdapter = createOpenaiChat(
+// 	//@ts-expect-error
+// 	"gpt-oss-120b",
+// 	env.CEREBRAS_API_KEY,
+// 	{
+// 		baseURL: "https://api.cerebras.ai/v1",
+// 	},
+// );
 
-const correctionAdapter = createOpenaiChat(
-	//@ts-expect-error
-	"openai/gpt-oss-20b",
-	env.GROQ_API_KEY,
-	{
-		baseURL: "https://api.groq.com/openai/v1",
-	},
-);
+// const correctionAdapter = createOpenaiChat(
+// 	//@ts-expect-error
+// 	"gpt-oss-120b",
+// 	env.CEREBRAS_API_KEY,
+// 	{
+// 		baseURL: "https://api.cerebras.ai/v1",
+// 	},
+// );
+
+async function llmText(args: { prompt: string; systemPrompts?: string[] }) {
+	const resp = await callOpenaiCompat({
+		body: JSON.stringify({
+			model: "gpt-oss-120b",
+			messages: [
+				...(args.systemPrompts
+					? args.systemPrompts.map((prompt) => ({
+							role: "system",
+							content: prompt,
+						}))
+					: []),
+				{
+					role: "user",
+					content: args.prompt,
+				},
+			],
+		}),
+	});
+
+	const data = await resp.json();
+	const parsed = z
+		.object({
+			choices: z.tuple([
+				z.object({
+					message: z.object({
+						content: z.string(),
+					}),
+				}),
+			]),
+		})
+		.safeParse(data);
+
+	if (!parsed.success) {
+		console.error("Failed to parse LLM response:", {
+			data,
+			error: parsed.error,
+		});
+		throw new Error("Failed to parse LLM response");
+	}
+
+	return parsed.data.choices[0].message.content;
+}
+
+async function llmJson<T, R>(args: {
+	prompt: string;
+	input: T;
+	outputSchema: z.ZodType<R>;
+	systemPrompts?: string[];
+}) {
+	const jsonSchema = toJSONSchema(args.outputSchema);
+
+	const resp = await callOpenaiCompat({
+		body: JSON.stringify({
+			model: "gpt-oss-120b",
+			messages: [
+				...(args.systemPrompts
+					? args.systemPrompts.map((prompt) => ({
+							role: "system",
+							content: prompt,
+						}))
+					: []),
+				{
+					role: "system",
+					content: `You must respond with valid JSON that matches this schema: ${JSON.stringify(jsonSchema)}`,
+				},
+				{
+					role: "user",
+					content: args.prompt,
+				},
+				{
+					role: "user",
+					content: `input:\n${JSON.stringify(args.input)}`,
+				},
+			],
+			response_format: {
+				type: "json_object",
+			},
+		}),
+	});
+
+	const data = await resp.json();
+
+	// Check if the response is an error
+	if (data.error) {
+		console.error("LLM API error:", data);
+		throw new Error(
+			`LLM API error: ${data.error.message || JSON.stringify(data.error)}`,
+		);
+	}
+
+	const parsed = z
+		.object({
+			choices: z.tuple([
+				z.object({
+					message: z.object({
+						content: z.string(),
+					}),
+				}),
+			]),
+		})
+		.safeParse(data);
+
+	if (!parsed.success) {
+		console.error("Failed to parse LLM JSON response:", {
+			data,
+			error: parsed.error,
+		});
+		throw new Error("Failed to parse LLM JSON response");
+	}
+
+	return parsed.data.choices[0].message.content;
+}
+
+function callOpenaiCompat(args: Parameters<typeof fetch>[1]) {
+	return fetch("https://api.cerebras.ai/v1/chat/completions", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${process.env.CEREBRAS_API_KEY}`,
+		},
+		...args,
+	});
+}
 
 async function generateEmbeddings(input: string) {
 	const payload = await fetch(`${env.OLLAMA_HOST}/v1/embeddings`, {

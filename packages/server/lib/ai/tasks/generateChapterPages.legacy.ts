@@ -148,7 +148,7 @@ PAGE TYPES & CONTENT SPECIFICATIONS:
 
 5. fill_in_the_blanks - Terminology reinforcement (use AFTER introducing terms)
    STRUCTURE:
-   - words: Complete array where blanks are $1, $2, etc.
+   - words: Complete array of words in the sentence where blanks are $1, $2, etc.
    - answers: Array of correct words for the blanks in order
    - wrongOptions: Array of incorrect options as distractors
 
