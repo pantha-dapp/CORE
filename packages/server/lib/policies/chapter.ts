@@ -1,0 +1,39 @@
+import { and, eq } from "drizzle-orm";
+import { ForbiddenError, NotFoundError } from "../errors";
+import type { Enforcers } from ".";
+
+const enforcers: Enforcers<"chapter"> = {
+	"chapter.view": async (user, resource, app) => {
+		const { db } = app;
+
+		const chapter = await db.chapterById({ chapterId: resource.chapterId });
+		if (!chapter) throw new NotFoundError("Chapter not found.");
+
+		// If the user is enrolled in the course, enforce progression:
+		// userCourses.progress stores the highest completed chapter `order`.
+		const [enrollment] = await db
+			.select()
+			.from(db.schema.userCourses)
+			.where(
+				and(
+					eq(db.schema.userCourses.userWallet, user),
+					eq(db.schema.userCourses.courseId, chapter.courseId),
+				),
+			);
+
+		if (enrollment) {
+			const progress = enrollment.progress ?? 0;
+			// Allow viewing if user has completed all chapters up to previous one
+			// (e.g. to view order=2 you must have progress >= 1)
+			if (progress < chapter.order) {
+				throw new ForbiddenError(
+					"You must complete previous chapters before accessing this one.",
+				);
+			}
+		}
+
+		return true;
+	},
+};
+
+export default enforcers;

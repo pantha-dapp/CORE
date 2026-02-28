@@ -60,21 +60,22 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	async function readEntry(id: string) {
 		await ready;
 		const res = await tryCatch(
-			vecDbClient.query(key, {
-				query: id,
+			vecDbClient.retrieve(key, {
+				ids: [id],
+				with_vector: true,
+				with_payload: true,
 			}),
 		);
 		if (!res.data) {
 			throw new Error(`Failed to read entry with id ${id}: ${res.error}`);
 		}
-		const entry = res.data;
 
-		if (!entry) return null;
-		const content = entry.points[0];
-		if (entry.points.length > 1 || entry.points.length === 0 || !content) {
-			throw new Error(
-				"Invalid state: multiple or no entries found for id, maybe the id is not an id",
-			);
+		const points = res.data;
+		if (!points || points.length === 0) return null;
+
+		const content = points[0];
+		if (!content) {
+			throw new Error("Invalid state: no entry found for id");
 		}
 
 		const parsed = def.schema.safeParse(content.payload);

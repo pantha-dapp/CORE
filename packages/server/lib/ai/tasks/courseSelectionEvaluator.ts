@@ -39,10 +39,9 @@ Output JSON only.
 
 If confidence is below 0.7, prefer ask_more_questions but also consider the budget.
 
-output uncertantiesRemaining and questionCount if and only if decision is ask_more_questions,
+Always output ALL fields. Set fields that are not applicable to the chosen decision to null.
 
 output chosenCourseId if and only if decision is select_existing_course,
-
 output courseGenerationInstructions if and only if decision is create_new_course.
 `;
 
@@ -75,10 +74,10 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 		"create_new_course",
 	]),
 
-	uncertantiesRemaining: z.array(z.string()).optional().nullable(),
-	questionCount: z.number().optional().nullable(),
+	uncertantiesRemaining: z.array(z.string()).nullish(),
+	questionCount: z.number().nullish(),
 
-	chosenCourseId: z.number().optional().nullable(),
+	chosenCourseId: z.number().nullish(),
 
 	courseGenerationInstructions: z
 		.object({
@@ -92,8 +91,7 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 				focus: z.string(),
 			}),
 		})
-		.optional()
-		.nullable(),
+		.nullish(),
 });
 
 export default {

@@ -1,5 +1,6 @@
 import { and, eq, gt } from "drizzle-orm";
 import type { AppState } from "../../../../api/routes/types";
+import { userCourses } from "../../../db/schema/user";
 import { prepareChapter } from "../../../utils/chapters";
 import { registerActivityForStreaks } from "../../../utils/streaks";
 
@@ -8,6 +9,28 @@ export default function (appState: AppState) {
 
 	event.on("chapter.completed", async ({ walletAddress }) => {
 		registerActivityForStreaks(db, walletAddress);
+	});
+
+	event.on("chapter.completed", async ({ chapterId, walletAddress }) => {
+		const chapter = await db.chapterById({ chapterId });
+		if (!chapter) return;
+		const [userCourse] = await db
+			.select()
+			.from(userCourses)
+			.where(and(eq(userCourses.userWallet, walletAddress)));
+		if (!userCourse) return;
+
+		if (userCourse.progress < chapter.order + 1) {
+			await db
+				.update(db.schema.userCourses)
+				.set({ progress: chapter.order + 1 })
+				.where(
+					and(
+						eq(db.schema.userCourses.userWallet, walletAddress),
+						eq(db.schema.userCourses.courseId, chapter.courseId),
+					),
+				);
+		}
 	});
 
 	event.on("chapter.completed", async ({ chapterId }) => {
