@@ -11,17 +11,19 @@ import { createAi } from "./lib/ai";
 import { aiAdapter } from "./lib/ai/engine";
 import { createDb } from "./lib/db";
 import { InMemoryEventBus } from "./lib/events/bus";
+import { registerEventHandlers } from "./lib/events/handlers";
 import { DefaultPolicyManager } from "./lib/policies";
 
 const vectorDbClient = new QdrantClient({
 	host: env.QDRANT_HOST,
-	port: parseInt(env.QDRANT_PORT, 10),
+	// port: parseInt(env.QDRANT_PORT, 10),
+	// apiKey: env.QDRANT_API_KEY,
 	checkCompatibility: false,
 });
 
 const db = createDb(env.SQLITE_FILE_PATH, {
 	vectorDbClient,
-	redisClient: new RedisClient(),
+	redisClient: new RedisClient(env.REDIS_CONNECTION_URI),
 });
 
 const ai = createAi({ aiClient: aiAdapter, vectorDbClient });
@@ -38,6 +40,9 @@ const appState: AppState = {
 	eventBus,
 	policyManager,
 };
+
+// Register event handlers so emitted events are handled (DB updates, prep, etc.)
+registerEventHandlers(appState);
 
 export const app = new Hono()
 
