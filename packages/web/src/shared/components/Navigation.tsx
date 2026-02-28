@@ -76,8 +76,9 @@ export default function Navigation() {
 
 							if (isMoreButton) {
 								return (
-									<Button
+									<button
 										key={item.id}
+										type="button"
 										onClick={handleMoreClick}
 										className="relative flex flex-col items-center justify-center flex-1 h-full group"
 									>
@@ -134,7 +135,7 @@ export default function Navigation() {
 											}`}
 											style={{ backgroundColor: item.color }}
 										/>
-									</Button>
+									</button>
 								);
 							}
 
@@ -226,7 +227,7 @@ export default function Navigation() {
 								{/* Profile Option */}
 								<Button
 									onClick={() => handleDrawerOptionClick("/profile")}
-									className="w-full flex items-center gap-3 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all duration-200 border border-gray-700/50"
+									variant="tertiary"
 								>
 									<div className="w-9 h-9 bg-blue-500/20 rounded-lg flex items-center justify-center shrink-0">
 										<Icon
@@ -245,7 +246,6 @@ export default function Navigation() {
 										className="text-gray-500"
 									/>
 								</Button>
-
 								{/* Video Call Option */}
 								<Button
 									onClick={() => {
@@ -253,7 +253,7 @@ export default function Navigation() {
 										// Add video call functionality here
 										console.log("Video call clicked");
 									}}
-									className="w-full flex items-center gap-3 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all duration-200 border border-gray-700/50"
+									variant="tertiary"
 								>
 									<div className="w-9 h-9 bg-green-500/20 rounded-lg flex items-center justify-center shrink-0">
 										<Icon name="video" size={18} className="text-green-400" />
