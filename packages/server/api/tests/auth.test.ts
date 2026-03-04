@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { testGlobals } from "./helpers/globals";
-import { userWallet1, userWallet2 } from "./helpers/setup";
+import { userWallet1 } from "./helpers/setup";
 
 describe("Auth", () => {
 	it("runtime returns uptime", async () => {
@@ -37,17 +37,5 @@ describe("Auth", () => {
 			throw new Error("Failed to fetch user info");
 		}
 		expect(data.data.user.walletAddress).toBe(userWallet1.account.address);
-	});
-	it("Can fetch other user's info", async () => {
-		const { api1 } = testGlobals;
-		const res = await api1.users[":wallet"].$get({
-			param: { wallet: userWallet2.account.address },
-		});
-		const data = await res.json();
-		expect(res.status).toBe(200);
-		if (!data.success) {
-			throw new Error("Failed to fetch user info");
-		}
-		expect(data.data.user.walletAddress).toBe(userWallet2.account.address);
 	});
 });

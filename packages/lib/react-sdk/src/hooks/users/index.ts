@@ -5,3 +5,4 @@ export * from "./useUserCourses";
 export * from "./useUserFollowers";
 export * from "./useUserFollowing";
 export * from "./useUserInfo";
+export * from "./useUserUpdateProfile";

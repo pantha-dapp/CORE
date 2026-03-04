@@ -23,6 +23,20 @@ describe("Following Users", () => {
 		expect(followingData.data.following).toEqual([]);
 	});
 
+	it("Cannot view a private profile", async () => {
+		const { api1, api2 } = testGlobals;
+
+		const setPrivateRes = await api2.users.me.$put({
+			json: { profileVisibility: "private" },
+		});
+		expect(setPrivateRes.status).toBe(200);
+
+		const profileRes = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		expect(profileRes.ok).toBe(false);
+	});
+
 	it("can follow user", async () => {
 		const { api1 } = testGlobals;
 		const res = await api1.users.follow.$post({
@@ -148,7 +162,6 @@ describe("Following Users", () => {
 	it("Users can follow both and become friends", async () => {
 		const { api1, api2 } = testGlobals;
 
-		// user 1 follows user 2
 		const postRes = await api1.users.follow.$post({
 			json: {
 				walletToFollow: userWallet2.account.address,
@@ -158,7 +171,6 @@ describe("Following Users", () => {
 		expect(postRes.status).toBe(200);
 		expect(data.success).toBe(true);
 
-		// user 2 follows user 1
 		const postRes2 = await api2.users.follow.$post({
 			json: {
 				walletToFollow: userWallet1.account.address,
@@ -178,7 +190,6 @@ describe("Following Users", () => {
 		}
 		expect(friendsData1.data.friends).toEqual([userWallet2.account.address]);
 
-		// check friends list for user 2
 		const res2 = await api2.users[":wallet"].friends.$get({
 			param: { wallet: userWallet2.account.address },
 		});
@@ -192,9 +203,7 @@ describe("Following Users", () => {
 
 	it("A friend can see the other's courses and activities and profile", async () => {
 		const { api1 } = testGlobals;
-		// user1 and user2 are already mutual friends from the previous test
 
-		// fetch user2's full profile as user1
 		const profileRes = await api1.users[":wallet"].profile.$get({
 			param: { wallet: userWallet2.account.address },
 		});
@@ -211,7 +220,6 @@ describe("Following Users", () => {
 			lastActiveDate: null,
 		});
 
-		// also verify courses endpoint independently
 		const coursesRes = await api1.users[":wallet"].courses.$get({
 			param: { wallet: userWallet2.account.address },
 		});
