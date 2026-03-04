@@ -1,3 +1,4 @@
+export * from "./useFriendProfileView";
 export * from "./useSearchUsers";
 export * from "./useSelfFriends";
 export * from "./useUserCourses";

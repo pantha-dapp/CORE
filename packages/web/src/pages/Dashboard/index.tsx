@@ -60,7 +60,16 @@ export default function Dashboard() {
 		walletAddress: wallet?.account.address,
 	});
 	const router = useRouter();
-	const [selectedCourseId, setSelectedCourseId] = useState<string>();
+
+	// Scope the storage key to the current wallet so switching accounts never
+	// leaks a previous user's selected course into the new session.
+	const storageKey = wallet?.account.address
+		? `pantha_selected_course_${wallet.account.address}`
+		: null;
+
+	const [selectedCourseId, setSelectedCourseId] = useState<string | undefined>(
+		() => (storageKey ? sessionStorage.getItem(storageKey) : null) ?? undefined,
+	);
 	const [showCourseDrawer, setShowCourseDrawer] = useState(false);
 	const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
 
@@ -84,6 +93,13 @@ export default function Dashboard() {
 		courseId: selectedCourseId,
 	});
 
+	// When the wallet address changes (account switch), wipe the current
+	// selection so the old course is never shown for the new user.
+	const walletAddress = wallet?.account.address;
+	useEffect(() => {
+		setSelectedCourseId(undefined);
+	}, [walletAddress]);
+
 	// Set first course as selected by default
 	useEffect(() => {
 		if (
@@ -91,9 +107,11 @@ export default function Dashboard() {
 			enrolledCourses.data.courses.length > 0 &&
 			!selectedCourseId
 		) {
-			setSelectedCourseId(enrolledCourses.data.courses[0].courseId);
+			const firstCourseId = enrolledCourses.data.courses[0].courseId;
+			if (storageKey) sessionStorage.setItem(storageKey, firstCourseId);
+			setSelectedCourseId(firstCourseId);
 		}
-	}, [enrolledCourses.data, selectedCourseId]);
+	}, [enrolledCourses.data, selectedCourseId, storageKey]);
 
 	useEffect(() => {
 		if (
@@ -201,6 +219,8 @@ export default function Dashboard() {
 								courseId={course.courseId}
 								isActive={selectedCourseId === course.courseId}
 								onClick={() => {
+									if (storageKey)
+										sessionStorage.setItem(storageKey, course.courseId);
 									setSelectedCourseId(course.courseId);
 									setShowCourseDrawer(false);
 								}}

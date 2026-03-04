@@ -144,4 +144,82 @@ describe("Following Users", () => {
 		expect(res.status).toBe(404);
 		expect(data.success).toBe(false);
 	});
+
+	it("Users can follow both and become friends", async () => {
+		const { api1, api2 } = testGlobals;
+
+		// user 1 follows user 2
+		const postRes = await api1.users.follow.$post({
+			json: {
+				walletToFollow: userWallet2.account.address,
+			},
+		});
+		const data = await postRes.json();
+		expect(postRes.status).toBe(200);
+		expect(data.success).toBe(true);
+
+		// user 2 follows user 1
+		const postRes2 = await api2.users.follow.$post({
+			json: {
+				walletToFollow: userWallet1.account.address,
+			},
+		});
+		const data2 = await postRes2.json();
+		expect(postRes2.status).toBe(200);
+		expect(data2.success).toBe(true);
+
+		const res = await api1.users[":wallet"].friends.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const friendsData1 = await res.json();
+		expect(res.status).toBe(200);
+		if (!friendsData1.success) {
+			throw new Error("Failed to fetch friends");
+		}
+		expect(friendsData1.data.friends).toEqual([userWallet2.account.address]);
+
+		// check friends list for user 2
+		const res2 = await api2.users[":wallet"].friends.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const friendsData2 = await res2.json();
+		expect(res2.status).toBe(200);
+		if (!friendsData2.success) {
+			throw new Error("Failed to fetch friends");
+		}
+		expect(friendsData2.data.friends).toEqual([userWallet1.account.address]);
+	});
+
+	it("A friend can see the other's courses and activities and profile", async () => {
+		const { api1 } = testGlobals;
+		// user1 and user2 are already mutual friends from the previous test
+
+		// fetch user2's full profile as user1
+		const profileRes = await api1.users[":wallet"].profile.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const profileData = await profileRes.json();
+		expect(profileRes.status).toBe(200);
+		if (!profileData.success) {
+			throw new Error("Failed to fetch profile");
+		}
+		expect(profileData.data.profile.walletAddress).toBe(
+			userWallet2.account.address,
+		);
+		expect(profileData.data.profile.streak).toEqual({
+			currentStreak: 0,
+			lastActiveDate: null,
+		});
+
+		// also verify courses endpoint independently
+		const coursesRes = await api1.users[":wallet"].courses.$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const coursesData = await coursesRes.json();
+		expect(coursesRes.status).toBe(200);
+		if (!coursesData.success) {
+			throw new Error("Failed to fetch courses");
+		}
+		expect(coursesData.data.courses).toEqual([]);
+	});
 });
