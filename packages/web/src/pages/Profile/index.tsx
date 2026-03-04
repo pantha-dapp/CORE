@@ -6,6 +6,7 @@ import {
 	useUserFollowers,
 	useUserFollowing,
 	useUserInfo,
+	useUserUpdateProfile,
 } from "@pantha/react/hooks";
 import { useLogout as usePrivyLogout } from "@privy-io/react-auth";
 import { useRouter } from "@tanstack/react-router";
@@ -21,6 +22,12 @@ export default function Profile(): JSX.Element {
 	const { logout: logoutPrivy } = usePrivyLogout();
 	const router = useRouter();
 	const [openSettings, setOpenSettings] = useState(false);
+	const [openEditProfile, setOpenEditProfile] = useState(false);
+	const [editName, setEditName] = useState("");
+	const [editUsername, setEditUsername] = useState("");
+	const [editVisibility, setEditVisibility] = useState<"public" | "private">(
+		"public",
+	);
 	const [socialTab, setSocialTab] = useState<SocialTab>("friends");
 	const [selectedFriend, setSelectedFriend] = useState<Address | null>(null);
 	const { mutateAsync: logoutPantha } = useLogout();
@@ -32,6 +39,8 @@ export default function Profile(): JSX.Element {
 	const { data: selfFriends } = useSelfFriends();
 	const { data: friendProfile, isLoading: friendProfileLoading } =
 		useFriendProfileView({ walletAddress: selectedFriend ?? undefined });
+	const { mutateAsync: updateUserProfile, isPending: isUpdating } =
+		useUserUpdateProfile();
 
 	const streak = userInfo?.user?.streak?.currentStreak ?? 0;
 	const followersCount = userFollowers?.followers.length ?? 0;
@@ -79,6 +88,7 @@ export default function Profile(): JSX.Element {
 							<h2 className="text-xl font-extrabold truncate leading-tight">
 								{userInfo?.user?.name ?? "—"}
 							</h2>
+
 							<p className="text-sm text-white/50 truncate">
 								@{userInfo?.user?.username ?? "—"}
 							</p>
@@ -92,6 +102,9 @@ export default function Profile(): JSX.Element {
 									🌍 {userInfo.user.timezone}
 								</p>
 							)}
+							<p className="text-sm text-white/50 truncate">
+								@{userInfo?.user?.profileVisibility ?? "—"}
+							</p>
 						</div>
 					</div>
 
@@ -381,7 +394,20 @@ export default function Profile(): JSX.Element {
 						{/* ── Scrollable middle: settings items only ── */}
 						<div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-5">
 							<SettingsSection title="Account">
-								<SettingsItem icon="✏️" label="Edit Profile" />
+								<SettingsItem
+									icon="✏️"
+									label="Edit Profile"
+									onClick={() => {
+										setEditName(userInfo?.user?.name ?? "");
+										setEditUsername(userInfo?.user?.username ?? "");
+										setEditVisibility(
+											userInfo?.user?.profileVisibility === "private"
+												? "private"
+												: "public",
+										);
+										setOpenEditProfile(true);
+									}}
+								/>
 								<SettingsItem icon="📧" label="Change Email" />
 								<SettingsItem icon="🔑" label="Change Password" />
 							</SettingsSection>
@@ -404,6 +430,129 @@ export default function Profile(): JSX.Element {
 						</div>
 
 						{/* ── Fixed bottom: padding for home indicator ── */}
+						<div className="shrink-0 pb-8" />
+					</div>
+				</div>
+			)}
+
+			{/* ── Edit Profile Bottom Sheet ── */}
+			{openEditProfile && (
+				<div className="fixed inset-0 z-60 flex items-end">
+					<button
+						type="button"
+						aria-label="Close edit profile"
+						className="absolute inset-0 bg-black/60 backdrop-blur-sm w-full"
+						onClick={() => setOpenEditProfile(false)}
+					/>
+					<div className="relative w-full max-h-[85vh] bg-gray-900 border-t border-gray-700 rounded-t-3xl animate-slide-up flex flex-col">
+						{/* Handle + Header */}
+						<div className="shrink-0 px-6 pt-4 pb-3 border-b border-gray-800">
+							<div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-3" />
+							<div className="flex justify-between items-center">
+								<h2 className="text-xl font-extrabold">Edit Profile</h2>
+								<button
+									type="button"
+									onClick={() => setOpenEditProfile(false)}
+									className="text-white/40 hover:text-white text-xl transition-colors p-1"
+								>
+									✕
+								</button>
+							</div>
+						</div>
+
+						{/* Form Fields */}
+						<div className="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-5">
+							{/* Name */}
+							<div className="space-y-1.5">
+								<label
+									htmlFor="edit-name"
+									className="text-xs font-bold uppercase tracking-widest text-white/40"
+								>
+									Name
+								</label>
+								<input
+									id="edit-name"
+									type="text"
+									value={editName}
+									onChange={(e) => setEditName(e.target.value)}
+									placeholder="Your display name"
+									className="w-full bg-white/5 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-primary transition-colors"
+								/>
+							</div>
+
+							{/* Username */}
+							<div className="space-y-1.5">
+								<label
+									htmlFor="edit-username"
+									className="text-xs font-bold uppercase tracking-widest text-white/40"
+								>
+									Username
+								</label>
+								<div className="relative">
+									<span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm">
+										@
+									</span>
+									<input
+										id="edit-username"
+										type="text"
+										value={editUsername}
+										onChange={(e) => setEditUsername(e.target.value)}
+										placeholder="your_username"
+										className="w-full bg-white/5 border border-gray-700 rounded-xl pl-8 pr-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-primary transition-colors"
+									/>
+								</div>
+							</div>
+
+							{/* Profile Visibility */}
+							<div className="space-y-1.5">
+								<p className="text-xs font-bold uppercase tracking-widest text-white/40">
+									Profile Visibility
+								</p>
+								<div className="flex gap-3">
+									<button
+										type="button"
+										onClick={() => setEditVisibility("public")}
+										className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+											editVisibility === "public"
+												? "bg-primary/15 border-primary text-primary"
+												: "bg-white/5 border-gray-700 text-white/50 hover:bg-white/10"
+										}`}
+									>
+										🌍 Public
+									</button>
+									<button
+										type="button"
+										onClick={() => setEditVisibility("private")}
+										className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+											editVisibility === "private"
+												? "bg-violet-500/15 border-violet-500 text-violet-400"
+												: "bg-white/5 border-gray-700 text-white/50 hover:bg-white/10"
+										}`}
+									>
+										🔒 Private
+									</button>
+								</div>
+							</div>
+						</div>
+
+						{/* Save Button */}
+						<div className="shrink-0 px-6 py-4 border-t border-gray-800">
+							<Button
+								variant="primary"
+								fullWidth
+								onClick={async () => {
+									await updateUserProfile({
+										name: editName || undefined,
+										username: editUsername || undefined,
+										profileVisibility: editVisibility,
+									});
+									setOpenEditProfile(false);
+								}}
+							>
+								{isUpdating ? "Saving…" : "Save Changes"}
+							</Button>
+						</div>
+
 						<div className="shrink-0 pb-8" />
 					</div>
 				</div>
@@ -555,10 +704,19 @@ function SettingsSection({
 	);
 }
 
-function SettingsItem({ icon, label }: { icon: string; label: string }) {
+function SettingsItem({
+	icon,
+	label,
+	onClick,
+}: {
+	icon: string;
+	label: string;
+	onClick?: () => void;
+}) {
 	return (
 		<button
 			type="button"
+			onClick={onClick}
 			className="w-full flex items-center gap-3 bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl text-left transition-colors"
 		>
 			<span className="text-base">{icon}</span>

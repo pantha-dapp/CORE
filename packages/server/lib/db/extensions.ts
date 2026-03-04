@@ -202,6 +202,21 @@ export function dbExtensionHelpers(db: DbClient) {
 		return !!following;
 	}
 
+	async function isUserFriend(args: {
+		userWallet: Address;
+		targetWallet: Address;
+	}) {
+		const { userWallet, targetWallet } = args;
+
+		const following = await isUserFollowing({ userWallet, targetWallet });
+		const followedBy = await isUserFollowing({
+			userWallet: targetWallet,
+			targetWallet: userWallet,
+		});
+
+		return following && followedBy;
+	}
+
 	async function searchUsersByUsername(args: {
 		query: string;
 		limit?: number;
@@ -233,6 +248,7 @@ export function dbExtensionHelpers(db: DbClient) {
 		userFollowers,
 		userFriends,
 		isUserFollowing,
+		isUserFriend,
 		searchUsersByUsername,
 	};
 }

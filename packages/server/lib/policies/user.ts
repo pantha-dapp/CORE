@@ -12,11 +12,11 @@ const enforcers: Enforcers<"user"> = {
 
 		if (target.profileVisibility === "public") return true;
 
-		const isFollowing = await db.isUserFollowing({
+		const isFriend = await db.isUserFriend({
 			userWallet: user,
 			targetWallet: resource.userWallet,
 		});
-		if (isFollowing) return true;
+		if (isFriend) return true;
 
 		throw new UnauthorizedError(
 			"You do not have permission to view this user's profile.",
@@ -58,33 +58,6 @@ const enforcers: Enforcers<"user"> = {
 		throw new UnauthorizedError(
 			"You do not have permission to unfollow this user.",
 		);
-	},
-
-	// Friends (mutual followers) can view each other's full profile.
-	"user.viewFriendProfile": async (user, resource, app) => {
-		const { db } = app;
-
-		// Always allow viewing your own profile.
-		if (user === resource.userWallet) return true;
-
-		const target = await db.userByWallet({ userWallet: resource.userWallet });
-		if (!target) throw new NotFoundError("User not found.");
-
-		// Check mutual follow — both directions must exist.
-		const [iFollowThem, theyFollowMe] = await Promise.all([
-			db.isUserFollowing({
-				userWallet: user,
-				targetWallet: resource.userWallet,
-			}),
-			db.isUserFollowing({
-				userWallet: resource.userWallet,
-				targetWallet: user,
-			}),
-		]);
-
-		if (iFollowThem && theyFollowMe) return true;
-
-		throw new UnauthorizedError("Only mutual friends can view this profile.");
 	},
 };
 

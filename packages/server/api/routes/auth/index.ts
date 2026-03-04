@@ -31,7 +31,7 @@ export default new Hono<RouterEnv>()
 			const { address: wallet } = ctx.req.valid("query");
 
 			const nonce = generateNonce();
-			nonceStore.set(wallet, nonce);
+			await nonceStore.set(wallet, nonce);
 
 			return respond.ok(ctx, { nonce }, "nonce generated", 200);
 		},
@@ -68,7 +68,6 @@ export default new Hono<RouterEnv>()
 
 			const msgData = await nonceStore.get(address);
 			nonceStore.del(address);
-
 			if (!msgData) {
 				return respond.err(ctx, "Nonce expired or not found", 400);
 			}

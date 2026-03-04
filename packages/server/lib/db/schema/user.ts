@@ -38,7 +38,7 @@ export const userCourses = t.sqliteTable("user_courses", {
 		.notNull()
 		.references(() => users.walletAddress, { onDelete: "cascade" }),
 	courseId: t.text("course_id").notNull(),
-	progress: t.integer("progress").notNull().default(0), // this will represent number of chapters till which user has reached
+	progress: t.integer("progress").notNull().default(0),
 
 	...timestamps,
 });

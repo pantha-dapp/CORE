@@ -39,6 +39,7 @@ export default new Hono()
 			}).pick({
 				name: true,
 				username: true,
+				profileVisibility: true,
 			}),
 		),
 		async (ctx) => {
@@ -55,6 +56,13 @@ export default new Hono()
 			if (!updatedUser) {
 				return respond.err(ctx, "User not found", 404);
 			}
+
+			return respond.ok(
+				ctx,
+				{ user: updatedUser },
+				"User updated successfully",
+				200,
+			);
 		},
 	)
 
@@ -203,6 +211,7 @@ export default new Hono()
 							currentStreak: streak?.currentStreak ?? 0,
 							lastActiveDate: streak?.lastActiveDate ?? null,
 						},
+						profileVisibility: user.profileVisibility,
 					},
 				},
 				"User fetched successfully",
@@ -230,6 +239,65 @@ export default new Hono()
 				ctx,
 				{ friends },
 				"User's friends fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.get(
+		"/:wallet/profile",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { wallet } = ctx.req.valid("param");
+
+			await policyManager.assertCan(userWallet, "user.view", {
+				userWallet: wallet,
+			});
+
+			const user = await db.userByWallet({ userWallet: wallet });
+			if (!user) {
+				throw new NotFoundError("User not found");
+			}
+
+			const [streak, courses, friends, followers, following] =
+				await Promise.all([
+					db
+						.select()
+						.from(db.schema.userStreaks)
+						.where(eq(db.schema.userStreaks.userId, wallet))
+						.then((rows) => rows[0] ?? null),
+					db.userEnrollments({ userWallet: wallet }),
+					db.userFriends({ userWallet: wallet }),
+					db
+						.userFollowers({ userWallet: wallet })
+						.then((rows) => rows.map((r) => r.follower)),
+					db
+						.userFollowing({ userWallet: wallet })
+						.then((rows) => rows.map((r) => r.following)),
+				]);
+
+			return respond.ok(
+				ctx,
+				{
+					profile: {
+						walletAddress: user.walletAddress,
+						name: user.name,
+						username: user.username,
+						timezone: user.timezone,
+						streak: {
+							currentStreak: streak?.currentStreak ?? 0,
+							lastActiveDate: streak?.lastActiveDate ?? null,
+						},
+						courses,
+						friends,
+						followers,
+						following,
+					},
+				},
+				"User profile fetched successfully",
 				200,
 			);
 		},
