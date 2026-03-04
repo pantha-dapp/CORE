@@ -48,7 +48,7 @@ export const aiAdapter: AiClient = {
 async function llmText(args: { prompt: string; systemPrompts?: string[] }) {
 	const resp = await callOpenaiCompat({
 		body: JSON.stringify({
-			model: "gpt-oss-120b",
+			model: env.AI_LLM_TEXT_MODEL,
 			messages: [
 				...(args.systemPrompts
 					? args.systemPrompts.map((prompt) => ({
@@ -127,14 +127,6 @@ async function llmJson<T, R>(args: {
 
 	const data = await resp.json();
 
-	// Check if the response is an error
-	if (data.error) {
-		console.error("LLM API error:", data);
-		throw new Error(
-			`LLM API error: ${data.error.message || JSON.stringify(data.error)}`,
-		);
-	}
-
 	const parsed = z
 		.object({
 			choices: z.tuple([
@@ -176,7 +168,7 @@ async function generateEmbeddings(input: string) {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({
-			model: "embeddinggemma:300m",
+			model: env.AI_EMBEDDING_TEXT_MODEL,
 			input: input,
 		}),
 	});
@@ -264,7 +256,4 @@ export async function generateImage(args: { prompt: string }) {
 
 	return { imageUrl };
 }
-const imageAdapter = createOpenaiImage("dall-e-3", env.OPENAI_API_KEY, {
-	moderation: "low",
-	quality: "medium",
-});
+const imageAdapter = createOpenaiImage("dall-e-3", env.OPENAI_API_KEY, {});

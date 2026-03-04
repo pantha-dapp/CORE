@@ -2,13 +2,17 @@ import * as t from "drizzle-orm/sqlite-core";
 import { tEvmAddress, timestamps } from "../helpers.base";
 import { users } from "./user";
 
-export const userDailyActivity = t.sqliteTable("user_daily_activity", {
-	userWallet: tEvmAddress()
-		.primaryKey()
-		.references(() => users.walletAddress, { onDelete: "cascade" }),
-	date: t.text("date").notNull(),
-	createdAt: timestamps.createdAt,
-});
+export const userDailyActivity = t.sqliteTable(
+	"user_daily_activity",
+	{
+		userWallet: tEvmAddress()
+			.notNull()
+			.references(() => users.walletAddress, { onDelete: "cascade" }),
+		date: t.text("date").notNull(),
+		createdAt: timestamps.createdAt,
+	},
+	(table) => [t.primaryKey({ columns: [table.userWallet, table.date] })],
+);
 
 export const userStreaks = t.sqliteTable("user_streaks", {
 	userId: tEvmAddress()
