@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import Button from "../../../shared/components/Button";
 
 interface Props {
@@ -15,13 +15,18 @@ export function FillInTheBlanks({
 	words,
 	wrongOptions = [],
 }: Props) {
-	// Count how many $1, $2, ... placeholders are in the words array
-	// The server intentionally clears `answers` before sending to client (security),
-	// so we determine blank count from placeholders in words
-	const blankCount = useMemo(
-		() => words.filter((w) => /^\$\d+$/.test(w)).length,
-		[words],
-	);
+	// Scan every character of every word token for $N patterns — not just exact-match
+	// tokens. The AI sometimes embeds placeholders inside punctuation, e.g. "( $1 , $2 )."
+	// as a single words[] element. We need Math.max of unique slot numbers, not a count.
+	const blankCount = useMemo(() => {
+		const nums: number[] = [];
+		for (const w of words) {
+			for (const m of w.matchAll(/\$(\d+)/g)) {
+				nums.push(parseInt(m[1], 10));
+			}
+		}
+		return nums.length === 0 ? 0 : Math.max(...nums);
+	}, [words]);
 
 	const [userInputs, setUserInputs] = useState<string[]>(
 		Array(blankCount).fill(""),
@@ -29,15 +34,47 @@ export function FillInTheBlanks({
 	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	// wrongOptions already contains the correct answers mixed in (server puts them there)
-	// Show them shuffled as hints
+	// Attach a stable id (original position before shuffle) so React keys are
+	// never based on the array index. wrongOptions already includes correct answers
+	// mixed in by the server.
 	const availableOptions = useMemo(() => {
-		const unique = Array.from(new Set(wrongOptions));
-		return unique.sort(() => Math.random() - 0.5);
+		return wrongOptions
+			.map((v, id) => ({ id, v }))
+			.sort(() => Math.random() - 0.5);
 	}, [wrongOptions]);
 
-	const allFilled =
-		blankCount > 0 && userInputs.every((input) => input.trim().length > 0);
+	// [].every() is vacuously true, so when blankCount=0 (no placeholders in words)
+	// the submit button is enabled immediately rather than stuck disabled forever.
+	const allFilled = userInputs.every((input) => input.trim().length > 0);
+
+	// Remaining options = availableOptions minus whatever is already placed in blanks
+	const remainingOptions = useMemo(() => {
+		const remaining = [...availableOptions];
+		for (const ans of userInputs) {
+			if (ans.trim().length === 0) continue;
+			const idx = remaining.findIndex(({ v }) => v === ans);
+			if (idx >= 0) remaining.splice(idx, 1);
+		}
+		return remaining;
+	}, [availableOptions, userInputs]);
+
+	// Click a word-bank chip → fill the next empty blank
+	function selectOption(option: string) {
+		if (showResult || isSubmitting) return;
+		const firstEmpty = userInputs.findIndex((v) => v.trim().length === 0);
+		if (firstEmpty === -1) return;
+		const next = [...userInputs];
+		next[firstEmpty] = option;
+		setUserInputs(next);
+	}
+
+	// Click a filled blank → return its answer to the word bank
+	function clearBlank(blankIndex: number) {
+		if (showResult || isSubmitting) return;
+		const next = [...userInputs];
+		next[blankIndex] = "";
+		setUserInputs(next);
+	}
 
 	async function handleSubmit() {
 		if (!allFilled) return;
@@ -55,6 +92,30 @@ export function FillInTheBlanks({
 		}
 	}
 
+	// ── Degenerate case: AI generated no $N placeholders ────────────────────────
+	// The server strips the real answers before sending to client, leaving
+	// content.answers = []. When blankCount = 0 the correct server-side check is
+	// jsonStringify([]) === jsonStringify([]) → true, so we just need to submit [].
+	// Show a simple "Continue" card so the user is not stuck with a broken UI.
+	if (blankCount === 0) {
+		return (
+			<div className="space-y-6">
+				<h3 className="text-2xl font-bold">Fill in the Blanks</h3>
+				<div className="bg-yellow-500/10 border border-yellow-500/30 p-5 rounded-lg text-center space-y-3">
+					<p className="text-yellow-300 text-sm font-medium">
+						⚠️ This question couldn't be displayed properly.
+					</p>
+					<p className="text-gray-400 text-sm">
+						Tap Continue to move on — it won't affect your progress.
+					</p>
+				</div>
+				<Button onClick={() => onSubmit([])} className="w-full">
+					Continue
+				</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-6">
 			<h3 className="text-2xl font-bold">Fill in the Blanks</h3>
@@ -65,66 +126,101 @@ export function FillInTheBlanks({
 
 			{/* Sentence with blanks */}
 			<div className="bg-gray-900/50 p-6 rounded-lg text-lg leading-loose">
-				{words.map((word, idx) => {
-					const placeholderMatch = word.match(/^\$(\d+)$/);
+				{words.flatMap((word, wordIdx) => {
+					// Split each token by any embedded $N patterns so that a single element
+					// like "( $1 , $2 )." is rendered as text + blank + text + blank + text.
+					const parts: ReactNode[] = [];
+					const regex = /\$(\d+)/g;
+					let lastIndex = 0;
+					let foundAny = false;
 
-					if (placeholderMatch) {
-						// 0-indexed blank slot
-						const blankIndex = parseInt(placeholderMatch[1], 10) - 1;
+					for (
+						let match = regex.exec(word);
+						match !== null;
+						match = regex.exec(word)
+					) {
+						foundAny = true;
+						// Plain text before this placeholder
+						if (match.index > lastIndex) {
+							parts.push(
+								<span
+									key={`w-${wordIdx}-t-${lastIndex}`}
+									className="text-gray-200"
+								>
+									{word.slice(lastIndex, match.index)}
+								</span>,
+							);
+						}
+						// Blank button for this $N
+						const blankIndex = parseInt(match[1], 10) - 1;
 						const userAnswer = userInputs[blankIndex] ?? "";
-						const isCorrect = showResult && userAnswer.trim().length > 0;
-
-						return (
-							<input
-								// use blankIndex and the placeholder word for a stable, meaningful key
-								key={`blank-${blankIndex}-${word}`}
-								type="text"
-								placeholder="___"
-								value={userAnswer}
-								onChange={(e) => {
-									const newInputs = [...userInputs];
-									newInputs[blankIndex] = e.target.value;
-									setUserInputs(newInputs);
-								}}
-								disabled={showResult || isSubmitting}
-								autoComplete="off"
-								className={`inline-block mx-1 px-3 py-1 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none focus:border-blue-400 w-28 text-center font-semibold transition-colors ${
+						const isFilled = userAnswer.trim().length > 0;
+						const isCorrect = showResult && isFilled;
+						parts.push(
+							<button
+								key={`blank-${wordIdx}-${match[1]}`}
+								type="button"
+								onClick={() => clearBlank(blankIndex)}
+								disabled={showResult || isSubmitting || !isFilled}
+								className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold ${
 									isCorrect
 										? "border-green-500 text-green-300"
-										: "border-gray-400 text-white"
+										: isFilled
+											? "border-blue-400 text-blue-300 hover:border-red-400 hover:text-red-300"
+											: "border-gray-500 text-gray-500"
 								}`}
-							/>
+							>
+								{isFilled ? userAnswer : "___"}
+							</button>,
+						);
+						lastIndex = regex.lastIndex;
+					}
+
+					// Remaining text after the last placeholder (or the full word if no $N found)
+					const tail = word.slice(lastIndex);
+					if (tail) {
+						const occ = words
+							.slice(0, wordIdx)
+							.filter((w) => w === word).length;
+						parts.push(
+							<span key={`w-${wordIdx}-tail-${occ}`} className="text-gray-200">
+								{tail}{" "}
+							</span>,
+						);
+					} else if (foundAny) {
+						// Token was entirely placeholder(s) — add a trailing space.
+						// Key uses word content + occurrence count to avoid lint warnings.
+						const spOcc = words
+							.slice(0, wordIdx)
+							.filter((w) => w === word).length;
+						parts.push(
+							<span key={`w-${word}-${spOcc}-sp`} aria-hidden>
+								{" "}
+							</span>,
 						);
 					}
 
-					// include the word text and its occurrence index to make the key stable
-					// (avoid using `idx` directly to prevent unstable keys on reordering)
-					return (
-						<span
-							key={`word-${word}-${words.slice(0, idx).filter((w) => w === word).length}`}
-							className="text-gray-200"
-						>
-							{word}{" "}
-						</span>
-					);
+					return parts;
 				})}
 			</div>
 
-			{/* Available words as hints */}
+			{/* Word bank – click to place; placed options disappear until the blank is cleared */}
 			{availableOptions.length > 0 && (
 				<div className="bg-gray-800/50 p-5 rounded-lg">
 					<h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-						💡 Word Bank (Hints)
+						💡 Word Bank
 					</h4>
 					<div className="flex flex-wrap gap-2">
-						{availableOptions.map((option) => (
-							<span
-								// options are deduplicated; use the option text as a stable key
-								key={`hint-${option}`}
-								className="px-3 py-1 rounded-full text-sm bg-gray-700 border border-gray-500 text-gray-300"
+						{remainingOptions.map(({ id, v }) => (
+							<button
+								key={`hint-${id}`}
+								type="button"
+								onClick={() => selectOption(v)}
+								disabled={showResult || isSubmitting}
+								className="px-3 py-1 rounded-full text-sm bg-gray-700 border border-gray-500 text-gray-300 hover:bg-gray-600 hover:border-blue-400 hover:text-white transition-colors"
 							>
-								{option}
-							</span>
+								{v}
+							</button>
 						))}
 					</div>
 				</div>

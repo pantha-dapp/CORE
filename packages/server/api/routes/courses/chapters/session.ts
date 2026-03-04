@@ -137,9 +137,18 @@ export default new Hono<RouterEnv>()
 					case "example_uses":
 						correct = true;
 						break;
-					case "fill_in_the_blanks":
-						correct = jsonStringify(content.answers) === jsonStringify(answer);
+					case "fill_in_the_blanks": {
+						// If the AI generated no $N placeholders in words (malformed output),
+						// the client showed a "Continue" card. Auto-mark correct so the user
+						// isn't penalised for a broken AI question.
+						const hasPlaceholders = (content.words as string[]).some((w) =>
+							/\$\d+/.test(w),
+						);
+						correct = hasPlaceholders
+							? jsonStringify(content.answers) === jsonStringify(answer)
+							: true;
 						break;
+					}
 					case "identify_object_from_images":
 						correct = content.correctImageIndex === parseInt(answer[0], 10);
 						break;
@@ -183,11 +192,11 @@ export default new Hono<RouterEnv>()
 
 			gameSessions.set(userWallet, session);
 
-			// console.log("Session state after answer:", { session, answer });
-			// console.log("Answer correctness:", { correct });
-			// console.log("current page number", session.currentPage);
-			// console.log("pages length", session.pages.length);
-			// console.log("has session?", gameSessions.has(userWallet));
+			console.log("Session state after answer:", { session, answer });
+			console.log("Answer correctness:", { correct });
+			console.log("current page number", session.currentPage);
+			console.log("pages length", session.pages.length);
+			console.log("has session?", gameSessions.has(userWallet));
 
 			if (session.currentPage >= session.pages.length) {
 				eventBus.emit("chapter.completed", {

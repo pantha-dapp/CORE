@@ -1,3 +1,4 @@
+import { marked } from "marked";
 import Button from "../../../shared/components/Button";
 
 interface Props {
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export function TeachContent({ topic, markdown, imageUrl, onContinue }: Props) {
+	const htmlContent = marked(markdown);
+
 	return (
 		<div className="space-y-4">
 			<h3 className="text-2xl font-bold">{topic}</h3>
@@ -16,7 +19,7 @@ export function TeachContent({ topic, markdown, imageUrl, onContinue }: Props) {
 			)}
 			<div className="prose prose-invert max-w-none">
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: Markdown content from AI */}
-				<div dangerouslySetInnerHTML={{ __html: markdown }} />
+				<div dangerouslySetInnerHTML={{ __html: htmlContent }} />
 			</div>
 			<Button onClick={onContinue} className="w-full mt-6">
 				Continue

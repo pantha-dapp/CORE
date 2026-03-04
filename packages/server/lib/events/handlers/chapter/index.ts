@@ -17,9 +17,22 @@ export default function (appState: AppState) {
 		const [userCourse] = await db
 			.select()
 			.from(userCourses)
-			.where(and(eq(userCourses.userWallet, walletAddress)));
+			.where(
+				and(
+					eq(userCourses.userWallet, walletAddress),
+					eq(userCourses.courseId, chapter.courseId),
+				),
+			);
 		if (!userCourse) return;
-
+		console.log(
+			"progress has been stored",
+			userCourse.progress,
+			chapter.order + 1,
+			userCourse.courseId,
+			chapter.courseId,
+			chapter.id,
+		);
+		console.log("progress has been stored another course");
 		if (userCourse.progress < chapter.order + 1) {
 			await db
 				.update(db.schema.userCourses)

@@ -52,6 +52,7 @@ export interface PolicyResourceDefs {
 	"user.view": PolicyResource<"user">;
 	"user.follow": PolicyResource<"user">;
 	"user.unfollow": PolicyResource<"user">;
+	"user.viewFriendProfile": PolicyResource<"user">;
 }
 type Domain = keyof PolicyResourceDefs extends infer K
 	? K extends `${infer Prefix}.${string}`

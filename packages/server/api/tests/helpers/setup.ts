@@ -23,10 +23,6 @@ import { createAuthenticatedApi } from "./apiAuth";
 import { testGlobals } from "./globals";
 import { testAiAdapter } from "./testAiAdapter";
 
-// let api0 = hc<typeof apiRouter>("http://error");
-// let api1 = hc<typeof apiRouter>("http://error");
-// let api2 = hc<typeof apiRouter>("http://error");
-
 export const userWallet1 = createWalletClient({
 	account: privateKeyToAccount(
 		"0x7b9a333cc8f8558f744fd43bae30c1cf9e33e3f5b1a9e8ca3402edec728dde84",
