@@ -22,6 +22,7 @@ export function createAi(args: {
 }) {
 	const { aiClient, vectorDbClient, objectStorage } = args;
 	const llmCache = createAiCache(vectorDbClient);
+	const imageProcessing: Record<string, Promise<{ url: string }>> = {};
 	function createLlmGenerateFunction<T extends ZodObject, R extends ZodObject>(
 		schemas: {
 			input: T;
@@ -171,12 +172,16 @@ export function createAi(args: {
 		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
 		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
 
+		if (imageProcessing[uuid]) {
+			return await imageProcessing[uuid];
+		}
+
 		const inputEmbedding = await aiClient.embedding.text(
 			similarityQueryOverride ?? prompt,
 		);
 		const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
 		if (similarImage && similarImage.score > cacheThreshold) {
-			return { imageUrl: similarImage.payload.imageUrl };
+			return { url: similarImage.payload.imageUrl };
 		}
 
 		const { buffer } = await aiClient.image.generate({
@@ -188,6 +193,7 @@ export function createAi(args: {
 			data: buffer,
 		});
 
+		imageProcessing[uuid] = hotStorage;
 		const { url: tmpUrl } = await hotStorage;
 
 		await imagePromptOutputs.writeEntry(uuid, {
@@ -205,7 +211,7 @@ export function createAi(args: {
 			objectStorage.unloadHot({ path: ["image", uuid] });
 		});
 
-		return { imageUrl: tmpUrl };
+		return { url: tmpUrl };
 	}
 	type GenerateImageArgs = Parameters<typeof generateOrFindImage>[0];
 

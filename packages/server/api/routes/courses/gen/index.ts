@@ -516,7 +516,7 @@ export default new Hono<RouterEnv>()
 								.generateIconImage({ prompt: newCourse.overview.icon })
 								.then((icon) => {
 									db.update(db.schema.courses)
-										.set({ icon: icon.imageUrl })
+										.set({ icon: icon.url })
 										.where(eq(db.schema.courses.id, generatedCourseId))
 										.run();
 
@@ -525,7 +525,7 @@ export default new Hono<RouterEnv>()
 											.generateIconImage({ prompt: chapter.icon })
 											.then((chapterIcon) => {
 												db.update(db.schema.courseChapters)
-													.set({ icon: chapterIcon.imageUrl })
+													.set({ icon: chapterIcon.url })
 													.where(
 														and(
 															eq(
