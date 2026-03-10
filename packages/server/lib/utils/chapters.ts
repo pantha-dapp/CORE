@@ -20,6 +20,7 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 	if (preparing.has(id)) {
 		return;
 	}
+	preparing.add(id);
 
 	const chaptersTillNow = await db
 		.select()
