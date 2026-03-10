@@ -166,58 +166,49 @@ export default function Profile(): JSX.Element {
 
 						{/* Tab list */}
 						<div className="p-4 space-y-1 max-h-60 overflow-y-auto">
-							{socialTab === "friends" && (
-								<>
-									{!selfFriends?.friends.length ? (
-										<EmptyState
-											emoji="🤝"
-											text="No friends yet — follow users back to become friends!"
+							{socialTab === "friends" &&
+								(!selfFriends?.friends.length ? (
+									<EmptyState
+										emoji="🤝"
+										text="No friends yet — follow users back to become friends!"
+									/>
+								) : (
+									selfFriends.friends.map((addr) => (
+										<WalletRow
+											key={addr}
+											address={addr}
+											label="Friend"
+											labelColor="text-cyan-400"
+											onClick={() => setSelectedFriend(addr as Address)}
 										/>
-									) : (
-										selfFriends.friends.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
-												label="Friend"
-												labelColor="text-cyan-400"
-												onClick={() => setSelectedFriend(addr as Address)}
-											/>
-										))
-									)}
-								</>
-							)}
-							{socialTab === "followers" && (
-								<>
-									{!userFollowers?.followers.length ? (
-										<EmptyState emoji="🙈" text="No followers yet." />
-									) : (
-										userFollowers.followers.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
-												label="Follower"
-												labelColor="text-violet-400"
-											/>
-										))
-									)}
-								</>
-							)}
-							{socialTab === "following" && (
-								<>
-									{!userFollowing?.following.length ? (
-										<EmptyState emoji="🔭" text="Not following anyone yet." />
-									) : (
-										userFollowing.following.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
-												label="Following"
-												labelColor="text-green-400"
-											/>
-										))
-									)}
-								</>
-							)}
+									))
+								))}
+							{socialTab === "followers" &&
+								(!userFollowers?.followers.length ? (
+									<EmptyState emoji="🙈" text="No followers yet." />
+								) : (
+									userFollowers.followers.map((addr) => (
+										<WalletRow
+											key={addr}
+											address={addr}
+											label="Follower"
+											labelColor="text-violet-400"
+										/>
+									))
+								))}
+							{socialTab === "following" &&
+								(!userFollowing?.following.length ? (
+									<EmptyState emoji="🔭" text="Not following anyone yet." />
+								) : (
+									userFollowing.following.map((addr) => (
+										<WalletRow
+											key={addr}
+											address={addr}
+											label="Following"
+											labelColor="text-green-400"
+										/>
+									))
+								))}
 						</div>
 					</div>
 

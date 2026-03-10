@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import type { hc } from "hono/client";
+import type { apiRouter } from "../routes/router";
 import { testGlobals } from "./helpers/globals";
 import { userWallet1 } from "./helpers/setup";
+
+function _rpc(_api: ReturnType<typeof hc<typeof apiRouter>>) {}
 
 describe("Auth", () => {
 	it("runtime returns uptime", async () => {
