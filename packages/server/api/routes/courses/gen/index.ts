@@ -411,6 +411,7 @@ export default new Hono<RouterEnv>()
 									title: evaluation.courseGenerationInstructions.courseTitle,
 									description:
 										evaluation.courseGenerationInstructions.courseDescription,
+									icon: newCourse.overview.icon,
 								});
 
 								const canonicalDescriptor = generateCanonicalCourseDescriptor({
@@ -448,6 +449,7 @@ export default new Hono<RouterEnv>()
 											title: chapter.title,
 											intent: chapter.intent,
 											order: chapterOrder++,
+											icon: chapter.icon,
 										})
 										.returning({ id: db.schema.courseChapters.id });
 
