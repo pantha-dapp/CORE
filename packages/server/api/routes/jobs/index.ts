@@ -1,3 +1,4 @@
+import { SECOND } from "@pantha/shared/constants";
 import type { RedisClient } from "bun";
 import { Hono } from "hono";
 import { respond } from "../../../lib/utils/respond";
@@ -52,7 +53,7 @@ export function createJob(redis: RedisClient, fn: () => Promise<void>): string {
 				})
 				.catch(async (err) => {
 					console.error("Job failed:", err);
-					await Bun.sleep(1000);
+					await Bun.sleep(22 * SECOND);
 
 					jobStore.update(id, { state: "failed", error: String(err) });
 				});
