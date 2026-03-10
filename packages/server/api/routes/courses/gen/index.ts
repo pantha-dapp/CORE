@@ -527,6 +527,7 @@ export default new Hono<RouterEnv>()
 						ongoingSession.state = "finished";
 						ongoingSession.courseId = generatedCourseId;
 					}
+
 					ongoingSession.lock = false;
 				});
 
