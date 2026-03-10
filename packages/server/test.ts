@@ -1,8 +1,7 @@
 import z, { toJSONSchema } from "zod";
 import type { AiClient } from "./lib/ai/client";
-import generateIdealCourseDescriptor from "./lib/ai/tasks/generateIdealCourseDescriptor";
 
-const client: AiClient = {
+const _client: AiClient = {
 	llm: {
 		text: async (args) => {
 			const response = await llmText(args);
