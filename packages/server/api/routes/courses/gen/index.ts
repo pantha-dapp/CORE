@@ -257,6 +257,8 @@ export default new Hono<RouterEnv>()
 				);
 
 				if (pendingQuestions.length > 0) {
+					ongoingSession.lock = false;
+
 					return respond.ok(
 						ctx,
 						{
