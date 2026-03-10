@@ -65,14 +65,30 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 		minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
 	});
 
+	generatedPages.forEach((page, index) => {
+		const { type, content } = page;
+
+		switch (type) {
+			case "fill_in_the_blanks":
+				if (!content.words.includes("$1")) delete generatedPages[index];
+				if (content.words.includes("$0")) delete generatedPages[index];
+				break;
+
+			default:
+				break;
+		}
+	});
+
 	await db
 		.insert(db.schema.chapterPages)
 		.values(
-			generatedPages.map((page, index) => ({
-				chapterId: id,
-				order: index + 1,
-				content: page,
-			})),
+			generatedPages
+				.filter((i) => !!i)
+				.map((page, index) => ({
+					chapterId: id,
+					order: index + 1,
+					content: page,
+				})),
 		)
 		.returning();
 
