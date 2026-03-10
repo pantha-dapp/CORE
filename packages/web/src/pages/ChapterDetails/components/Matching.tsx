@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "../../../shared/components/Button";
 
 interface Props {
@@ -12,6 +12,15 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 	const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
 	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const shuffledRights = useMemo(
+		() =>
+			[...pairs.map((pair, i) => ({ right: pair.right, originalIdx: i }))].sort(
+				() => Math.random() - 0.5,
+			),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[],
+	);
 
 	const allMatched = Object.keys(matches).length === pairs.length;
 
@@ -44,9 +53,12 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 		setShowResult(true);
 
 		try {
-			const answer = pairs.map((_, idx) => {
+			const answer = pairs.flatMap((pair, idx) => {
 				const rightIndex = matches[idx];
-				return rightIndex !== undefined ? pairs[rightIndex]?.right : "";
+				return [
+					pair.left,
+					rightIndex !== undefined ? (pairs[rightIndex]?.right ?? "") : "",
+				];
 			});
 
 			await onSubmit(answer);
@@ -109,14 +121,14 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 
 				{/* Right column */}
 				<div className="space-y-2">
-					{pairs.map((pair, idx) => {
-						const isMatched = Object.values(matches).includes(idx);
+					{shuffledRights.map((item) => {
+						const isMatched = Object.values(matches).includes(item.originalIdx);
 
 						return (
 							<button
-								key={`right-${idx}-${pair.right}`}
+								key={`right-${item.originalIdx}-${item.right}`}
 								type="button"
-								onClick={() => handleRightClick(idx)}
+								onClick={() => handleRightClick(item.originalIdx)}
 								disabled={showResult || isMatched}
 								className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
 									isMatched
@@ -124,7 +136,7 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 										: "border-gray-600 hover:border-gray-500"
 								} ${selectedLeft !== null && !isMatched ? "hover:border-blue-400" : ""}`}
 							>
-								{pair.right}
+								{item.right}
 							</button>
 						);
 					})}
