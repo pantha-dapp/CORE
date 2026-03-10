@@ -1,23 +1,25 @@
-import {
-	//  chat,
-	generateImage as tanstackGenerateImage,
-} from "@tanstack/ai";
-import {
-	//  createOpenaiChat,
-	createOpenaiImage,
-} from "@tanstack/ai-openai";
+import { createOpenaiImage } from "@tanstack/ai-openai";
 import { toJSONSchema, z } from "zod";
 import { type LanguageCode, languageCodesAndNames } from "../../data/languages";
 import env from "../../env";
+import { pngBufferToCompressedWebpBuffer } from "../utils/image";
 import type { AiClient } from "./client";
-// import { structuralRepairPrompt } from "./corrections";
 
 export const aiAdapter: AiClient = {
 	llm: {
 		text: llmText,
 		json: async (args) => {
-			const resposne = await llmJson(args);
-			return args.outputSchema.parse(JSON.parse(resposne));
+			const response = await llmJson(args);
+			const { data, error } = response;
+			if (error || !data) {
+				const healed = await jsonHeal({
+					...args,
+					failedGeneration: data ?? "{}",
+				});
+				return args.outputSchema.parse(JSON.parse(healed));
+			}
+
+			return args.outputSchema.parse(JSON.parse(data));
 		},
 	},
 	embedding: { text: generateEmbeddings },
@@ -26,24 +28,6 @@ export const aiAdapter: AiClient = {
 		generate: generateImage,
 	},
 };
-
-// const chatAdapter = createOpenaiChat(
-// 	//@ts-expect-error
-// 	"gpt-oss-120b",
-// 	env.CEREBRAS_API_KEY,
-// 	{
-// 		baseURL: "https://api.cerebras.ai/v1",
-// 	},
-// );
-
-// const correctionAdapter = createOpenaiChat(
-// 	//@ts-expect-error
-// 	"gpt-oss-120b",
-// 	env.CEREBRAS_API_KEY,
-// 	{
-// 		baseURL: "https://api.cerebras.ai/v1",
-// 	},
-// );
 
 async function llmText(args: { prompt: string; systemPrompts?: string[] }) {
 	const resp = await callOpenaiCompat({
@@ -117,6 +101,71 @@ async function llmJson<T, R>(args: {
 				{
 					role: "user",
 					content: `input:\n${JSON.stringify(args.input)}`,
+				},
+			],
+			response_format: {
+				type: "json_object",
+			},
+		}),
+	});
+
+	const data = await resp.json();
+
+	const parsed = z
+		.object({
+			choices: z.tuple([
+				z.object({
+					message: z.object({
+						content: z.string(),
+					}),
+				}),
+			]),
+		})
+		.safeParse(data);
+
+	if (!parsed.success) {
+		console.error("Failed to parse LLM JSON response:", {
+			data,
+			error: parsed.error,
+		});
+	}
+
+	return {
+		data: parsed.data?.choices[0].message.content,
+		error: parsed.success ? null : parsed.error,
+	};
+}
+
+async function jsonHeal(
+	args: Parameters<typeof llmJson>[0] & { failedGeneration: string },
+) {
+	const jsonSchema = toJSONSchema(args.outputSchema);
+
+	const resp = await callOpenaiCompat({
+		body: JSON.stringify({
+			model: "gpt-oss-120b",
+			messages: [
+				...(args.systemPrompts
+					? args.systemPrompts.map((prompt) => ({
+							role: "system",
+							content: prompt,
+						}))
+					: []),
+				{
+					role: "system",
+					content: `An Ai model has failed to generate valid JSON as requested. Your goal is to take the failed generation and fix it.  You will also be given the initial prompts and inputs so if any data is missing try to generate it. if any data must be deleted, delete it and prioritize restructuring to match the JSON over insertions or deletions. Always try to restructure whenever possible. here is the expected output Schema: ${JSON.stringify(jsonSchema)}.`,
+				},
+				{
+					role: "user",
+					content: `initial prompt: ${args.prompt}`,
+				},
+				{
+					role: "user",
+					content: `initial input:\n${JSON.stringify(args.input)}`,
+				},
+				{
+					role: "user",
+					content: `failed generation:\n${args.failedGeneration}`,
 				},
 			],
 			response_format: {
@@ -236,24 +285,31 @@ ${text}`,
 
 export async function generateImage(args: { prompt: string }) {
 	const { prompt } = args;
-
-	const response = await tanstackGenerateImage({
-		adapter: imageAdapter,
-		prompt: prompt,
-		size: "1024x1024",
-		numberOfImages: 1,
-		modelOptions: {
-			quality: "standard",
-			style: "vivid",
-			response_format: "url",
+	const resp = await fetch("https://api.openai.com/v1/images/generations", {
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${env.OPENAI_API_KEY}`,
 		},
+		method: "POST",
+		body: JSON.stringify({
+			model: "gpt-image-1-mini",
+			prompt: prompt,
+			n: 1,
+			size: "1024x1024",
+			quality: "low",
+			background: "transparent",
+		}),
 	});
 
-	const imageUrl = response.images.at(0)?.url;
-	if (!imageUrl) {
-		throw new Error("Failed to generate image");
+	if (!resp.ok) {
+		const error = await resp.json();
+		throw new Error(`OpenAI API error: ${JSON.stringify(error)}`);
 	}
 
-	return { imageUrl };
+	const data = (await resp.json()) as { data: [{ b64_json: string }] };
+	const b64 = data.data[0].b64_json;
+	const imageBuffer = Buffer.from(b64, "base64");
+	const webpBuffer = await pngBufferToCompressedWebpBuffer(imageBuffer);
+
+	return { buffer: webpBuffer };
 }
-const imageAdapter = createOpenaiImage("dall-e-3", env.OPENAI_API_KEY, {});
