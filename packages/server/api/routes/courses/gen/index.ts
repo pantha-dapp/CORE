@@ -41,6 +41,8 @@ type GenerationState = {
 		topics: string[];
 	}>;
 	uncertainties: Array<string>;
+
+	lock: boolean;
 };
 const sessionStore = new Map<string, GenerationState>();
 
@@ -71,6 +73,7 @@ export default new Hono<RouterEnv>()
 			candidateCourses: [],
 			uncertainties: [],
 			questionsBudget: DEFAULT_QUESTIONS_BUDGET,
+			lock: false,
 		});
 		session = sessionStore.get(userWallet);
 
@@ -145,9 +148,20 @@ export default new Hono<RouterEnv>()
 				);
 			}
 
+			if (ongoingSession.lock) {
+				return respond.err(
+					ctx,
+					"Session is currently processing a previous action. Please wait a moment before trying again.",
+					429,
+				);
+			}
+			ongoingSession.lock = true;
+
 			if (action.type === "major_category_choice") {
 				ongoingSession.majorCategory = action.category;
 				ongoingSession.state = "learning_intent_freetext";
+
+				ongoingSession.lock = false;
 
 				return respond.ok(
 					ctx,
@@ -209,6 +223,8 @@ export default new Hono<RouterEnv>()
 							key: crypto.randomUUID().slice(0, 8),
 						});
 					});
+
+					ongoingSession.lock = false;
 				});
 
 				return respond.ok(
@@ -511,6 +527,7 @@ export default new Hono<RouterEnv>()
 						ongoingSession.state = "finished";
 						ongoingSession.courseId = generatedCourseId;
 					}
+					ongoingSession.lock = false;
 				});
 
 				return respond.ok(
