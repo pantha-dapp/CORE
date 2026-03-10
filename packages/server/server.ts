@@ -3,6 +3,7 @@ import { RedisClient } from "bun";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { privateKeyToAccount } from "viem/accounts";
 import { attachAppState } from "./api/middleware/attachAppState";
 import { apiRouter } from "./api/routes/router";
 import type { AppState } from "./api/routes/types";
@@ -12,6 +13,7 @@ import { aiAdapter } from "./lib/ai/engine";
 import { createDb } from "./lib/db";
 import { InMemoryEventBus } from "./lib/events/bus";
 import { registerEventHandlers } from "./lib/events/handlers";
+import { ObjectStorageService } from "./lib/objectStorage/service";
 import { DefaultPolicyManager } from "./lib/policies";
 
 const vectorDbClient = new QdrantClient({
@@ -26,7 +28,26 @@ const db = createDb(env.SQLITE_FILE_PATH, {
 	redisClient: new RedisClient(env.REDIS_CONNECTION_URI),
 });
 
-const ai = createAi({ aiClient: aiAdapter, vectorDbClient });
+const objectStorage = new ObjectStorageService({
+	s3: {
+		accessKeyId: env.S3_ACCESS_KEY_ID,
+		secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+		endpoint: env.S3_ENDPOINT,
+		bucket: env.S3_BUCKET,
+		rootDir: ["pantha-server"],
+	},
+	synapse: {
+		account: privateKeyToAccount(
+			(env.EVM_PRIVATE_KEY_SYNAPSE.startsWith("0x")
+				? env.EVM_PRIVATE_KEY_SYNAPSE
+				: `0x${env.EVM_PRIVATE_KEY_SYNAPSE}`) as `0x${string}`,
+		),
+		environment: "dev",
+		source: "pantha-server",
+	},
+});
+
+const ai = createAi({ aiClient: aiAdapter, vectorDbClient, objectStorage });
 
 const eventBus = new InMemoryEventBus();
 
@@ -39,6 +60,7 @@ const appState: AppState = {
 	ai,
 	eventBus,
 	policyManager,
+	objectStorage,
 };
 
 // Register event handlers so emitted events are handled (DB updates, prep, etc.)
