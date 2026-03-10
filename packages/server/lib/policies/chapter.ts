@@ -9,8 +9,6 @@ const enforcers: Enforcers<"chapter"> = {
 		const chapter = await db.chapterById({ chapterId: resource.chapterId });
 		if (!chapter) throw new NotFoundError("Chapter not found.");
 
-		// If the user is enrolled in the course, enforce progression:
-		// userCourses.progress stores the highest completed chapter `order`.
 		const [enrollment] = await db
 			.select()
 			.from(db.schema.userCourses)
@@ -23,8 +21,6 @@ const enforcers: Enforcers<"chapter"> = {
 
 		if (enrollment) {
 			const progress = enrollment.progress ?? 0;
-			// Allow viewing if user has completed all chapters up to previous one
-			// (e.g. to view order=2 you must have progress >= 1)
 			if (progress < chapter.order) {
 				throw new ForbiddenError(
 					"You must complete previous chapters before accessing this one.",
