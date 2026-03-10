@@ -18,7 +18,7 @@ export interface AiClient {
 		text: (input: string) => Promise<number[]>;
 	};
 	image: {
-		generate: (args: { prompt: string }) => Promise<{ imageUrl: string }>;
+		generate: (args: { prompt: string }) => Promise<{ buffer: Buffer }>;
 	};
 	translation: {
 		generate: (args: {
