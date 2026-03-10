@@ -42,6 +42,7 @@ export function createJob(redis: RedisClient, fn: () => Promise<void>) {
 		fn()
 			.then(() => {
 				jobStore.update(id, { state: "success" });
+				resolve();
 			})
 			.catch(async (err) => {
 				console.error("Job failed:", err);
