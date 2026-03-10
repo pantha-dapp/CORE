@@ -8,7 +8,7 @@ import { RouterProvider, useRouter } from "@tanstack/react-router";
 import { Buffer as BufferI } from "buffer";
 import { StrictMode, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import router from "./pages/router";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
 import { privyConfig } from "./shared/config/privy";
@@ -37,6 +37,25 @@ function AppWrapper(props: { children: React.ReactNode }) {
 				privy.logout();
 				logout();
 				router.navigate({ to: "/login", replace: true });
+				return;
+			}
+
+			if (res.status === 403) {
+				// Show a friendly popup instead of logging out when access is forbidden
+				res
+					.clone()
+					.json()
+					.then((body) => {
+						const message =
+							body?.message ||
+							body?.error ||
+							"You must complete previous chapters first.";
+						toast(message);
+					})
+					.catch(() => {
+						toast("You must complete previous chapters first.");
+					});
+				return;
 			}
 		});
 	}
