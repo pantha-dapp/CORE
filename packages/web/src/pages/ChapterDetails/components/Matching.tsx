@@ -13,14 +13,23 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const shuffledRights = useMemo(
-		() =>
-			[...pairs.map((pair, i) => ({ right: pair.right, originalIdx: i }))].sort(
-				() => Math.random() - 0.5,
-			),
+	const shuffledRights = useMemo(() => {
+		const original = pairs.map((pair, i) => ({
+			right: pair.right,
+			originalIdx: i,
+		}));
+		console.log(
+			"Before shuffle:",
+			original.map((o) => o.right),
+		);
+		const shuffled = [...original].sort(() => Math.random() - 0.5);
+		console.log(
+			"After shuffle:",
+			shuffled.map((o) => o.right),
+		);
+		return shuffled;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[],
-	);
+	}, []);
 
 	const allMatched = Object.keys(matches).length === pairs.length;
 
@@ -62,6 +71,7 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 			});
 
 			await onSubmit(answer);
+			console.log("Submitted answer:", answer);
 			await new Promise((resolve) => setTimeout(resolve, 2000));
 		} catch (error) {
 			console.error("Error submitting matching:", error);
