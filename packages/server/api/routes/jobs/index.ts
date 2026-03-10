@@ -32,34 +32,38 @@ function getJobStore(redis: RedisClient) {
 	return { set, get, update };
 }
 
-export function createJob(redis: RedisClient, fn: () => Promise<void>): string {
+export function createJob(redis: RedisClient, fn: () => Promise<void>) {
 	const jobStore = getJobStore(redis);
 	const id = crypto.randomUUID();
 
 	jobStore.set(id, { state: "pending" });
 
-	fn()
-		.then(() => {
-			jobStore.update(id, { state: "success" });
-		})
-		.catch(async (err) => {
-			console.error("Job failed:", err);
+	const promise = new Promise<void>((resolve, reject) => {
+		fn()
+			.then(() => {
+				jobStore.update(id, { state: "success" });
+			})
+			.catch(async (err) => {
+				console.error("Job failed:", err);
 
-			await Bun.sleep(1000);
+				await Bun.sleep(1000);
 
-			fn()
-				.then(() => {
-					jobStore.update(id, { state: "success" });
-				})
-				.catch(async (err) => {
-					console.error("Job failed:", err);
-					await Bun.sleep(22 * SECOND);
+				fn()
+					.then(() => {
+						jobStore.update(id, { state: "success" });
+						resolve();
+					})
+					.catch(async (err) => {
+						console.error("Job failed:", err);
+						await Bun.sleep(22 * SECOND);
 
-					jobStore.update(id, { state: "failed", error: String(err) });
-				});
-		});
+						jobStore.update(id, { state: "failed", error: String(err) });
+						reject(err);
+					});
+			});
+	});
 
-	return id;
+	return { id, promise };
 }
 
 export default new Hono<RouterEnv>().get("/:id", authenticated, async (ctx) => {

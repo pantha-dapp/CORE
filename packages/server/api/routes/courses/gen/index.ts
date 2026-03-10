@@ -7,6 +7,7 @@ import { categories } from "../../../../data/categories";
 import type clarificationQuestionGenerator from "../../../../lib/ai/tasks/clarificationQuestionGenerator";
 import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/utils";
 import { createVectorDb } from "../../../../lib/db/vec/client";
+import { RateLimitExceededError } from "../../../../lib/errors";
 import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
@@ -149,10 +150,8 @@ export default new Hono<RouterEnv>()
 			}
 
 			if (ongoingSession.lock) {
-				return respond.err(
-					ctx,
-					"Session is currently processing a previous action. Please wait a moment before trying again.",
-					429,
+				throw new RateLimitExceededError(
+					"Your previous action is still being processed. Please wait a moment before taking another action.",
 				);
 			}
 			ongoingSession.lock = true;
@@ -176,54 +175,62 @@ export default new Hono<RouterEnv>()
 
 			if (action.type === "learning_intent_freetext") {
 				ongoingSession.learningIntent = action.intent;
-				const jobId = createJob(ctx.var.appState.db.redis, async () => {
-					const intentClarificationResult = await tryCatch(
-						ai.llm.intentClarification({
-							majorCategory:
-								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
-							userInput: ongoingSession.learningIntent ?? "",
-						}),
-					);
+				const { id: jobId, promise: jobPromise } = createJob(
+					ctx.var.appState.db.redis,
+					async () => {
+						const intentClarificationResult = await tryCatch(
+							ai.llm.intentClarification({
+								majorCategory:
+									categories[ongoingSession.majorCategory ?? -1] ?? "Others",
+								userInput: ongoingSession.learningIntent ?? "",
+							}),
+						);
 
-					if (intentClarificationResult.error) {
-						console.error(intentClarificationResult.error);
-						throw "Failed to clarify user learning intent.";
-					}
+						if (intentClarificationResult.error) {
+							console.error(intentClarificationResult.error);
+							throw "Failed to clarify user learning intent.";
+						}
 
-					const intentClarificationData = intentClarificationResult.data;
-					ongoingSession.inferredGoal = intentClarificationData.inferredGoal;
+						const intentClarificationData = intentClarificationResult.data;
+						ongoingSession.inferredGoal = intentClarificationData.inferredGoal;
 
-					intentClarificationData.uncertainties.forEach((u) => {
-						ongoingSession.uncertainties.push(u);
-					});
-					ongoingSession.state = "answer_question";
-
-					const clarificationQuestionResult = await tryCatch(
-						ai.llm.clarificationQuestionGenerator({
-							inferredGoal: intentClarificationData.inferredGoal,
-							uncertainties: ongoingSession.uncertainties,
-							previous: ongoingSession.questions.map((q) => ({
-								question: q.text,
-								purpose: q.purpose,
-								answer: q.answer ?? "unanswered",
-							})),
-							questionsToGenerate: Math.min(3, ongoingSession.questionsBudget),
-							courses: ongoingSession.candidateCourses,
-						}),
-					);
-					if (clarificationQuestionResult.error) {
-						throw "Failed to generate clarification questions.";
-					}
-					const { questions } = clarificationQuestionResult.data;
-
-					questions.forEach((q) => {
-						ongoingSession.questionsBudget--;
-						ongoingSession.questions.push({
-							...q,
-							key: crypto.randomUUID().slice(0, 8),
+						intentClarificationData.uncertainties.forEach((u) => {
+							ongoingSession.uncertainties.push(u);
 						});
-					});
+						ongoingSession.state = "answer_question";
 
+						const clarificationQuestionResult = await tryCatch(
+							ai.llm.clarificationQuestionGenerator({
+								inferredGoal: intentClarificationData.inferredGoal,
+								uncertainties: ongoingSession.uncertainties,
+								previous: ongoingSession.questions.map((q) => ({
+									question: q.text,
+									purpose: q.purpose,
+									answer: q.answer ?? "unanswered",
+								})),
+								questionsToGenerate: Math.min(
+									3,
+									ongoingSession.questionsBudget,
+								),
+								courses: ongoingSession.candidateCourses,
+							}),
+						);
+						if (clarificationQuestionResult.error) {
+							throw "Failed to generate clarification questions.";
+						}
+						const { questions } = clarificationQuestionResult.data;
+
+						questions.forEach((q) => {
+							ongoingSession.questionsBudget--;
+							ongoingSession.questions.push({
+								...q,
+								key: crypto.randomUUID().slice(0, 8),
+							});
+						});
+					},
+				);
+
+				jobPromise.finally(() => {
 					ongoingSession.lock = false;
 				});
 
@@ -261,273 +268,283 @@ export default new Hono<RouterEnv>()
 					);
 				}
 
-				const jobId = createJob(ctx.var.appState.db.redis, async () => {
-					const idealCourseResult = await tryCatch(
-						ai.llm.generateIdealCourseDescriptor({
-							majorCategory:
-								categories[ongoingSession.majorCategory ?? -1] ?? "Others",
-							inferredGoal: ongoingSession.inferredGoal ?? "",
-							learningIntent: ongoingSession.learningIntent ?? "",
-							uncertainties: ongoingSession.uncertainties,
-							previous: ongoingSession.questions.map((q) => ({
-								question: q.text,
-								purpose: q.purpose,
-								answer: q.answer || "",
-							})),
-						}),
-					);
-
-					if (idealCourseResult.error) {
-						throw "Failed to generate ideal course descriptor.";
-					}
-					const idealCourse = idealCourseResult.data;
-					const idealCourseDescriptor =
-						generateCanonicalCourseDescriptor(idealCourse);
-					const idealCourseDescriptorEmbedding = await ai.embedding.text(
-						idealCourseDescriptor,
-					);
-					const similarCoursesToIdeal = await coursesVectorDb.querySimilar(
-						idealCourseDescriptorEmbedding,
-						5,
-					);
-
-					// Push all candidate courses to the ongoing session's state
-					ongoingSession.candidateCourses = [];
-					if (similarCoursesToIdeal.length > 0) {
-						const courseIds = similarCoursesToIdeal
-							.filter((c) => {
-								return c.score > 0.7;
-							})
-							.map((c) => c.id);
-
-						for (const courseId of courseIds) {
-							const course = await db.courseById({ courseId });
-
-							if (course) {
-								const topics = await db
-									.select()
-									.from(db.schema.courseTopics)
-									.where(eq(db.schema.courseTopics.courseId, courseId));
-
-								ongoingSession.candidateCourses.push({
-									id: courseId,
-									title: course.title,
-									description: course.description,
-									topics: topics.map((t) => t.topic),
-								});
-							}
-						}
-					}
-
-					const courseSelectionEvaluatorResult = await tryCatch(
-						ai.llm.courseSelectionEvaluator({
-							previous: ongoingSession.questions.map((q) => ({
-								question: q.text,
-								purpose: q.purpose,
-								answer: q.answer || "unanswered",
-							})),
-							currentCandidateCourses: ongoingSession.candidateCourses.map(
-								(course, idx) => ({
-									...course,
-									id: idx,
-								}),
-							),
-							questionBudgetRemaining: ongoingSession.questionsBudget,
-							questionsAsked:
-								DEFAULT_QUESTIONS_BUDGET - ongoingSession.questionsBudget,
-							remainingUncertainties: ongoingSession.uncertainties,
-						}),
-					);
-					if (courseSelectionEvaluatorResult.error) {
-						console.error(courseSelectionEvaluatorResult.error);
-						throw "Failed to evaluate course selection.";
-					}
-					const evaluation = courseSelectionEvaluatorResult.data;
-
-					if (evaluation.decision === "ask_more_questions") {
-						ongoingSession.uncertainties =
-							evaluation.uncertantiesRemaining || ongoingSession.uncertainties;
-
-						const clarificationQuestionGeneratorResult = await tryCatch(
-							ai.llm.clarificationQuestionGenerator({
+				const { id: jobId, promise: jobPromise } = createJob(
+					ctx.var.appState.db.redis,
+					async () => {
+						const idealCourseResult = await tryCatch(
+							ai.llm.generateIdealCourseDescriptor({
+								majorCategory:
+									categories[ongoingSession.majorCategory ?? -1] ?? "Others",
 								inferredGoal: ongoingSession.inferredGoal ?? "",
+								learningIntent: ongoingSession.learningIntent ?? "",
 								uncertainties: ongoingSession.uncertainties,
 								previous: ongoingSession.questions.map((q) => ({
 									question: q.text,
 									purpose: q.purpose,
-									answer: q.answer ?? "unanswered",
+									answer: q.answer || "",
 								})),
-								questionsToGenerate: Math.min(
-									evaluation.questionCount || 3,
-									ongoingSession.questionsBudget,
-								),
-								courses: ongoingSession.candidateCourses,
 							}),
 						);
-						if (clarificationQuestionGeneratorResult.error) {
-							throw "Failed to generate additional clarification questions.";
-						}
-						const { questions } = clarificationQuestionGeneratorResult.data;
 
-						questions.forEach((q) => {
-							ongoingSession.questionsBudget--;
-							ongoingSession.questions.push({
-								...q,
-								key: crypto.randomUUID().slice(0, 8),
-							});
-						});
-					}
-
-					if (evaluation.decision === "select_existing_course") {
-						if (
-							evaluation.chosenCourseId === null ||
-							evaluation.chosenCourseId === undefined
-						) {
-							throw "No course ID chosen for enrollment";
+						if (idealCourseResult.error) {
+							throw "Failed to generate ideal course descriptor.";
 						}
-						const chosenCourseId =
-							ongoingSession.candidateCourses[evaluation.chosenCourseId]?.id;
-						if (!chosenCourseId) {
-							throw "Chosen course ID is invalid";
-						}
-
-						const enrollmentResult = await tryCatch(
-							db.enrollUserInCourse({
-								userWallet: userWallet,
-								courseId: chosenCourseId,
-							}),
+						const idealCourse = idealCourseResult.data;
+						const idealCourseDescriptor =
+							generateCanonicalCourseDescriptor(idealCourse);
+						const idealCourseDescriptorEmbedding = await ai.embedding.text(
+							idealCourseDescriptor,
 						);
-						if (enrollmentResult.error) {
-							throw "Failed to enroll user in the chosen course.";
-						}
-
-						ongoingSession.state = "finished";
-						ongoingSession.courseId = chosenCourseId;
-					}
-
-					if (evaluation.decision === "create_new_course") {
-						let generatedCourseId = "";
-						if (!evaluation.courseGenerationInstructions) {
-							throw "No instructions for course generation";
-						}
-						const newCourse = await ai.llm.generateNewCourseSkeleton(
-							evaluation.courseGenerationInstructions,
+						const similarCoursesToIdeal = await coursesVectorDb.querySimilar(
+							idealCourseDescriptorEmbedding,
+							5,
 						);
 
-						let firstChapterId = "";
-						await db
-							.transaction(async (tx) => {
-								if (!evaluation.courseGenerationInstructions) {
-									throw "No instructions for course generation";
-								}
-								const courseId = crypto.randomUUID();
+						// Push all candidate courses to the ongoing session's state
+						ongoingSession.candidateCourses = [];
+						if (similarCoursesToIdeal.length > 0) {
+							const courseIds = similarCoursesToIdeal
+								.filter((c) => {
+									return c.score > 0.7;
+								})
+								.map((c) => c.id);
 
-								await tx.insert(db.schema.courses).values({
-									id: courseId,
-									title: evaluation.courseGenerationInstructions.courseTitle,
-									description:
-										evaluation.courseGenerationInstructions.courseDescription,
-									icon: newCourse.overview.icon,
-								});
+							for (const courseId of courseIds) {
+								const course = await db.courseById({ courseId });
 
-								const canonicalDescriptor = generateCanonicalCourseDescriptor({
-									name: evaluation.courseGenerationInstructions.courseTitle,
-									description:
-										evaluation.courseGenerationInstructions.courseDescription,
-									topics:
-										evaluation.courseGenerationInstructions
-											.assumedPrerequisites,
-								});
-								const embedding = await ai.embedding.text(canonicalDescriptor);
-								coursesVectorDb.writeEntry(courseId, {
-									vector: embedding,
-									payload: { courseId },
-								});
-								generatedCourseId = courseId;
+								if (course) {
+									const topics = await db
+										.select()
+										.from(db.schema.courseTopics)
+										.where(eq(db.schema.courseTopics.courseId, courseId));
 
-								for (const topic of newCourse.overview.topics) {
-									await tx.insert(db.schema.courseTopics).values({
-										courseId: courseId,
-										topic: topic,
-										id: crypto.randomUUID(),
+									ongoingSession.candidateCourses.push({
+										id: courseId,
+										title: course.title,
+										description: course.description,
+										topics: topics.map((t) => t.topic),
 									});
 								}
+							}
+						}
 
-								let chapterOrder = 0;
-								for (const chapter of newCourse.overview.chapters) {
-									const chapterId = crypto.randomUUID();
-									const [insertedChapter] = await tx
-										.insert(db.schema.courseChapters)
-										.values({
-											courseId: courseId,
-											description: chapter.description,
-											id: chapterId,
-											title: chapter.title,
-											intent: chapter.intent,
-											order: chapterOrder++,
-											icon: chapter.icon,
-										})
-										.returning({ id: db.schema.courseChapters.id });
+						const courseSelectionEvaluatorResult = await tryCatch(
+							ai.llm.courseSelectionEvaluator({
+								previous: ongoingSession.questions.map((q) => ({
+									question: q.text,
+									purpose: q.purpose,
+									answer: q.answer || "unanswered",
+								})),
+								currentCandidateCourses: ongoingSession.candidateCourses.map(
+									(course, idx) => ({
+										...course,
+										id: idx,
+									}),
+								),
+								questionBudgetRemaining: ongoingSession.questionsBudget,
+								questionsAsked:
+									DEFAULT_QUESTIONS_BUDGET - ongoingSession.questionsBudget,
+								remainingUncertainties: ongoingSession.uncertainties,
+							}),
+						);
+						if (courseSelectionEvaluatorResult.error) {
+							console.error(courseSelectionEvaluatorResult.error);
+							throw "Failed to evaluate course selection.";
+						}
+						const evaluation = courseSelectionEvaluatorResult.data;
 
-									if (!insertedChapter || !insertedChapter.id) {
-										throw "Failed to insert course chapter.";
-									}
+						if (evaluation.decision === "ask_more_questions") {
+							ongoingSession.uncertainties =
+								evaluation.uncertantiesRemaining ||
+								ongoingSession.uncertainties;
 
-									if (!firstChapterId) {
-										firstChapterId = insertedChapter.id;
-									}
+							const clarificationQuestionGeneratorResult = await tryCatch(
+								ai.llm.clarificationQuestionGenerator({
+									inferredGoal: ongoingSession.inferredGoal ?? "",
+									uncertainties: ongoingSession.uncertainties,
+									previous: ongoingSession.questions.map((q) => ({
+										question: q.text,
+										purpose: q.purpose,
+										answer: q.answer ?? "unanswered",
+									})),
+									questionsToGenerate: Math.min(
+										evaluation.questionCount || 3,
+										ongoingSession.questionsBudget,
+									),
+									courses: ongoingSession.candidateCourses,
+								}),
+							);
+							if (clarificationQuestionGeneratorResult.error) {
+								throw "Failed to generate additional clarification questions.";
+							}
+							const { questions } = clarificationQuestionGeneratorResult.data;
 
-									for (const topic of chapter.topics) {
-										await tx.insert(db.schema.chapterTopics).values({
-											id: crypto.randomUUID(),
-											chapterId: insertedChapter.id,
-											topic: topic,
-										});
-									}
-								}
-							})
-							.catch(() => {
-								if (!generatedCourseId || generatedCourseId.length === 0) {
-									coursesVectorDb.deleteEntry(generatedCourseId);
-								}
-							});
-						await db.enrollUserInCourse({
-							userWallet: userWallet,
-							courseId: generatedCourseId,
-						});
-
-						ai.image
-							.generateIconImage({ prompt: newCourse.overview.icon })
-							.then((icon) => {
-								db.update(db.schema.courses)
-									.set({ icon: icon.imageUrl })
-									.where(eq(db.schema.courses.id, generatedCourseId))
-									.run();
-
-								newCourse.overview.chapters.forEach((chapter, idx) => {
-									ai.image
-										.generateIconImage({ prompt: chapter.icon })
-										.then((chapterIcon) => {
-											db.update(db.schema.courseChapters)
-												.set({ icon: chapterIcon.imageUrl })
-												.where(
-													and(
-														eq(
-															db.schema.courseChapters.courseId,
-															generatedCourseId,
-														),
-														eq(db.schema.courseChapters.order, idx),
-													),
-												)
-												.run();
-										});
+							questions.forEach((q) => {
+								ongoingSession.questionsBudget--;
+								ongoingSession.questions.push({
+									...q,
+									key: crypto.randomUUID().slice(0, 8),
 								});
 							});
-						await prepareChapter(firstChapterId, { db, ai });
-						ongoingSession.state = "finished";
-						ongoingSession.courseId = generatedCourseId;
-					}
+						}
 
+						if (evaluation.decision === "select_existing_course") {
+							if (
+								evaluation.chosenCourseId === null ||
+								evaluation.chosenCourseId === undefined
+							) {
+								throw "No course ID chosen for enrollment";
+							}
+							const chosenCourseId =
+								ongoingSession.candidateCourses[evaluation.chosenCourseId]?.id;
+							if (!chosenCourseId) {
+								throw "Chosen course ID is invalid";
+							}
+
+							const enrollmentResult = await tryCatch(
+								db.enrollUserInCourse({
+									userWallet: userWallet,
+									courseId: chosenCourseId,
+								}),
+							);
+							if (enrollmentResult.error) {
+								throw "Failed to enroll user in the chosen course.";
+							}
+
+							ongoingSession.state = "finished";
+							ongoingSession.courseId = chosenCourseId;
+						}
+
+						if (evaluation.decision === "create_new_course") {
+							let generatedCourseId = "";
+							if (!evaluation.courseGenerationInstructions) {
+								throw "No instructions for course generation";
+							}
+							const newCourse = await ai.llm.generateNewCourseSkeleton(
+								evaluation.courseGenerationInstructions,
+							);
+
+							let firstChapterId = "";
+							await db
+								.transaction(async (tx) => {
+									if (!evaluation.courseGenerationInstructions) {
+										throw "No instructions for course generation";
+									}
+									const courseId = crypto.randomUUID();
+
+									await tx.insert(db.schema.courses).values({
+										id: courseId,
+										title: evaluation.courseGenerationInstructions.courseTitle,
+										description:
+											evaluation.courseGenerationInstructions.courseDescription,
+										icon: newCourse.overview.icon,
+									});
+
+									const canonicalDescriptor = generateCanonicalCourseDescriptor(
+										{
+											name: evaluation.courseGenerationInstructions.courseTitle,
+											description:
+												evaluation.courseGenerationInstructions
+													.courseDescription,
+											topics:
+												evaluation.courseGenerationInstructions
+													.assumedPrerequisites,
+										},
+									);
+									const embedding =
+										await ai.embedding.text(canonicalDescriptor);
+									coursesVectorDb.writeEntry(courseId, {
+										vector: embedding,
+										payload: { courseId },
+									});
+									generatedCourseId = courseId;
+
+									for (const topic of newCourse.overview.topics) {
+										await tx.insert(db.schema.courseTopics).values({
+											courseId: courseId,
+											topic: topic,
+											id: crypto.randomUUID(),
+										});
+									}
+
+									let chapterOrder = 0;
+									for (const chapter of newCourse.overview.chapters) {
+										const chapterId = crypto.randomUUID();
+										const [insertedChapter] = await tx
+											.insert(db.schema.courseChapters)
+											.values({
+												courseId: courseId,
+												description: chapter.description,
+												id: chapterId,
+												title: chapter.title,
+												intent: chapter.intent,
+												order: chapterOrder++,
+												icon: chapter.icon,
+											})
+											.returning({ id: db.schema.courseChapters.id });
+
+										if (!insertedChapter || !insertedChapter.id) {
+											throw "Failed to insert course chapter.";
+										}
+
+										if (!firstChapterId) {
+											firstChapterId = insertedChapter.id;
+										}
+
+										for (const topic of chapter.topics) {
+											await tx.insert(db.schema.chapterTopics).values({
+												id: crypto.randomUUID(),
+												chapterId: insertedChapter.id,
+												topic: topic,
+											});
+										}
+									}
+								})
+								.catch(() => {
+									if (!generatedCourseId || generatedCourseId.length === 0) {
+										coursesVectorDb.deleteEntry(generatedCourseId);
+									}
+								});
+							await db.enrollUserInCourse({
+								userWallet: userWallet,
+								courseId: generatedCourseId,
+							});
+
+							ai.image
+								.generateIconImage({ prompt: newCourse.overview.icon })
+								.then((icon) => {
+									db.update(db.schema.courses)
+										.set({ icon: icon.imageUrl })
+										.where(eq(db.schema.courses.id, generatedCourseId))
+										.run();
+
+									newCourse.overview.chapters.forEach((chapter, idx) => {
+										ai.image
+											.generateIconImage({ prompt: chapter.icon })
+											.then((chapterIcon) => {
+												db.update(db.schema.courseChapters)
+													.set({ icon: chapterIcon.imageUrl })
+													.where(
+														and(
+															eq(
+																db.schema.courseChapters.courseId,
+																generatedCourseId,
+															),
+															eq(db.schema.courseChapters.order, idx),
+														),
+													)
+													.run();
+											});
+									});
+								});
+							await prepareChapter(firstChapterId, { db, ai });
+							ongoingSession.state = "finished";
+							ongoingSession.courseId = generatedCourseId;
+						}
+					},
+				);
+
+				jobPromise.finally(() => {
 					ongoingSession.lock = false;
 				});
 
