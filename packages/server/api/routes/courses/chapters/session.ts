@@ -192,12 +192,6 @@ export default new Hono<RouterEnv>()
 
 			gameSessions.set(userWallet, session);
 
-			console.log("Session state after answer:", { session, answer });
-			console.log("Answer correctness:", { correct });
-			console.log("current page number", session.currentPage);
-			console.log("pages length", session.pages.length);
-			console.log("has session?", gameSessions.has(userWallet));
-
 			if (session.currentPage >= session.pages.length) {
 				eventBus.emit("chapter.completed", {
 					chapterId: session.chapterId,
