@@ -1,6 +1,7 @@
 import { jsonStringify } from "@pantha/shared";
 import type { ZodObject, z } from "zod";
 import { createVectorDb, type VectorDbClient } from "../db/vec/client";
+import type { ObjectStorageService } from "../objectStorage/service";
 import { createAiCache } from "./cache";
 import type { AiClient } from "./client";
 import clarificationQuestionGenerator from "./tasks/clarificationQuestionGenerator";
@@ -17,8 +18,9 @@ import learningIntentSummarizer from "./tasks/learningIntentSummarizer";
 export function createAi(args: {
 	aiClient: AiClient;
 	vectorDbClient: VectorDbClient;
+	objectStorage: ObjectStorageService;
 }) {
-	const { aiClient, vectorDbClient } = args;
+	const { aiClient, vectorDbClient, objectStorage } = args;
 	const llmCache = createAiCache(vectorDbClient);
 	function createLlmGenerateFunction<T extends ZodObject, R extends ZodObject>(
 		schemas: {
@@ -166,6 +168,9 @@ export function createAi(args: {
 	}) {
 		const { prompt, cacheThreshold = 0.95, similarityQueryOverride } = args;
 
+		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
+		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+
 		const inputEmbedding = await aiClient.embedding.text(
 			similarityQueryOverride ?? prompt,
 		);
@@ -174,24 +179,33 @@ export function createAi(args: {
 			return { imageUrl: similarImage.payload.imageUrl };
 		}
 
-		const response = await aiClient.image.generate({
+		const { buffer } = await aiClient.image.generate({
 			prompt: prompt,
 		});
 
-		const imageUrl = response.imageUrl;
-		if (!imageUrl) {
-			throw new Error("Failed to generate image");
-		}
+		const { hotStorage, persistentStorage } = objectStorage.upload({
+			path: ["image", uuid],
+			data: buffer,
+		});
 
-		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
-		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+		const { url: tmpUrl } = await hotStorage;
 
 		await imagePromptOutputs.writeEntry(uuid, {
 			vector: inputEmbedding,
-			payload: { imageUrl },
+			payload: { imageUrl: tmpUrl },
 		});
 
-		return { imageUrl };
+		persistentStorage.then(({ url }) => {
+			// Update the entry with the permanent URL once available
+			imagePromptOutputs.writeEntry(uuid, {
+				vector: inputEmbedding,
+				payload: { imageUrl: url },
+			});
+
+			objectStorage.unloadHot({ path: ["image", uuid] });
+		});
+
+		return { imageUrl: tmpUrl };
 	}
 	type GenerateImageArgs = Parameters<typeof generateOrFindImage>[0];
 
