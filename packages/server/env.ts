@@ -13,9 +13,12 @@ const envKeys = [
 	"EVM_PRIVATE_KEY_SYNAPSE",
 	"TG_ANALYTICS_BOT_GROUP_ID",
 	"CEREBRAS_API_KEY",
-
 	"AI_LLM_TEXT_MODEL",
 	"AI_EMBEDDING_TEXT_MODEL",
+	"S3_ACCESS_KEY_ID",
+	"S3_SECRET_ACCESS_KEY",
+	"S3_BUCKET",
+	"S3_ENDPOINT",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;
