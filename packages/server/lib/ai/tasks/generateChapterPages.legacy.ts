@@ -92,6 +92,7 @@ PACING & FLOW RULES (CRITICAL):
 ✓ NO more than 2 teaching pages in a row
 ✓ NO more than 3 question pages in a row
 ✓ May optionally have an image prompt if relevant and required but this is not mandatory, avoid unnecessary images as image generation is costly and time-consuming, use images sparingly but do use them.
+✓ Lot of Image generation is ok if the course deems it necessary, like art, pixel art or architecture or anything where visual representation is crucial, but for more abstract topics like programming or math try to avoid images and use text-based explanations and examples more
 
 PAGE TYPES & CONTENT SPECIFICATIONS:
 
