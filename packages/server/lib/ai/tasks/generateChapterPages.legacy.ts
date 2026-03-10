@@ -150,7 +150,7 @@ PAGE TYPES & CONTENT SPECIFICATIONS:
    STRUCTURE:
    - words: Complete array of words in the sentence where blanks are $1, $2, etc.
    - answers: Array of correct words for the blanks in order
-   - wrongOptions: Array of incorrect options as distractors
+   - wrongOptions: Array of incorrect options as distractors, it is a flat array of words, you are not to create nested arrays for seperate blanks, just one flat array of wrong options that can be used for confusion in any blank
 
    GUIDELINES:
    - Write complete, grammatically correct sentence first
