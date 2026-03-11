@@ -6,6 +6,7 @@ import { createAiCache } from "./cache";
 import type { AiClient } from "./client";
 import clarificationQuestionGenerator from "./tasks/clarificationQuestionGenerator";
 import courseSelectionEvaluator from "./tasks/courseSelectionEvaluator";
+import generateAnswerExplanation from "./tasks/generateAnswerExplanation";
 import { generateChapterPageOutputTypedSchema } from "./tasks/generateChapterPage.schemas";
 import generateChapterPages from "./tasks/generateChapterPages.legacy";
 import generateIconImage from "./tasks/generateIconImage";
@@ -151,6 +152,13 @@ export function createAi(args: {
 				output: learningIntentSummarizer.outputSchema,
 			},
 			learningIntentSummarizer.prompt,
+		),
+		generateAnswerExplanation: createLlmGenerateFunction(
+			{
+				input: generateAnswerExplanation.inputSchema,
+				output: generateAnswerExplanation.outputSchema,
+			},
+			generateAnswerExplanation.prompt,
 		),
 	};
 
