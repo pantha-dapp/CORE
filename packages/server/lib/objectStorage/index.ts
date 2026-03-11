@@ -20,6 +20,12 @@ export const ObjectStorageResourceDefs = [
 		contentType: "image/webp",
 		maxSizeBytes: 5 * 1024 * 1024, // 5MB
 	},
+	{
+		name: "pageImages",
+		key: "chapter-page-images",
+		contentType: "image/webp",
+		maxSizeBytes: 10 * 1024 * 1024, // 5MB
+	},
 ] as const satisfies readonly ObjectStorageResourceDef[];
 
 export type ObjectStorageResourceKey =
