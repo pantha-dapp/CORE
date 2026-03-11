@@ -29,7 +29,7 @@ export class S3ObjectStorage implements ObjectStorageAdapter {
 	}
 
 	file(path: string[]) {
-		return this.$s3.file([this._config.rootDir, ...path].join("/"));
+		return this.$s3.file([...this._config.rootDir, ...path].join("/"));
 	}
 
 	async upload(
@@ -46,9 +46,8 @@ export class S3ObjectStorage implements ObjectStorageAdapter {
 				`File size exceeds maximum of ${def.maxSizeBytes} bytes for resource type ${key}`,
 			);
 		}
-		const pathStr = [def.key, ...path].join("/");
 
-		const file = this.$s3.file(pathStr);
+		const file = this.file([def.key, ...path]);
 
 		await file.write(data);
 
@@ -59,8 +58,7 @@ export class S3ObjectStorage implements ObjectStorageAdapter {
 
 	async delete(args: { path: string[] }) {
 		const { path } = args;
-		const pathStr = path.join("/");
-		const file = this.$s3.file(pathStr);
+		const file = this.file(path);
 		await file.delete();
 	}
 }
