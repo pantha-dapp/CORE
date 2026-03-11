@@ -1,14 +1,13 @@
 import * as t from "drizzle-orm/sqlite-core";
 import { timestamps, tUuid } from "../helpers.base";
-import { tPageContent } from "../helpers.custom";
+import { tImageParts, tPageContent } from "../helpers.custom";
 
 export const courses = t.sqliteTable("courses", {
 	id: tUuid("id").primaryKey(),
 	title: t.text("title").notNull(),
 	description: t.text("description").notNull(),
 
-	iconPrompt: t.text("icon_prompt"),
-	iconUrl: t.text("icon_url"),
+	icon: tImageParts("icon").notNull(),
 
 	...timestamps,
 });
@@ -43,8 +42,7 @@ export const courseChapters = t.sqliteTable(
 			})
 			.notNull(),
 
-		iconPrompt: t.text("icon_prompt"),
-		iconUrl: t.text("icon_url"),
+		icon: tImageParts("icon").notNull(),
 	},
 	(table) => [t.index("idx_course_chapters_course_id").on(table.courseId)],
 );
