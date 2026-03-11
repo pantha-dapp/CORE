@@ -4,43 +4,42 @@ import Button from "../../../shared/components/Button";
 interface Props {
 	question: string;
 	options: string[];
-	correctOptionIndex: number;
 	imageUrl?: string;
 	onSubmit: (answer: string[]) => Promise<void>;
+	answerResult: { correct: boolean; pageIndex: number } | null;
+	onContinue: () => void;
 }
 
 export function Quiz({
 	question,
 	options,
-	correctOptionIndex,
 	imageUrl,
 	onSubmit,
+	answerResult,
+	onContinue,
 }: Props) {
 	const [selectedOption, setSelectedOption] = useState<number | null>(null);
-	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// Reset local state when a new question is provided by the parent/back-end.
 	useEffect(() => {
 		setSelectedOption(null);
-		setShowResult(false);
 		setIsSubmitting(false);
-	}, [question, correctOptionIndex]);
+	}, [question]);
 
-	const isCorrect = selectedOption === correctOptionIndex;
+	const showResult = answerResult !== null;
+	const isCorrect = answerResult?.correct ?? false;
 
 	async function handleSubmit() {
 		if (selectedOption === null) return;
 
 		setIsSubmitting(true);
-		setShowResult(true);
 
 		try {
 			await onSubmit([selectedOption.toString()]);
-			await new Promise((resolve) => setTimeout(resolve, 2000));
 		} catch (error) {
 			console.error("Error submitting quiz:", error);
-			setShowResult(false);
+		} finally {
 			setIsSubmitting(false);
 		}
 	}
@@ -56,9 +55,8 @@ export function Quiz({
 			<div className="space-y-3">
 				{options.map((option, idx) => {
 					const isSelected = selectedOption === idx;
-					const isCorrectAnswer = idx === correctOptionIndex;
-					const showCorrect = showResult && isCorrectAnswer;
-					const showIncorrect = showResult && isSelected && !isCorrectAnswer;
+					const showCorrect = showResult && isSelected && isCorrect;
+					const showIncorrect = showResult && isSelected && !isCorrect;
 
 					return (
 						<button
@@ -99,20 +97,23 @@ export function Quiz({
 
 			{showResult && (
 				<div
-					className={`p-4 rounded-lg ${isCorrect ? "bg-green-500/10" : "bg-red-500/10"}`}
+					className={`p-4 rounded-2xl border ${
+						isCorrect
+							? "border-green-500/40 bg-green-500/10"
+							: "border-red-500/40 bg-red-500/10"
+					}`}
 				>
 					<p
 						className={`font-bold text-lg mb-1 ${isCorrect ? "text-green-400" : "text-red-400"}`}
 					>
 						{isCorrect ? "✓ Correct!" : "✗ Incorrect"}
 					</p>
-					{!isCorrect && (
-						<p className="text-sm text-gray-300">
-							The correct answer was option{" "}
-							{String.fromCharCode(65 + correctOptionIndex)}
-						</p>
-					)}
-					<p className="text-sm text-blue-400 mt-2">Moving to next page...</p>
+					<p className="text-sm text-gray-300">
+						Your answer has been checked by the server.
+					</p>
+					<Button onClick={onContinue} className="w-full mt-4">
+						Continue
+					</Button>
 				</div>
 			)}
 		</div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Button from "../../../shared/components/Button";
 
 interface Props {
@@ -5,7 +6,7 @@ interface Props {
 	text: string;
 	examples: string[];
 	imageUrl?: string;
-	onContinue: () => void;
+	onContinue: () => Promise<void>;
 }
 
 export function ExampleUses({
@@ -15,6 +16,21 @@ export function ExampleUses({
 	imageUrl,
 	onContinue,
 }: Props) {
+	const [isContinuing, setIsContinuing] = useState(false);
+
+	async function handleContinue() {
+		if (isContinuing) {
+			return;
+		}
+
+		setIsContinuing(true);
+		try {
+			await onContinue();
+		} finally {
+			setIsContinuing(false);
+		}
+	}
+
 	return (
 		<div className="space-y-4">
 			<h3 className="text-2xl font-bold">{topic}</h3>
@@ -35,8 +51,12 @@ export function ExampleUses({
 					</ul>
 				</div>
 			)}
-			<Button onClick={onContinue} className="w-full mt-6">
-				Continue
+			<Button
+				onClick={handleContinue}
+				className="w-full mt-6"
+				disabled={isContinuing}
+			>
+				{isContinuing ? "Loading..." : "Continue"}
 			</Button>
 		</div>
 	);

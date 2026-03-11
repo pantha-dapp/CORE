@@ -5,13 +5,22 @@ interface Props {
 	pairs: Array<{ left: string; right: string }>;
 	imageUrl?: string;
 	onSubmit: (answer: string[]) => Promise<void>;
+	answerResult: { correct: boolean; pageIndex: number } | null;
+	onContinue: () => void;
 }
 
-export function Matching({ pairs, imageUrl, onSubmit }: Props) {
+export function Matching({
+	pairs,
+	imageUrl,
+	onSubmit,
+	answerResult,
+	onContinue,
+}: Props) {
 	const [matches, setMatches] = useState<Record<number, number>>({});
 	const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
-	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const showResult = answerResult !== null;
+	const isCorrect = answerResult?.correct ?? false;
 
 	const shuffledRights = useMemo(() => {
 		const original = pairs.map((pair, i) => ({
@@ -59,7 +68,6 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 
 	async function handleSubmit() {
 		setIsSubmitting(true);
-		setShowResult(true);
 
 		try {
 			const answer = pairs.flatMap((pair, idx) => {
@@ -72,10 +80,9 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 
 			await onSubmit(answer);
 			console.log("Submitted answer:", answer);
-			await new Promise((resolve) => setTimeout(resolve, 2000));
 		} catch (error) {
 			console.error("Error submitting matching:", error);
-			setShowResult(false);
+		} finally {
 			setIsSubmitting(false);
 		}
 	}
@@ -168,9 +175,24 @@ export function Matching({ pairs, imageUrl, onSubmit }: Props) {
 			)}
 
 			{showResult && (
-				<div className="bg-blue-500/10 p-4 rounded-lg">
-					<p className="text-blue-400 font-bold">✓ Answer submitted!</p>
-					<p className="text-sm text-blue-400 mt-2">Moving to next page...</p>
+				<div
+					className={`p-4 rounded-2xl border ${
+						isCorrect
+							? "border-green-500/40 bg-green-500/10"
+							: "border-red-500/40 bg-red-500/10"
+					}`}
+				>
+					<p
+						className={`font-bold ${isCorrect ? "text-green-400" : "text-red-400"}`}
+					>
+						{isCorrect ? "✓ Correct!" : "✗ Incorrect"}
+					</p>
+					<p className="text-sm text-gray-300 mt-2">
+						Your answer has been checked by the server.
+					</p>
+					<Button onClick={onContinue} className="w-full mt-4">
+						Continue
+					</Button>
 				</div>
 			)}
 		</div>
