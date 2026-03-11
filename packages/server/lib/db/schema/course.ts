@@ -7,7 +7,8 @@ export const courses = t.sqliteTable("courses", {
 	title: t.text("title").notNull(),
 	description: t.text("description").notNull(),
 
-	icon: t.text("icon"),
+	iconPrompt: t.text("icon_prompt"),
+	iconUrl: t.text("icon_url"),
 
 	...timestamps,
 });
@@ -42,7 +43,8 @@ export const courseChapters = t.sqliteTable(
 			})
 			.notNull(),
 
-		icon: t.text("icon"),
+		iconPrompt: t.text("icon_prompt"),
+		iconUrl: t.text("icon_url"),
 	},
 	(table) => [t.index("idx_course_chapters_course_id").on(table.courseId)],
 );
