@@ -94,6 +94,62 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 		.returning();
 
 	preparing.delete(id);
+	prepareChapterImages(id, { db, ai }).catch(console.error);
+}
 
-	// we will also queue chapter prepataion for images etc for now we dont do that becuse no images are there
+export async function prepareChapterImages(
+	id: string,
+	config: { db: Db; ai: Ai },
+) {
+	const { db, ai } = config;
+
+	const chapter = await db.chapterById({ chapterId: id });
+	if (!chapter) {
+		throw new Error("Chapter not found.");
+	}
+
+	const pages = await db.chapterPagesById({ chapterId: id });
+	if (!pages || pages.length === 0) {
+		throw new Error("Chapter pages not found.");
+	}
+
+	for (const page of pages) {
+		const { content, type } = page.content;
+
+		switch (type) {
+			case "identify_shown_object_in_image":
+				await ai.image.generatePageImage({ prompt: content.image.prompt });
+				break;
+			case "identify_object_from_images":
+				for (const img of content.images) {
+					await ai.image.generatePageImage({ prompt: img.prompt });
+				}
+				break;
+			case "example_uses":
+				content.image &&
+					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				break;
+			case "fill_in_the_blanks":
+				content.image &&
+					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				break;
+			case "matching":
+				break;
+			case "quiz":
+				content.image &&
+					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				break;
+			case "teach_and_explain_content":
+				content.image &&
+					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				break;
+			case "true_false":
+				content.image &&
+					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				break;
+
+			default:
+				break;
+		}
+	}
 }
