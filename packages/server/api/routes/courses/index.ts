@@ -2,6 +2,7 @@ import { tryCatch } from "@pantha/shared";
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
+import { prepareCourseIcons } from "../../../lib/utils/courses";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -113,8 +114,10 @@ export default new Hono()
 	})
 
 	.get("/:id", authenticated, async (ctx) => {
-		const { db } = ctx.var.appState;
+		const { db, ai } = ctx.var.appState;
 		const courseId = ctx.req.param("id");
+
+		prepareCourseIcons(courseId, { db, ai });
 
 		const course = await db.courseById({ courseId });
 		if (!course) {
