@@ -439,7 +439,7 @@ export default new Hono<RouterEnv>()
 										title: evaluation.courseGenerationInstructions.courseTitle,
 										description:
 											evaluation.courseGenerationInstructions.courseDescription,
-										icon: newCourse.overview.icon,
+										iconPrompt: newCourse.overview.icon,
 									});
 
 									const canonicalDescriptor = generateCanonicalCourseDescriptor(
@@ -481,7 +481,7 @@ export default new Hono<RouterEnv>()
 												title: chapter.title,
 												intent: chapter.intent,
 												order: chapterOrder++,
-												icon: chapter.icon,
+												iconPrompt: chapter.icon,
 											})
 											.returning({ id: db.schema.courseChapters.id });
 
@@ -512,30 +512,37 @@ export default new Hono<RouterEnv>()
 								courseId: generatedCourseId,
 							});
 
-							await ai.image
+							ai.image
 								.generateIconImage({ prompt: newCourse.overview.icon })
-								.then((icon) => {
-									db.update(db.schema.courses)
-										.set({ icon: icon.url })
-										.where(eq(db.schema.courses.id, generatedCourseId));
-								});
+								.then((icon) =>
+									db
+										.update(db.schema.courses)
+										.set({ iconUrl: icon.url })
+										.where(eq(db.schema.courses.id, generatedCourseId)),
+								)
+								.catch(console.error);
 
 							for (const [
 								idx,
 								chapter,
 							] of newCourse.overview.chapters.entries()) {
-								const chapterIcon = await ai.image.generateIconImage({
-									prompt: chapter.icon,
-								});
-								await db
-									.update(db.schema.courseChapters)
-									.set({ icon: chapterIcon.url })
-									.where(
-										and(
-											eq(db.schema.courseChapters.courseId, generatedCourseId),
-											eq(db.schema.courseChapters.order, idx),
-										),
-									);
+								ai.image
+									.generateIconImage({ prompt: chapter.icon })
+									.then((icon) =>
+										db
+											.update(db.schema.courseChapters)
+											.set({ iconUrl: icon.url })
+											.where(
+												and(
+													eq(
+														db.schema.courseChapters.courseId,
+														generatedCourseId,
+													),
+													eq(db.schema.courseChapters.order, idx),
+												),
+											),
+									)
+									.catch(console.error);
 							}
 
 							await prepareChapter(firstChapterId, { db, ai });
