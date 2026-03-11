@@ -130,6 +130,7 @@ export default new Hono()
 				id: course.id,
 				title: course.title,
 				description: course.description,
+				icon: course.icon,
 			},
 			"Course fetched successfully.",
 			200,
