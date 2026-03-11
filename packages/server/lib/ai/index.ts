@@ -199,7 +199,7 @@ export function createAi(args: {
 			});
 
 			const { hotStorage, persistentStorage } = objectStorage.upload({
-				path: ["image", uuid],
+				path: ["course-icons", uuid],
 				data: buffer,
 			});
 
@@ -216,7 +216,7 @@ export function createAi(args: {
 					payload: { imageUrl: url },
 				});
 
-				objectStorage.unloadHot({ path: ["image", uuid] });
+				objectStorage.unloadHot({ path: ["course-icons", uuid] });
 			});
 
 			return { url: tmpUrl };
