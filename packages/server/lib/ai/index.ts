@@ -176,42 +176,45 @@ export function createAi(args: {
 			return await imageProcessing[uuid];
 		}
 
-		const inputEmbedding = await aiClient.embedding.text(
-			similarityQueryOverride ?? prompt,
-		);
-		const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
-		if (similarImage && similarImage.score > cacheThreshold) {
-			return { url: similarImage.payload.imageUrl };
-		}
+		imageProcessing[uuid] = (async () => {
+			const inputEmbedding = await aiClient.embedding.text(
+				similarityQueryOverride ?? prompt,
+			);
+			const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
+			if (similarImage && similarImage.score > cacheThreshold) {
+				delete imageProcessing[uuid];
+				return { url: similarImage.payload.imageUrl };
+			}
 
-		const { buffer } = await aiClient.image.generate({
-			prompt: prompt,
-		});
-
-		const { hotStorage, persistentStorage } = objectStorage.upload({
-			path: ["image", uuid],
-			data: buffer,
-		});
-
-		imageProcessing[uuid] = hotStorage;
-		const { url: tmpUrl } = await hotStorage;
-
-		await imagePromptOutputs.writeEntry(uuid, {
-			vector: inputEmbedding,
-			payload: { imageUrl: tmpUrl },
-		});
-
-		persistentStorage.then(({ url }) => {
-			// Update the entry with the permanent URL once available
-			imagePromptOutputs.writeEntry(uuid, {
-				vector: inputEmbedding,
-				payload: { imageUrl: url },
+			const { buffer } = await aiClient.image.generate({
+				prompt: prompt,
 			});
 
-			objectStorage.unloadHot({ path: ["image", uuid] });
-		});
+			const { hotStorage, persistentStorage } = objectStorage.upload({
+				path: ["image", uuid],
+				data: buffer,
+			});
 
-		return { url: tmpUrl };
+			const { url: tmpUrl } = await hotStorage;
+
+			await imagePromptOutputs.writeEntry(uuid, {
+				vector: inputEmbedding,
+				payload: { imageUrl: tmpUrl },
+			});
+
+			persistentStorage.then(({ url }) => {
+				imagePromptOutputs.writeEntry(uuid, {
+					vector: inputEmbedding,
+					payload: { imageUrl: url },
+				});
+
+				objectStorage.unloadHot({ path: ["image", uuid] });
+			});
+
+			return { url: tmpUrl };
+		})();
+
+		return await imageProcessing[uuid];
 	}
 	type GenerateImageArgs = Parameters<typeof generateOrFindImage>[0];
 
