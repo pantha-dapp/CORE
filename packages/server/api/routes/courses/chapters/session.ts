@@ -3,6 +3,7 @@ import { MINUTE } from "@pantha/shared/constants";
 import { Hono } from "hono";
 import z from "zod";
 import type { DbSchema } from "../../../../lib/db/schema";
+import { NotFoundError, ValidationError } from "../../../../lib/errors";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
@@ -14,6 +15,7 @@ type ChapterGameState = {
 	currentPage: number;
 	correct: number[];
 	incorrect: number[];
+	answers: Record<number, string[]>;
 	lastSessionStartedAt: number;
 };
 const gameSessions = new Map<string, ChapterGameState>();
@@ -56,7 +58,7 @@ export default new Hono<RouterEnv>()
 				const chapterPages = await db.chapterPagesById({ chapterId });
 
 				if (!chapterPages || chapterPages.length === 0) {
-					return respond.err(ctx, "Chapter not found", 404);
+					throw new NotFoundError("Chapter not found");
 				}
 				gameSessions.set(userWallet, {
 					chapterId,
@@ -64,6 +66,7 @@ export default new Hono<RouterEnv>()
 					currentPage: 0,
 					correct: [],
 					incorrect: [],
+					answers: {},
 					lastSessionStartedAt: Date.now(),
 				});
 				session = gameSessions.get(userWallet);
@@ -74,7 +77,7 @@ export default new Hono<RouterEnv>()
 			}
 
 			const expired = checkSessionExpiry(userWallet);
-			if (expired) return respond.err(ctx, "Session expired", 404);
+			if (expired) throw new NotFoundError("Session expired");
 
 			return respond.ok(
 				ctx,
@@ -95,6 +98,48 @@ export default new Hono<RouterEnv>()
 		return respond.ok(ctx, {}, "Session reset successfully.", 200);
 	})
 
+	.get("/explanation", authenticated, async (ctx) => {
+		const { userWallet } = ctx.var;
+		const { ai } = ctx.var.appState;
+		const session = gameSessions.get(userWallet);
+
+		if (!session) {
+			throw new NotFoundError(
+				"No active session found. Please start a session.",
+			);
+		}
+
+		const lastAnsweredPageIndex =
+			session.correct.length + session.incorrect.length - 1;
+		if (lastAnsweredPageIndex < 0) {
+			throw new NotFoundError(
+				"No questions answered yet. Please answer a question to get an explanation.",
+			);
+		}
+
+		const lastAnsweredPage = session.pages[lastAnsweredPageIndex];
+		if (!lastAnsweredPage) {
+			throw new NotFoundError("Last answered page not found");
+		}
+
+		const explanation = await ai.llm.generateAnswerExplanation({
+			question: lastAnsweredPage.content,
+			userGivenAnswer:
+				session.answers[lastAnsweredPageIndex]?.join(", ") ??
+				"user did not provide an answer",
+			correct: session.correct.includes(lastAnsweredPageIndex),
+		});
+
+		return respond.ok(
+			ctx,
+			{
+				explanation,
+			},
+			"Answer explanation retrieved successfully.",
+			200,
+		);
+	})
+
 	.post(
 		"/answer",
 		authenticated,
@@ -110,23 +155,21 @@ export default new Hono<RouterEnv>()
 			const { answer } = ctx.req.valid("json");
 
 			const expired = checkSessionExpiry(userWallet);
-			if (expired) return respond.err(ctx, "Session expired", 404);
+			if (expired) throw new NotFoundError("Session expired");
 
 			const session = gameSessions.get(userWallet);
 			if (!session) {
-				return respond.err(
-					ctx,
+				throw new NotFoundError(
 					"No active session found. Please start a session.",
-					404,
 				);
 			}
 			if (answer[0] === undefined) {
-				return respond.err(ctx, "Answer cannot be empty", 400);
+				throw new ValidationError("Answer cannot be empty");
 			}
 
 			const page = session.pages[session.currentPage];
 			if (!page) {
-				return respond.err(ctx, "No more pages in the session", 400);
+				throw new NotFoundError("No more pages in the session");
 			}
 
 			const { content, type } = page.content;
@@ -138,9 +181,6 @@ export default new Hono<RouterEnv>()
 						correct = true;
 						break;
 					case "fill_in_the_blanks": {
-						// If the AI generated no $N placeholders in words (malformed output),
-						// the client showed a "Continue" card. Auto-mark correct so the user
-						// isn't penalised for a broken AI question.
 						const hasPlaceholders = (content.words as string[]).some((w) =>
 							/\$\d+/.test(w),
 						);
@@ -183,6 +223,7 @@ export default new Hono<RouterEnv>()
 					default:
 						break;
 				}
+				session.answers[session.currentPage] = answer;
 			} catch {
 				correct = false;
 			}
