@@ -30,7 +30,7 @@ export const tImageParts = customType<{
 	},
 	fromDriver(value) {
 		return z
-			.object({ url: z.string().nullable(), prompt: z.string() })
+			.object({ url: z.url().nullable(), prompt: z.string() })
 			.parse(jsonParse(value));
 	},
 });
