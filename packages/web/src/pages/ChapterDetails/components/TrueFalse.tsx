@@ -3,30 +3,35 @@ import Button from "../../../shared/components/Button";
 
 interface Props {
 	statement: string;
-	isTrue: boolean;
 	imageUrl?: string;
 	onSubmit: (answer: string[]) => Promise<void>;
+	answerResult: { correct: boolean; pageIndex: number } | null;
+	onContinue: () => void;
 }
 
-export function TrueFalse({ statement, isTrue, imageUrl, onSubmit }: Props) {
+export function TrueFalse({
+	statement,
+	imageUrl,
+	onSubmit,
+	answerResult,
+	onContinue,
+}: Props) {
 	const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
-	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const isCorrect = selectedAnswer === isTrue;
+	const showResult = answerResult !== null;
+	const isCorrect = answerResult?.correct ?? false;
 
 	async function handleSubmit() {
 		if (selectedAnswer === null) return;
 
 		setIsSubmitting(true);
-		setShowResult(true);
 
 		try {
 			await onSubmit([selectedAnswer.toString()]);
-			await new Promise((resolve) => setTimeout(resolve, 2000));
 		} catch (error) {
 			console.error("Error submitting true/false:", error);
-			setShowResult(false);
+		} finally {
 			setIsSubmitting(false);
 		}
 	}
@@ -50,14 +55,14 @@ export function TrueFalse({ statement, isTrue, imageUrl, onSubmit }: Props) {
 						selectedAnswer === true && !showResult
 							? "border-blue-500 bg-blue-500/10"
 							: "border-gray-600 hover:border-gray-500"
-					} ${showResult && isTrue ? "border-green-500 bg-green-500/10" : ""} ${
-						showResult && selectedAnswer === true && !isTrue
+					} ${showResult && selectedAnswer === true && isCorrect ? "border-green-500 bg-green-500/10" : ""} ${
+						showResult && selectedAnswer === true && !isCorrect
 							? "border-red-500 bg-red-500/10"
 							: ""
 					}`}
 				>
 					True
-					{showResult && isTrue && (
+					{showResult && selectedAnswer === true && isCorrect && (
 						<span className="ml-2 text-green-400">✓</span>
 					)}
 				</button>
@@ -70,14 +75,14 @@ export function TrueFalse({ statement, isTrue, imageUrl, onSubmit }: Props) {
 						selectedAnswer === false && !showResult
 							? "border-blue-500 bg-blue-500/10"
 							: "border-gray-600 hover:border-gray-500"
-					} ${showResult && !isTrue ? "border-green-500 bg-green-500/10" : ""} ${
-						showResult && selectedAnswer === false && isTrue
+					} ${showResult && selectedAnswer === false && isCorrect ? "border-green-500 bg-green-500/10" : ""} ${
+						showResult && selectedAnswer === false && !isCorrect
 							? "border-red-500 bg-red-500/10"
 							: ""
 					}`}
 				>
 					False
-					{showResult && !isTrue && (
+					{showResult && selectedAnswer === false && isCorrect && (
 						<span className="ml-2 text-green-400">✓</span>
 					)}
 				</button>
@@ -95,14 +100,23 @@ export function TrueFalse({ statement, isTrue, imageUrl, onSubmit }: Props) {
 
 			{showResult && (
 				<div
-					className={`p-4 rounded-lg ${isCorrect ? "bg-green-500/10" : "bg-red-500/10"}`}
+					className={`p-4 rounded-2xl border ${
+						isCorrect
+							? "border-green-500/40 bg-green-500/10"
+							: "border-red-500/40 bg-red-500/10"
+					}`}
 				>
 					<p
 						className={`font-bold text-lg ${isCorrect ? "text-green-400" : "text-red-400"}`}
 					>
 						{isCorrect ? "✓ Correct!" : "✗ Incorrect"}
 					</p>
-					<p className="text-sm text-blue-400 mt-2">Moving to next page...</p>
+					<p className="text-sm text-gray-300 mt-2">
+						Your answer has been checked by the server.
+					</p>
+					<Button onClick={onContinue} className="w-full mt-4">
+						Continue
+					</Button>
 				</div>
 			)}
 		</div>

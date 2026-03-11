@@ -7,11 +7,15 @@ interface Props {
 	answers: string[];
 	imageUrl?: string;
 	onSubmit: (answer: string[]) => Promise<void>;
+	answerResult: { correct: boolean; pageIndex: number } | null;
+	onContinue: () => void;
 }
 
 export function FillInTheBlanks({
 	imageUrl,
 	onSubmit,
+	answerResult,
+	onContinue,
 	words,
 	wrongOptions = [],
 }: Props) {
@@ -31,8 +35,9 @@ export function FillInTheBlanks({
 	const [userInputs, setUserInputs] = useState<string[]>(
 		Array(blankCount).fill(""),
 	);
-	const [showResult, setShowResult] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const showResult = answerResult !== null;
+	const isCorrect = answerResult?.correct ?? false;
 
 	// Attach a stable id (original position before shuffle) so React keys are
 	// never based on the array index. wrongOptions already includes correct answers
@@ -80,14 +85,12 @@ export function FillInTheBlanks({
 		if (!allFilled) return;
 
 		setIsSubmitting(true);
-		setShowResult(true);
 
 		try {
 			await onSubmit(userInputs);
-			await new Promise((resolve) => setTimeout(resolve, 2000));
 		} catch (error) {
 			console.error("Error submitting fill in the blanks:", error);
-			setShowResult(false);
+		} finally {
 			setIsSubmitting(false);
 		}
 	}
@@ -109,9 +112,21 @@ export function FillInTheBlanks({
 						Tap Continue to move on — it won't affect your progress.
 					</p>
 				</div>
-				<Button onClick={() => onSubmit([])} className="w-full">
-					Continue
-				</Button>
+				{showResult ? (
+					<div className="bg-green-500/10 border border-green-500/40 p-4 rounded-2xl">
+						<p className="font-bold text-lg text-green-400">✓ Correct!</p>
+						<p className="text-sm text-gray-300 mt-2">
+							This question was skipped because it could not be rendered.
+						</p>
+						<Button onClick={onContinue} className="w-full mt-4">
+							Continue
+						</Button>
+					</div>
+				) : (
+					<Button onClick={() => onSubmit([])} className="w-full">
+						Submit Answer
+					</Button>
+				)}
 			</div>
 		);
 	}
@@ -237,9 +252,24 @@ export function FillInTheBlanks({
 			)}
 
 			{showResult && (
-				<div className="bg-blue-500/10 p-4 rounded-lg">
-					<p className="text-blue-400 font-semibold mb-1">Answer submitted!</p>
-					<p className="text-sm text-blue-400 mt-1">Moving to next page...</p>
+				<div
+					className={`p-4 rounded-2xl border ${
+						isCorrect
+							? "border-green-500/40 bg-green-500/10"
+							: "border-red-500/40 bg-red-500/10"
+					}`}
+				>
+					<p
+						className={`font-semibold mb-1 ${isCorrect ? "text-green-400" : "text-red-400"}`}
+					>
+						{isCorrect ? "✓ Correct!" : "✗ Incorrect"}
+					</p>
+					<p className="text-sm text-gray-300 mt-1">
+						Your answer has been checked by the server.
+					</p>
+					<Button onClick={onContinue} className="w-full mt-4">
+						Continue
+					</Button>
 				</div>
 			)}
 		</div>
