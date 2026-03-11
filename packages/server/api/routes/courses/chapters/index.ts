@@ -85,23 +85,61 @@ export default new Hono<RouterEnv>()
 				);
 			nextChapter && prepareChapter(nextChapter.id, { db, ai });
 
+			const images: Record<
+				string,
+				{ url: string } | { images: { url: string }[] }
+			> = {};
+
 			//safepages generaton
-			pages.forEach((p) => {
+			pages.forEach(async (p) => {
 				const { type, content } = p.content;
+
 				switch (type) {
 					case "example_uses":
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
 						return;
 					case "fill_in_the_blanks": {
 						content.wrongOptions = content.wrongOptions.concat(content.answers);
 						content.answers = [];
+
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
+
 						return;
 					}
 					case "identify_object_from_images": {
 						content.correctImageIndex = -1;
+
+						const imgs: { url: string }[] = [];
+						for (const image of content.images) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: image.prompt,
+							});
+							imgs.push({ url });
+						}
+						images[p.id] = { images: imgs };
+
 						return;
 					}
 					case "identify_shown_object_in_image": {
 						content.correctOptionIndex = -1;
+
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
+
 						return;
 					}
 					case "matching": {
@@ -110,13 +148,34 @@ export default new Hono<RouterEnv>()
 					}
 					case "quiz": {
 						content.correctOptionIndex = -1;
+
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
+
 						return;
 					}
 					case "teach_and_explain_content": {
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
 						return;
 					}
 					case "true_false": {
 						content.isTrue = false;
+
+						if (content.image) {
+							const { url } = await ai.image.generatePageImage({
+								prompt: content.image.prompt,
+							});
+							images[p.id] = { url };
+						}
 						return;
 					}
 					default:
@@ -126,7 +185,7 @@ export default new Hono<RouterEnv>()
 
 			return respond.ok(
 				ctx,
-				{ pages },
+				{ pages, images },
 				"Chapter pages fetched successfully.",
 				200,
 			);
