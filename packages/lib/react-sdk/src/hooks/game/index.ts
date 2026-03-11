@@ -1,1 +1,1 @@
-export * from "./useChapterGame";
+export * from "./useAnswerExplanation";
