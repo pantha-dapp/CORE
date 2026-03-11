@@ -512,7 +512,7 @@ export default new Hono<RouterEnv>()
 								courseId: generatedCourseId,
 							});
 
-							ai.image
+							await ai.image
 								.generateIconImage({ prompt: newCourse.overview.icon })
 								.then((icon) => {
 									db.update(db.schema.courses)
@@ -520,23 +520,23 @@ export default new Hono<RouterEnv>()
 										.where(eq(db.schema.courses.id, generatedCourseId));
 								});
 
-							newCourse.overview.chapters.forEach((chapter, idx) => {
-								ai.image
-									.generateIconImage({ prompt: chapter.icon })
-									.then((chapterIcon) => {
-										db.update(db.schema.courseChapters)
-											.set({ icon: chapterIcon.url })
-											.where(
-												and(
-													eq(
-														db.schema.courseChapters.courseId,
-														generatedCourseId,
-													),
-													eq(db.schema.courseChapters.order, idx),
-												),
-											);
-									});
-							});
+							for (const [
+								idx,
+								chapter,
+							] of newCourse.overview.chapters.entries()) {
+								const chapterIcon = await ai.image.generateIconImage({
+									prompt: chapter.icon,
+								});
+								await db
+									.update(db.schema.courseChapters)
+									.set({ icon: chapterIcon.url })
+									.where(
+										and(
+											eq(db.schema.courseChapters.courseId, generatedCourseId),
+											eq(db.schema.courseChapters.order, idx),
+										),
+									);
+							}
 
 							await prepareChapter(firstChapterId, { db, ai });
 							ongoingSession.state = "finished";
