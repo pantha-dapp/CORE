@@ -439,7 +439,7 @@ export default new Hono<RouterEnv>()
 										title: evaluation.courseGenerationInstructions.courseTitle,
 										description:
 											evaluation.courseGenerationInstructions.courseDescription,
-										iconPrompt: newCourse.overview.icon,
+										icon: { prompt: newCourse.overview.icon, url: null },
 									});
 
 									const canonicalDescriptor = generateCanonicalCourseDescriptor(
@@ -481,7 +481,7 @@ export default new Hono<RouterEnv>()
 												title: chapter.title,
 												intent: chapter.intent,
 												order: chapterOrder++,
-												iconPrompt: chapter.icon,
+												icon: { prompt: chapter.icon, url: null },
 											})
 											.returning({ id: db.schema.courseChapters.id });
 
@@ -517,7 +517,9 @@ export default new Hono<RouterEnv>()
 								.then((icon) =>
 									db
 										.update(db.schema.courses)
-										.set({ iconUrl: icon.url })
+										.set({
+											icon: { prompt: newCourse.overview.icon, url: icon.url },
+										})
 										.where(eq(db.schema.courses.id, generatedCourseId)),
 								)
 								.catch(console.error);
@@ -531,7 +533,7 @@ export default new Hono<RouterEnv>()
 									.then((icon) =>
 										db
 											.update(db.schema.courseChapters)
-											.set({ iconUrl: icon.url })
+											.set({ icon: { prompt: chapter.icon, url: icon.url } })
 											.where(
 												and(
 													eq(
