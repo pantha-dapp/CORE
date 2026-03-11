@@ -12,16 +12,17 @@ export function useAnswerExplanation() {
 				throw new Error("not connected");
 			}
 
-			const sessionResponseRaw = await api.rpc.courses.gen.session.$get();
-			const sessionResponse = await sessionResponseRaw.json();
+			const explanationResponseRaw =
+				await api.rpc.courses.chapters.session.explanation.$get();
+			const explanationResponse = await explanationResponseRaw.json();
 
-			if (!sessionResponse.success) {
+			if (!explanationResponse.success) {
 				throw new Error("Failed to retreive  session ", {
-					cause: sessionResponse.error,
+					cause: explanationResponse.error,
 				});
 			}
 
-			return sessionResponse.data;
+			return explanationResponse.data;
 		},
 		staleTime: 2 * MINUTE,
 	});
