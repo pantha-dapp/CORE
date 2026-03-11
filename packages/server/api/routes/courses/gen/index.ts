@@ -9,6 +9,7 @@ import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/util
 import { createVectorDb } from "../../../../lib/db/vec/client";
 import { RateLimitExceededError } from "../../../../lib/errors";
 import { prepareChapter } from "../../../../lib/utils/chapters";
+import { prepareCourseIcons } from "../../../../lib/utils/courses";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
@@ -256,7 +257,7 @@ export default new Hono<RouterEnv>()
 					(q) => q.answer === undefined,
 				);
 
-				if (pendingQuestions.length > 0) {
+				if (pendingQuestions.length > 0 && ongoingSession.questionsBudget > 0) {
 					ongoingSession.lock = false;
 
 					return respond.ok(
@@ -512,42 +513,9 @@ export default new Hono<RouterEnv>()
 								courseId: generatedCourseId,
 							});
 
-							ai.image
-								.generateIconImage({ prompt: newCourse.overview.icon })
-								.then((icon) =>
-									db
-										.update(db.schema.courses)
-										.set({
-											icon: { prompt: newCourse.overview.icon, url: icon.url },
-										})
-										.where(eq(db.schema.courses.id, generatedCourseId)),
-								)
-								.catch(console.error);
-
-							for (const [
-								idx,
-								chapter,
-							] of newCourse.overview.chapters.entries()) {
-								ai.image
-									.generateIconImage({ prompt: chapter.icon })
-									.then((icon) =>
-										db
-											.update(db.schema.courseChapters)
-											.set({ icon: { prompt: chapter.icon, url: icon.url } })
-											.where(
-												and(
-													eq(
-														db.schema.courseChapters.courseId,
-														generatedCourseId,
-													),
-													eq(db.schema.courseChapters.order, idx),
-												),
-											),
-									)
-									.catch(console.error);
-							}
-
+							await prepareCourseIcons(generatedCourseId, { db, ai });
 							await prepareChapter(firstChapterId, { db, ai });
+
 							ongoingSession.state = "finished";
 							ongoingSession.courseId = generatedCourseId;
 						}
