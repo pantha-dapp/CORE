@@ -19,3 +19,12 @@ console.log("Depositing with address ", s.$synapse.client.account.address);
 
 const amount = 5 * 10 ** 18;
 await s.$synapse.payments.deposit({ amount: BigInt(amount) });
+
+const prep = await s.$synapse.storage.prepare({
+	dataSize: 1073741824n, // 1 GiB
+});
+
+if (prep.transaction) {
+	const { hash } = await prep.transaction.execute();
+	console.log(`✅ Account funded and approved (tx: ${hash})`);
+}
