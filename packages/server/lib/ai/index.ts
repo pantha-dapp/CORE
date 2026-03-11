@@ -1,6 +1,7 @@
 import { jsonStringify } from "@pantha/shared";
 import type { ZodObject, z } from "zod";
 import { createVectorDb, type VectorDbClient } from "../db/vec/client";
+import type { ObjectStorageResourceKey } from "../objectStorage";
 import type { ObjectStorageService } from "../objectStorage/service";
 import { createAiCache } from "./cache";
 import type { AiClient } from "./client";
@@ -172,10 +173,16 @@ export function createAi(args: {
 	}
 	async function generateOrFindImage(args: {
 		prompt: string;
+		key: ObjectStorageResourceKey;
 		cacheThreshold?: number;
 		similarityQueryOverride?: string;
 	}) {
-		const { prompt, cacheThreshold = 0.95, similarityQueryOverride } = args;
+		const {
+			prompt,
+			cacheThreshold = 0.95,
+			similarityQueryOverride,
+			key,
+		} = args;
 
 		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
 		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
@@ -199,7 +206,7 @@ export function createAi(args: {
 			});
 
 			const { hotStorage, persistentStorage } = objectStorage.upload({
-				path: ["course-icons", uuid],
+				path: [key, uuid],
 				data: buffer,
 			});
 
@@ -216,7 +223,7 @@ export function createAi(args: {
 					payload: { imageUrl: url },
 				});
 
-				objectStorage.unloadHot({ path: ["course-icons", uuid] });
+				objectStorage.unloadHot({ path: [key, uuid] });
 			});
 
 			return { url: tmpUrl };
@@ -224,7 +231,10 @@ export function createAi(args: {
 
 		return await imageProcessing[uuid];
 	}
-	type GenerateImageArgs = Parameters<typeof generateOrFindImage>[0];
+	type GenerateImageArgs = Pick<
+		Parameters<typeof generateOrFindImage>[0],
+		"prompt" | "cacheThreshold" | "similarityQueryOverride"
+	>;
 
 	const image = {
 		generateIconImage: (args: GenerateImageArgs) =>
@@ -232,6 +242,7 @@ export function createAi(args: {
 				prompt: `${generateIconImage.prompt}\n${args.prompt}`,
 				cacheThreshold: args.cacheThreshold ?? 0.85,
 				similarityQueryOverride: `Icon: ${args.prompt}`,
+				key: "course-icons",
 			}),
 
 		generatePageImage: (args: GenerateImageArgs) =>
@@ -239,6 +250,7 @@ export function createAi(args: {
 				prompt: `${generatePageImage.prompt}\n${args.prompt}`,
 				cacheThreshold: args.cacheThreshold ?? 0.9,
 				similarityQueryOverride: args.prompt,
+				key: "chapter-page-images",
 			}),
 	};
 
