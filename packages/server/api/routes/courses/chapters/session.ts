@@ -119,7 +119,7 @@ export default new Hono<RouterEnv>()
 
 		const lastAnsweredPage = session.pages[lastAnsweredPageIndex];
 		if (!lastAnsweredPage) {
-			throw new NotFoundError("Last answered page not found");
+			return respond.err(ctx, "Last answered page not found", 500);
 		}
 
 		const explanation = await ai.llm.generateAnswerExplanation({
