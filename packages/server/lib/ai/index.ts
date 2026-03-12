@@ -102,15 +102,14 @@ export function createAi(args: {
 				const { success: parseSuccess, error: parseError } =
 					generateChapterPageOutputTypedSchema.safeParse(page);
 				if (!parseSuccess) {
-					console.error("Failed to validate generated page", {
-						error: String(parseError).slice(0, 255),
-						page: jsonStringify(page),
-					});
-
 					if (page.type === "fill_in_the_blanks") {
 						// delete this page
 						delete result.pages[result.pages.indexOf(page)];
 					} else {
+						console.error("Failed to validate generated page", {
+							error: String(parseError).slice(0, 255),
+							page: jsonStringify(page),
+						});
 						throw new Error("Failed to validate generated page");
 					}
 				}
@@ -118,7 +117,7 @@ export function createAi(args: {
 
 			const parsed = generateChapterPageOutputTypedSchema
 				.array()
-				.safeParse(result.pages);
+				.safeParse(result.pages.filter((p) => !!p));
 
 			if (!parsed.success) {
 				console.error("Failed to validate generated pages", {
