@@ -231,7 +231,7 @@ export function createAi(args: {
 				objectStorage.unloadHot({ path: [key, uuid] });
 			});
 
-			return { url: tmpUrl };
+			return { url: tmpUrl, persistent: persistentStorage };
 		})();
 
 		return await imageProcessing[uuid];
