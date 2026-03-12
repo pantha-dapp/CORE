@@ -106,7 +106,13 @@ export function createAi(args: {
 						error: String(parseError).slice(0, 255),
 						page: jsonStringify(page),
 					});
-					throw new Error("Failed to validate generated page");
+
+					if (page.type === "fill_in_the_blanks") {
+						// delete this page
+						delete result.pages[result.pages.indexOf(page)];
+					} else {
+						throw new Error("Failed to validate generated page");
+					}
 				}
 			}
 
