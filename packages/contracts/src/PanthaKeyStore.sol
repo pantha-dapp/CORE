@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./interfaces/IPanthaOrchestrator.sol";
+import "./errors/EPanthaKeyStore.sol";
 
 contract PanthaKeyStore is EIP712 {
     using ECDSA for bytes32;
@@ -23,7 +24,7 @@ contract PanthaKeyStore is EIP712 {
     event KeygenDataRegistered(address indexed user);
 
     modifier onlyServer() {
-        require(msg.sender == address(orchestrator.server()), "Only server");
+        if (msg.sender != address(orchestrator.server())) revert OnlyServer();
         _;
     }
 
@@ -42,21 +43,20 @@ contract PanthaKeyStore is EIP712 {
         bytes32 publicKey_,
         bytes calldata signature_
     ) external onlyServer {
-        if (seedSalt_ == bytes32(0)) revert("InvalidSeedSalt()");
-        if (challengeSalt_ == bytes20(0)) revert("InvalidChallengeSalt()");
-        if (publicKey_ == bytes32(0)) revert("InvalidPublicKey()");
-        if (isRegistered[msg.sender]) revert("DataAlreadyRegistered()");
+        if (seedSalt_ == bytes32(0)) revert InvalidSeedSalt();
+        if (challengeSalt_ == bytes20(0)) revert InvalidChallengeSalt();
+        if (publicKey_ == bytes32(0)) revert InvalidPublicKey();
+        if (isRegistered[msg.sender]) revert DataAlreadyRegistered();
 
-        require(
-            validateKeygenDataRegistrationSignature(
+        if (
+            !validateKeygenDataRegistrationSignature(
                 seedSalt_,
                 challengeSalt_,
                 publicKey_,
                 signature_,
                 msg.sender
-            ),
-            "Invalid signature"
-        );
+            )
+        ) revert InvalidSignature();
 
         keygenData[msg.sender] = KeygenData({
             seedSalt: seedSalt_,
