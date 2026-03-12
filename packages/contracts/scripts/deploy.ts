@@ -18,11 +18,14 @@ async function main() {
         process.exit(1);
     }
 
-
     console.log("Deploying contracts as ", deployer.account.address);
 
-    const panthaToken = await viem.deployContract("PanthaToken", [BigInt(100_000_000 * (10 ** 18))]);
-    const orchestrator = await viem.deployContract("PanthaOrchestrator", [panthaToken.address]);
+    const panthaToken = await viem.deployContract("PanthaToken", [
+        BigInt(100_000_000 * 10 ** 18),
+    ]);
+    const orchestrator = await viem.deployContract("PanthaOrchestrator", [
+        panthaToken.address,
+    ]);
     const certificationAuthority = await viem.getContractAt(
         "PanthaCertificationAuthority",
         await orchestrator.read.certificationAuthority(),
@@ -32,7 +35,10 @@ async function main() {
         await orchestrator.read.keyStore(),
     );
     const pxp = await viem.getContractAt("PXP", await orchestrator.read.pxp());
-    const certificate = await viem.getContractAt("PanthaCertificate", await certificationAuthority.read.certificate());
+    const certificate = await viem.getContractAt(
+        "PanthaCertificate",
+        await certificationAuthority.read.certificate(),
+    );
 
     console.log("Contracts deployed");
 
@@ -60,7 +66,7 @@ async function main() {
         PXP: {
             address: pxp.address,
             abi: pxp.abi,
-        }
+        },
     } as const;
 
     let existingDefinitions: Record<string, typeof definitions> = {};
@@ -88,6 +94,12 @@ async function main() {
 
     // Always add the new definitions, even if parsing failed
     existingDefinitions[toHex(chainId)] = definitions;
+
+    await definitionsFile.write(
+        DEFINITIONS_FILE_PREFIX +
+        JSON.stringify(existingDefinitions, null, 2) +
+        DEFINITIONS_FILE_SUFFIX,
+    );
 
     await definitionsFile.write(
         DEFINITIONS_FILE_PREFIX +
