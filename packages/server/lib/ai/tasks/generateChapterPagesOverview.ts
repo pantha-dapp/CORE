@@ -1,5 +1,5 @@
 import z from "zod";
-import { zChapterPageType } from "./generateChapterPage";
+import { zChapterPageType } from "./generateChapterPage.schemas";
 
 const generateChapterPagesOverviewPrompt = `You are an expert learning experience designer for a mobile micro-learning platform like Duolingo.
 

@@ -1,7 +1,6 @@
 import clarificationQuestionGenerator from "./clarificationQuestionGenerator";
 import courseSelectionEvaluator from "./courseSelectionEvaluator";
 import generateAnswerExplanation from "./generateAnswerExplanation";
-import { generateChapterPage } from "./generateChapterPage";
 import generateChapterPages from "./generateChapterPages.legacy";
 import generateChapterPagesOverview from "./generateChapterPagesOverview";
 import generateIdealCourseDescriptor from "./generateIdealCourseDescriptor";
@@ -13,7 +12,6 @@ const tasks = {
 	clarificationQuestionGenerator,
 	courseSelectionEvaluator,
 	generateAnswerExplanation,
-	generateChapterPage,
 	generateChapterPages,
 	generateChapterPagesOverview,
 	generateIdealCourseDescriptor,
