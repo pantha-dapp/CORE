@@ -3,7 +3,8 @@
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"compile": "hardhat compile"
+		"compile": "bun scripts/generateInterfaces.ts; hardhat compile",
+		"migrate": "bun compile; bun scripts/deploy.ts"
 	},
 	"devDependencies": {
 		"@nomicfoundation/hardhat-ignition": "^3.0.9",
