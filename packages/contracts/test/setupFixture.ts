@@ -12,8 +12,8 @@ export async function setupFixture() {
 		token.address,
 	]);
 	const pxpAddress = await orchestrator.read.pxp();
-	const pxp = await viem.getContractAt("PXP", pxpAddress);
-	const ca = await orchestrator.read.certificationAuthority();
+	const _pxp = await viem.getContractAt("PXP", pxpAddress);
+	const _ca = await orchestrator.read.certificationAuthority();
 
 	return {
 		viem,
