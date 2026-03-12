@@ -36,6 +36,7 @@ export default function (appState: AppState) {
 					),
 				);
 		}
+		// store the progress of the user in the chapter
 	});
 
 	event.on("chapter.completed", async ({ chapterId }) => {

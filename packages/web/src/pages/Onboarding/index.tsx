@@ -3,11 +3,12 @@ import {
 	useCourseGenerationAction,
 	useCourseGenerationMajorCategories,
 	useCourseGenerationSession,
+	useCourseGenerationSessionReset,
 	useJobStatus,
 	useUserCourses,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../../shared/components/Button";
 import Icon from "../../shared/components/Icon";
 
@@ -16,7 +17,9 @@ export default function Onboarding() {
 	const { data: actionData, mutate: action } = useCourseGenerationAction();
 	const jobState = useJobStatus({ jobId: actionData?.awaitedJobId });
 	const majorCategories = useCourseGenerationMajorCategories();
+	const resetSession = useCourseGenerationSessionReset();
 	const router = useRouter();
+	const [learningIntent, setLearningIntent] = useState("");
 
 	const { wallet } = usePanthaContext();
 
@@ -54,7 +57,7 @@ export default function Onboarding() {
 			<div className="w-full max-w-xl space-y-8">
 				{/* Logo / Brand */}
 				<div className="text-center space-y-1">
-					<h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+					<h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
 						Pantha
 					</h1>
 					<p className="text-gray-400 text-sm">
@@ -154,7 +157,13 @@ export default function Onboarding() {
 										</p>
 									</div>
 									<div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 italic">
-										"I want to learn about this just for fun!"
+										<input
+											type="text"
+											placeholder="I want to learn this because..."
+											className="w-full bg-transparent focus:outline-none"
+											value={learningIntent}
+											onChange={(e) => setLearningIntent(e.target.value)}
+										/>
 									</div>
 									<Button
 										type="button"
@@ -163,16 +172,28 @@ export default function Onboarding() {
 										fullWidth
 										icon="arrow-right"
 										iconPosition="right"
+										disabled={!learningIntent.trim()}
 										onClick={() =>
 											action({
 												action: {
 													type: "learning_intent_freetext",
-													intent: "I want to learn about this just for fun!",
+													intent: learningIntent,
 												},
 											})
 										}
 									>
 										Continue
+									</Button>
+									<Button
+										type="button"
+										variant="secondary"
+										size="sm"
+										fullWidth
+										icon="arrow-left"
+										iconPosition="left"
+										onClick={() => resetSession.mutate()}
+									>
+										Start Over
 									</Button>
 								</div>
 							)}
@@ -255,6 +276,18 @@ export default function Onboarding() {
 											</Button>
 										</div>
 									)}
+
+									<Button
+										type="button"
+										variant="secondary"
+										size="sm"
+										fullWidth
+										icon="arrow-left"
+										iconPosition="left"
+										onClick={() => resetSession.mutate()}
+									>
+										Start Over
+									</Button>
 								</div>
 							)}
 						</>

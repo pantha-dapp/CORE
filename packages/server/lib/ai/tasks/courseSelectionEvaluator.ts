@@ -41,8 +41,45 @@ If confidence is below 0.7, prefer ask_more_questions but also consider the budg
 
 Always output ALL fields. Set fields that are not applicable to the chosen decision to null.
 
-output chosenCourseId if and only if decision is select_existing_course,
-output courseGenerationInstructions if and only if decision is create_new_course.
+- If decision is ask_more_questions: populate uncertantiesRemaining and questionCount; set chosenCourseId and courseGenerationInstructions to null.
+- If decision is select_existing_course: populate chosenCourseId; set uncertantiesRemaining, questionCount, and courseGenerationInstructions to null.
+- If decision is create_new_course: populate courseGenerationInstructions; set uncertantiesRemaining, questionCount, and chosenCourseId to null.
+
+Example Output for ask_more_questions:
+{
+  "decision": "ask_more_questions",
+  "uncertantiesRemaining": [
+    "What is the user's current skill level?",
+    "Is the focus more on web automation or system automation?"
+  ],
+  "questionCount": 2
+}
+
+Example Output for select_existing_course:
+{
+  "decision": "select_existing_course",
+  "chosenCourseId": 42
+}
+
+Example Output for create_new_course:
+{
+  "decision": "create_new_course",
+  "courseGenerationInstructions": {
+    "courseTitle": "Python Automation",
+    "courseDescription": "A comprehensive course focused on using Python to automate file operations, operating system tasks, repetitive workflows, and system-level scripting for practical and professional use.",
+    "targetAudience": "Learners with basic programming familiarity who want to automate real-world tasks using Python",
+    "assumedPrerequisites": [
+      "Basic understanding of programming concepts",
+      "Familiarity with variables, conditionals, and loops"
+    ],
+    "constraints": {
+      "minimumChapters": 80,
+      "granularity": "very fine-grained",
+      "focus": "practical automation, not theory-heavy computer science"
+    }
+  }
+}
+
 `;
 
 const courseSelectionEvaluatorInputSchema = z.object({
@@ -74,10 +111,10 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 		"create_new_course",
 	]),
 
-	uncertantiesRemaining: z.array(z.string()).nullish(),
-	questionCount: z.number().nullish(),
+	uncertantiesRemaining: z.array(z.string()).nullable(),
+	questionCount: z.number().nullable(),
 
-	chosenCourseId: z.number().nullish(),
+	chosenCourseId: z.number().nullable(),
 
 	courseGenerationInstructions: z
 		.object({
@@ -91,7 +128,7 @@ const courseSelectionEvaluatorOutputSchema = z.object({
 				focus: z.string(),
 			}),
 		})
-		.nullish(),
+		.nullable(),
 });
 
 export default {

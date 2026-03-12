@@ -48,9 +48,11 @@ function CourseIcon({
 						isActive ? "bg-green-500 text-white" : "bg-gray-700 text-gray-100"
 					}`}
 				>
-					<span className="text-lg font-bold">
-						{courseDetails.data?.title?.charAt(0).toUpperCase() || "C"}
-					</span>
+					<img
+						src={courseDetails.data?.icon?.url ?? undefined}
+						alt={courseDetails.data?.title || "Course icon"}
+						className="h-8 w-8"
+					/>
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="line-clamp-2 text-sm font-semibold leading-tight text-white">
@@ -454,6 +456,11 @@ export default function Dashboard() {
 												<span className="relative z-10 text-base font-black tracking-tight sm:text-lg">
 													{isLocked ? "🔒" : index + 1}
 												</span>
+
+												<img
+													src={chapter.icon.url ?? undefined}
+													alt={chapter.title}
+												/>
 											</button>
 											<div className="mt-2 text-center">
 												<p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400">

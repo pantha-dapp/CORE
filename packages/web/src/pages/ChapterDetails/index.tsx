@@ -19,7 +19,6 @@ import { Matching } from "./components/Matching";
 import { Quiz } from "./components/Quiz";
 import { TeachContent } from "./components/TeachContent";
 import { TrueFalse } from "./components/TrueFalse";
-
 export default function ChapterDetails() {
 	const { courseId, chapterId } = useParams({ strict: false });
 	const router = useRouter();
@@ -47,6 +46,21 @@ export default function ChapterDetails() {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const deleteSessionMutation = useChapterGameSessionDelete();
 	const answerExplanation = useAnswerExplanation();
+
+	function handleCancelBack() {
+		setShowConfirmDialog(false);
+	}
+
+	async function handleConfirmBack() {
+		setIsDeleting(true);
+		try {
+			await deleteSessionMutation.mutateAsync();
+			router.navigate({ to: `/dashboard` });
+		} finally {
+			setIsDeleting(false);
+			setShowConfirmDialog(false);
+		}
+	}
 
 	// Swipe detection state
 	// const swipeStartX = useRef(0);
@@ -154,7 +168,7 @@ export default function ChapterDetails() {
 					<p className="text-gray-400 mb-8">
 						The chapter you're looking for doesn't exist.
 					</p>
-					<Button onClick={() => router.navigate({ to: "/" })}>
+					<Button onClick={() => router.navigate({ to: "/dashboard" })}>
 						← Go Home
 					</Button>
 				</div>
@@ -282,24 +296,6 @@ export default function ChapterDetails() {
 		setShowConfirmDialog(true);
 	}
 
-	async function handleConfirmBack() {
-		setIsDeleting(true);
-		try {
-			// Delete the session
-			await deleteSessionMutation.mutateAsync();
-			setShowConfirmDialog(false);
-			// Navigate to dashboard
-			router.navigate({ to: `/dashboard` });
-		} catch (error) {
-			console.error("Error deleting session:", error);
-			setIsDeleting(false);
-		}
-	}
-
-	function handleCancelBack() {
-		setShowConfirmDialog(false);
-	}
-
 	function renderPage(page: NonNullable<typeof currentPage>) {
 		const { content, type } = page.content;
 		console.log("Rendering page:", { type, content });
@@ -333,6 +329,8 @@ export default function ChapterDetails() {
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -345,6 +343,8 @@ export default function ChapterDetails() {
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -353,10 +353,11 @@ export default function ChapterDetails() {
 					<FillInTheBlanks
 						key={displayedPageIndex}
 						{...content}
-						//imageUrl={imageUrl}
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -369,6 +370,8 @@ export default function ChapterDetails() {
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -384,6 +387,8 @@ export default function ChapterDetails() {
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -395,6 +400,8 @@ export default function ChapterDetails() {
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
+						onViewExplanation={handleOpenExplanation}
+						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
 
@@ -408,86 +415,101 @@ export default function ChapterDetails() {
 	}
 
 	return (
-		<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-6 py-8 pb-[calc(env(safe-area-inset-bottom)+8rem)]">
+		<div className="min-h-screen bg-linear-to-b from-slate-950 via-[#0f1b33] to-[#1b2742] text-white px-4 py-6 sm:px-6 sm:py-8">
 			{isExplanationOpen && (
-				<div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-center">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-md">
 					<button
 						type="button"
 						className="absolute inset-0"
 						onClick={() => setIsExplanationOpen(false)}
 						aria-label="Close explanation"
 					/>
-					<div className="relative z-10 w-full max-w-xl rounded-t-3xl border border-gray-700 bg-linear-to-br from-gray-800 to-gray-900 p-6 shadow-2xl sm:rounded-3xl sm:p-7">
-						<div className="mb-5 flex items-start justify-between gap-4">
-							<div>
-								<p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">
-									Answer explanation
-								</p>
-								<h2 className="mt-2 text-2xl font-bold text-white">
-									Why this answer was{" "}
-									{answerResult?.correct ? "correct" : "incorrect"}
-								</h2>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsExplanationOpen(false)}
-								className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-xl text-gray-300 transition hover:bg-white/10"
-								aria-label="Close explanation"
-							>
-								×
-							</button>
-						</div>
-
-						{isExplanationLoadingForCurrentAnswer ? (
-							<div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
-								<div className="mb-3 h-5 w-40 animate-pulse rounded bg-blue-400/20" />
-								<div className="space-y-2">
-									<div className="h-4 w-full animate-pulse rounded bg-gray-700" />
-									<div className="h-4 w-11/12 animate-pulse rounded bg-gray-700" />
-									<div className="h-4 w-4/5 animate-pulse rounded bg-gray-700" />
-								</div>
-								<p className="mt-4 text-sm text-gray-300">
-									Preparing your explanation...
-								</p>
-							</div>
-						) : isExplanationReady ? (
-							<div className="space-y-4">
-								<div className="rounded-2xl border border-gray-700 bg-gray-950/30 p-5">
-									<p className="text-base leading-7 text-gray-100">
-										{explanationContent?.explanation}
+					<div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-4xl border border-white/10 bg-linear-to-br from-[#162847] via-[#1a2d4f] to-[#13233e] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+						<div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500" />
+						<div className="p-6 sm:p-8">
+							<div className="mb-6 flex items-start justify-between gap-4">
+								<div>
+									<p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300/90">
+										Answer explanation
+									</p>
+									<h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+										Why this answer was{" "}
+										{answerResult?.correct ? "correct" : "incorrect"}
+									</h2>
+									<p className="mt-2 text-sm leading-6 text-slate-300 sm:text-base">
+										Quick review before you move to the next question.
 									</p>
 								</div>
-								<div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
-									<p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-										Key takeaway
-									</p>
-									<p className="mt-2 text-sm leading-6 text-emerald-50">
-										{explanationContent?.keyTakeaway}
-									</p>
-								</div>
-							</div>
-						) : isExplanationErrorForCurrentAnswer ? (
-							<div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
-								<p className="font-semibold text-red-300">
-									We could not load the explanation right now.
-								</p>
-								<Button
-									onClick={() =>
-										answerResult
-											? refreshExplanationForPage(answerResult.pageIndex)
-											: Promise.resolve()
-									}
-									className="mt-4"
+								<button
+									type="button"
+									onClick={() => setIsExplanationOpen(false)}
+									className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-slate-300 transition hover:bg-white/10"
+									aria-label="Close explanation"
 								>
-									Try Again
+									×
+								</button>
+							</div>
+
+							{isExplanationLoadingForCurrentAnswer ? (
+								<div className="rounded-[1.75rem] border border-cyan-400/15 bg-slate-950/25 p-6 shadow-inner shadow-black/20">
+									<div className="mb-4 flex items-center gap-3">
+										<div className="h-10 w-10 animate-pulse rounded-2xl bg-cyan-300/15" />
+										<div className="h-5 w-44 animate-pulse rounded-full bg-cyan-300/15" />
+									</div>
+									<div className="space-y-2">
+										<div className="h-4 w-full animate-pulse rounded-full bg-slate-700" />
+										<div className="h-4 w-11/12 animate-pulse rounded-full bg-slate-700" />
+										<div className="h-4 w-4/5 animate-pulse rounded-full bg-slate-700" />
+									</div>
+									<p className="mt-5 text-sm font-medium text-slate-300">
+										Preparing your explanation...
+									</p>
+								</div>
+							) : isExplanationReady ? (
+								<div className="space-y-4">
+									<div className="rounded-[1.75rem] border border-white/10 bg-slate-950/30 p-6 shadow-inner shadow-black/20">
+										<p className="mb-3 inline-flex rounded-full bg-white/8 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">
+											Breakdown
+										</p>
+										<p className="text-base leading-8 text-slate-100 sm:text-lg">
+											{explanationContent?.explanation}
+										</p>
+									</div>
+									<div className="rounded-[1.75rem] border border-emerald-400/20 bg-linear-to-br from-emerald-500/12 to-teal-400/10 p-6">
+										<p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-300">
+											Key takeaway
+										</p>
+										<p className="mt-3 text-sm leading-7 text-emerald-50 sm:text-base">
+											{explanationContent?.keyTakeaway}
+										</p>
+									</div>
+								</div>
+							) : isExplanationErrorForCurrentAnswer ? (
+								<div className="rounded-[1.75rem] border border-red-500/20 bg-red-500/10 p-6">
+									<p className="font-semibold text-red-300">
+										We could not load the explanation right now.
+									</p>
+									<Button
+										onClick={() =>
+											answerResult
+												? refreshExplanationForPage(answerResult.pageIndex)
+												: Promise.resolve()
+										}
+										className="mt-4"
+									>
+										Try Again
+									</Button>
+								</div>
+							) : null}
+
+							<div className="mt-6 flex justify-end">
+								<Button
+									onClick={() => setIsExplanationOpen(false)}
+									icon="check"
+								>
+									Got it
 								</Button>
 							</div>
-						) : null}
-
-						<div className="mt-6 flex justify-end">
-							<Button onClick={() => setIsExplanationOpen(false)}>
-								Got it
-							</Button>
 						</div>
 					</div>
 				</div>
@@ -527,32 +549,44 @@ export default function ChapterDetails() {
 				</div>
 			)}
 
-			<div className="max-w-4xl mx-auto pb-12">
+			<div className="mx-auto max-w-4xl pb-12">
 				{/* Header */}
-				<Button onClick={handleBackClick} variant="secondary" className="mb-6">
+				<Button
+					onClick={handleBackClick}
+					variant="secondary"
+					className="mb-6 shadow-lg shadow-blue-950/30"
+				>
 					← Back to Chapters
 				</Button>
 
-				<div className="mb-6">
-					<p className="text-sm text-gray-400">{course.title}</p>
-					<h1 className="text-4xl font-bold mt-1">{currentChapter.title}</h1>
+				<div className="mb-6 rounded-4xl border border-white/8 bg-white/3 px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+					<p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+						{course.title}
+					</p>
+					<h1 className="mt-2 text-4xl font-black tracking-tight text-white">
+						{currentChapter.title}
+					</h1>
 					{currentChapter.description && (
-						<p className="text-gray-300 mt-2">{currentChapter.description}</p>
+						<p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+							{currentChapter.description}
+						</p>
 					)}
 				</div>
 
 				{/* Progress Bar */}
 				{!isComplete && (
-					<div className="mb-8">
-						<div className="flex justify-between text-sm text-gray-400 mb-2">
-							<span className="font-semibold">Progress</span>
-							<span className="font-mono">
+					<div className="mb-8 rounded-4xl border border-white/8 bg-white/3 px-5 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+						<div className="mb-3 flex justify-between text-sm text-slate-300">
+							<span className="font-black uppercase tracking-[0.16em] text-slate-400">
+								Progress
+							</span>
+							<span className="font-mono text-base font-bold text-white">
 								{displayedPageIndex + 1} / {totalPages}
 							</span>
 						</div>
-						<div className="w-full bg-gray-700 rounded-full h-3">
+						<div className="h-4 w-full rounded-full bg-slate-700/70 p-1">
 							<div
-								className="bg-linear-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+								className="h-full rounded-full bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500 transition-all duration-500"
 								style={{
 									width: `${((displayedPageIndex + 1) / totalPages) * 100}%`,
 								}}
@@ -563,7 +597,7 @@ export default function ChapterDetails() {
 
 				{/* Content */}
 				{session ? (
-					<div className="bg-gray-800 rounded-xl p-6 pb-[calc(env(safe-area-inset-bottom)+7rem)] shadow-lg">
+					<div className="rounded-4xl border border-white/8 bg-linear-to-br from-white/5 to-white/3 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-sm sm:p-6">
 						{isComplete ? (
 							<CompletionScreen
 								correctCount={completionReport?.correct ?? 0}
@@ -583,21 +617,6 @@ export default function ChapterDetails() {
 					"creating session"
 				)}
 			</div>
-
-			{answerResult && !isComplete && (
-				<div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-40 px-6">
-					<div className="mx-auto max-w-4xl">
-						<Button
-							onClick={handleOpenExplanation}
-							className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl"
-						>
-							{isExplanationLoadingForCurrentAnswer
-								? "Preparing explanation..."
-								: "View explanation"}
-						</Button>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }
