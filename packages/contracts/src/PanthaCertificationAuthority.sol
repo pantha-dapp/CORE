@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IPanthaOrchestrator.sol";
+import "./errors/EPanthaCertificationAuthority.sol";
 
 contract PanthaCertificationAuthority {
     IPanthaOrchestrator public immutable orchestrator;
@@ -15,24 +16,22 @@ contract PanthaCertificationAuthority {
     }
 
     modifier onlyOrchestrator() {
-        require(msg.sender == address(orchestrator), "Only orchestrator");
+        if (msg.sender != address(orchestrator)) revert OnlyOrchestrator();
         _;
     }
 
     modifier onlyServer() {
-        require(msg.sender == address(orchestrator.server()), "Only server");
+        if (msg.sender != address(orchestrator.server())) revert OnlyServer();
         _;
     }
 
     function certify(address user_) external onlyOrchestrator {
-        require(user_ != address(0), "Invalid user");
+        if (user_ == address(0)) revert InvalidUser();
 
         bytes32 actionChainRoot = actionChainMerkleRoots[user_];
-        require(actionChainRoot != bytes32(0), "No action chain root for user");
-        require(
-            !usedActionChainRoots[actionChainRoot],
-            "Action chain root already used"
-        );
+        if (actionChainRoot == bytes32(0)) revert NoActionChainRoot();
+        if (usedActionChainRoots[actionChainRoot])
+            revert ActionChainRootAlreadyUsed();
 
         usedActionChainRoots[actionChainRoot] = true;
     }
@@ -43,6 +42,9 @@ contract PanthaCertificationAuthority {
     ) external onlyOrchestrator {
         require(user_ != address(0), "Invalid user");
         require(actionChainRoot_ != bytes32(0), "Invalid action chain root");
+
+        if (user_ == address(0)) revert InvalidUser();
+        if (actionChainRoot_ == bytes32(0)) revert InvalidActionChainRoot();
 
         actionChainMerkleRoots[user_] = actionChainRoot_;
     }
