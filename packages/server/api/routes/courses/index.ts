@@ -120,10 +120,13 @@ export default new Hono()
         );
 
         const results = await Promise.allSettled([...iconPromises, timeoutPromise]);
-        const icons = results
-            .slice(0, -1)
-            .filter((r) => r.status === "fulfilled")
-            .map((r) => (r as PromiseFulfilledResult<{ url: string }>).value.url);
+        const icons = chapters.reduce((acc, chapter, index) => {
+            const result = results[index];
+            if (result?.status === "fulfilled") {
+                acc[chapter.id] = (result as PromiseFulfilledResult<{ url: string }>).value.url;
+            }
+            return acc;
+        }, {} as Record<string, string>);
 
         return respond.ok(
             ctx,
