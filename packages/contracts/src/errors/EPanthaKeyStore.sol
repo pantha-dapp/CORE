@@ -18,6 +18,3 @@ error DataAlreadyRegistered();
 
 /// @notice Thrown when signature validation fails
 error InvalidSignature();
-
-/// @notice Thrown when caller is not the server
-error OnlyServer();
