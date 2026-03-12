@@ -1,6 +1,36 @@
 @import "tailwindcss";
 
+@font-face {
+	font-family: "Haymer Small Capitals W01 Bold";
+	src: url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.eot");
+	src:
+		url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.eot?#iefix")
+		format("embedded-opentype"),
+		url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.woff2")
+		format("woff2"),
+		url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.woff")
+		format("woff"),
+		url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.ttf")
+		format("truetype"),
+		url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.svg#Haymer Small Capitals W01 Bold")
+		format("svg");
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Tusker Grotesk";
+	src:
+		url("/fonts/TuskerGrotesk-7700Bold.woff2") format("woff2"),
+		url("/fonts/TuskerGrotesk-7700Bold.woff") format("woff"),
+		url("/fonts/TuskerGrotesk-7700Bold.ttf") format("truetype");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
 @theme {
+	--font-tusker: "Tusker Grotesk", system-ui, sans-serif;
+	--font-haymer: "Haymer Small Capitals W01 Bold", system-ui, sans-serif;
 	--color-primary: #3b82f6;
 	--color-secondary: #8b5cf6;
 	--color-background: #1f2937;
@@ -12,10 +42,20 @@
 	--color-mute: #64748b;
 	--color-border: #e2e8f0;
 	--color-borderApp: #6a7282;
+	--landing-1-bg: #9dadc5;
+	--landing-1-text: #f1e92e;
 }
 
 body {
 	@apply bg-background text-foreground;
+}
+
+/* Scroll lock: prevents all scroll when section is locked */
+body.scroll-lock {
+	overflow: hidden !important;
+	position: fixed !important;
+	width: 100%;
+	top: var(--scroll-lock-top, 0);
 }
 
 @keyframes slideLeft {
@@ -76,4 +116,89 @@ body {
 
 .animate-slide-down {
 	animation: slideDown 0.3s ease-out;
+}
+
+/* Landing hero: slide up from invisible line, rotating from slanted to straight */
+/* Text starts fully below the line (hidden), emerges into view - no opacity change */
+@keyframes slideUpAnglePositive {
+	from {
+		transform: translateY(120%) rotate(10deg);
+	}
+	to {
+		transform: translateY(0) rotate(0deg);
+	}
+}
+
+@keyframes slideUpAngleNegative {
+	from {
+		transform: translateY(120%) rotate(-10deg);
+	}
+	to {
+		transform: translateY(0) rotate(0deg);
+	}
+}
+
+.animate-slide-up-angle-positive {
+	animation: slideUpAnglePositive 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-up-angle-negative {
+	animation: slideUpAngleNegative 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* One line at bottom. All words start from below that line, animate up to fixed positions. */
+.animate-slide-up-line {
+	animation: slideUpFromLine 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* All words: start below viewport bottom (same line), move up into their final positions */
+@keyframes slideUpFromLine {
+	from {
+		transform: translateY(100vh) rotate(var(--word-rotate, 0deg));
+	}
+	to {
+		transform: translateY(0) rotate(0deg);
+	}
+}
+
+.animate-slide-up-line[data-angle="0"] {
+	--word-rotate: 10deg;
+}
+.animate-slide-up-line[data-angle="1"] {
+	--word-rotate: -8deg;
+}
+.animate-slide-up-line[data-angle="2"] {
+	--word-rotate: 15deg;
+}
+.animate-slide-up-line[data-angle="3"] {
+	--word-rotate: -10deg;
+}
+.animate-slide-up-line[data-angle="4"] {
+	--word-rotate: -12deg;
+}
+
+/* HowItWorksStep1: cat fades up from below */
+@keyframes fadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(60px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Token economy: dots moving left to right - seamless loop (one full period = no visible reset) */
+@keyframes dotsScroll {
+	0% {
+		background-position: 0 0;
+	}
+	100% {
+		background-position: var(--dot-gap, 36px) 0;
+	}
+}
+
+.animate-dots-scroll {
+	animation: dotsScroll 3s linear infinite;
 }
