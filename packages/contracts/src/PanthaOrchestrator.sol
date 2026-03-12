@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./PXP.sol";
 import "./PanthaCertificationAuthority.sol";
+import "./errors/EPanthaOrchestrator.sol";
 
 contract PanthaOrchestrator is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -36,7 +37,7 @@ contract PanthaOrchestrator is ReentrancyGuard {
     event RewardClaimed(address indexed user, uint256 amount);
 
     modifier onlyServer() {
-        require(msg.sender == server, "Only server");
+        if (msg.sender != server) revert OnlyServer();
         _;
     }
 
@@ -48,12 +49,12 @@ contract PanthaOrchestrator is ReentrancyGuard {
     }
 
     function cycleServer(address newServer_) external onlyServer {
-        require(newServer_ != address(0), "Invalid server");
+        if (newServer_ == address(0)) revert InvalidServer();
         server = newServer_;
     }
 
     function distribute(uint256 amount_) external onlyServer {
-        require(totalXp > 0, "No XP minted");
+        if (totalXp == 0) revert NoXpMinted();
 
         panthaToken.safeTransferFrom(msg.sender, address(this), amount_);
 
@@ -72,8 +73,8 @@ contract PanthaOrchestrator is ReentrancyGuard {
         bytes8 reason_,
         bytes8 reasonResourceIdentifier_
     ) external onlyServer {
-        require(recipient_ != address(0), "Invalid recipient");
-        require(amount_ > 0, "Zero XP");
+        if (recipient_ == address(0)) revert InvalidRecipient();
+        if (amount_ == 0) revert ZeroXp();
 
         _claim(recipient_);
 
