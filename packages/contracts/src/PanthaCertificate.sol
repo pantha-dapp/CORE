@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "./errors/EPanthaCertificate.sol";
 
 contract PanthaCertificate is ERC721URIStorage {
     uint256 public nextTokenId;
@@ -12,7 +13,7 @@ contract PanthaCertificate is ERC721URIStorage {
     }
 
     modifier onlyAuthority() {
-        require(msg.sender == authority, "Not authorized");
+        if (msg.sender != authority) revert NotAuthorized();
         _;
     }
 
