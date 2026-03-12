@@ -5,6 +5,7 @@ pragma solidity ^0.8.28;
 
 interface IPanthaCertificationAuthority {
     function orchestrator() external view returns (address);
+    function certificate() external view returns (address);
     function actionChainMerkleRoots(address key) external view returns (bytes32);
     function usedActionChainRoots(bytes32 key) external view returns (bool);
     function certify(address user_) external;
