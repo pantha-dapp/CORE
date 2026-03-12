@@ -418,7 +418,11 @@ export default new Hono<RouterEnv>()
 							ongoingSession.courseId = chosenCourseId;
 						}
 
-						if (evaluation.decision === "create_new_course") {
+						if (
+							evaluation.decision === "create_new_course" ||
+							(evaluation.decision === "ask_more_questions" &&
+								ongoingSession.questionsBudget > 0)
+						) {
 							let generatedCourseId = "";
 							if (!evaluation.courseGenerationInstructions) {
 								throw "No instructions for course generation";
