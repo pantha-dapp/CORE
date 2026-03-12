@@ -1,6 +1,6 @@
 import { tryCatch } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { categories } from "../../../../data/categories";
@@ -91,6 +91,12 @@ export default new Hono<RouterEnv>()
 			"Session started successfully.",
 			201,
 		);
+	})
+
+	.delete("/session", authenticated, async (ctx) => {
+		const { userWallet } = ctx.var;
+		sessionStore.delete(userWallet);
+		return respond.ok(ctx, {}, "Session deleted successfully.", 200);
 	})
 
 	.get("/categories", authenticated, async (ctx) => {

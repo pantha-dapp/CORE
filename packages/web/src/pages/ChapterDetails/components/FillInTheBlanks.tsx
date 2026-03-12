@@ -9,6 +9,8 @@ interface Props {
 	onSubmit: (answer: string[]) => Promise<void>;
 	answerResult: { correct: boolean; pageIndex: number } | null;
 	onContinue: () => void;
+	onViewExplanation?: () => void;
+	isExplanationLoading?: boolean;
 }
 
 export function FillInTheBlanks({
@@ -16,6 +18,8 @@ export function FillInTheBlanks({
 	onSubmit,
 	answerResult,
 	onContinue,
+	onViewExplanation,
+	isExplanationLoading,
 	words,
 	wrongOptions = [],
 }: Props) {
@@ -113,13 +117,34 @@ export function FillInTheBlanks({
 					</p>
 				</div>
 				{showResult ? (
-					<div className="bg-green-500/10 border border-green-500/40 p-4 rounded-2xl">
-						<p className="font-bold text-lg text-green-400">✓ Correct!</p>
-						<p className="text-sm text-gray-300 mt-2">
+					<div className="overflow-hidden rounded-[1.75rem] border-2 border-emerald-400/35 bg-linear-to-br from-emerald-500/18 to-emerald-400/8 p-5 shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+						<p className="text-lg font-black text-emerald-300">
+							Rendered safely
+						</p>
+						<p className="mt-2 text-sm leading-6 text-slate-200">
 							This question was skipped because it could not be rendered.
 						</p>
-						<Button onClick={onContinue} className="w-full mt-4">
-							Continue
+						{onViewExplanation && (
+							<button
+								type="button"
+								onClick={onViewExplanation}
+								className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-sm font-black text-cyan-200 transition hover:bg-cyan-400/16"
+							>
+								<span>💡</span>
+								<span>
+									{isExplanationLoading
+										? "Loading explanation…"
+										: "View Explanation"}
+								</span>
+							</button>
+						)}
+						<Button
+							onClick={onContinue}
+							className="mt-3 w-full"
+							icon="arrow-right"
+							iconPosition="right"
+						>
+							Next Question
 						</Button>
 					</div>
 				) : (
@@ -253,22 +278,51 @@ export function FillInTheBlanks({
 
 			{showResult && (
 				<div
-					className={`p-4 rounded-2xl border ${
+					className={`overflow-hidden rounded-[1.75rem] border-2 p-5 shadow-[0_16px_40px_rgba(0,0,0,0.18)] ${
 						isCorrect
-							? "border-green-500/40 bg-green-500/10"
-							: "border-red-500/40 bg-red-500/10"
+							? "border-emerald-400/35 bg-linear-to-br from-emerald-500/18 to-emerald-400/8"
+							: "border-rose-400/35 bg-linear-to-br from-rose-500/18 to-rose-400/8"
 					}`}
 				>
-					<p
-						className={`font-semibold mb-1 ${isCorrect ? "text-green-400" : "text-red-400"}`}
+					<div className="mb-4 flex items-start gap-3">
+						<div
+							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-xl ${isCorrect ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100" : "border-rose-300/30 bg-rose-300/15 text-rose-100"}`}
+						>
+							{isCorrect ? "📝" : "🔤"}
+						</div>
+						<div>
+							<p
+								className={`text-lg font-black ${isCorrect ? "text-emerald-300" : "text-rose-300"}`}
+							>
+								{isCorrect ? "Well filled!" : "Almost there"}
+							</p>
+							<p className="mt-1 text-sm leading-6 text-slate-200">
+								Use the explanation to understand the missing words, then
+								continue.
+							</p>
+						</div>
+					</div>
+					{onViewExplanation && (
+						<button
+							type="button"
+							onClick={onViewExplanation}
+							className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-sm font-black text-cyan-200 transition hover:bg-cyan-400/16"
+						>
+							<span>💡</span>
+							<span>
+								{isExplanationLoading
+									? "Loading explanation…"
+									: "View Explanation"}
+							</span>
+						</button>
+					)}
+					<Button
+						onClick={onContinue}
+						className="mt-3 w-full"
+						icon="arrow-right"
+						iconPosition="right"
 					>
-						{isCorrect ? "✓ Correct!" : "✗ Incorrect"}
-					</p>
-					<p className="text-sm text-gray-300 mt-1">
-						Your answer has been checked by the server.
-					</p>
-					<Button onClick={onContinue} className="w-full mt-4">
-						Continue
+						Next Question
 					</Button>
 				</div>
 			)}

@@ -158,6 +158,11 @@ export default new Hono<RouterEnv>()
 			if (expired) throw new NotFoundError("Session expired");
 
 			const session = gameSessions.get(userWallet);
+			console.log(
+				"session :",
+				!!session,
+				JSON.stringify({ session }).slice(0, 200),
+			);
 			if (!session) {
 				throw new NotFoundError(
 					"No active session found. Please start a session.",
@@ -251,6 +256,9 @@ export default new Hono<RouterEnv>()
 					},
 					"Session completed.",
 					200,
+					// "Error processing answer: " +
+					// 	(error instanceof Error ? error.message : String(error)),
+					// 500,
 				);
 			}
 
