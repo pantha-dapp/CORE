@@ -1,5 +1,5 @@
 import { tryCatch } from "@pantha/shared";
-import { eq, sql } from "drizzle-orm";
+import { eq, isConfig, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { prepareCourseIcons } from "../../../lib/utils/courses";
@@ -106,11 +106,31 @@ export default new Hono()
 	)
 
 	.get("/:id/chapters", authenticated, async (ctx) => {
-		const { db } = ctx.var.appState;
+		const { db, ai } = ctx.var.appState;
 
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
-		return respond.ok(ctx, { chapters }, "Chapters fetched successfully.", 200);
+
+		const iconPromises = chapters.map((chapter) =>
+			ai.image.generateIconImage({ prompt: chapter.icon.prompt }),
+		);
+
+		const timeoutPromise = new Promise((resolve) =>
+			setTimeout(() => resolve("TIMEOUT"), 5000),
+		);
+
+		const results = await Promise.allSettled([...iconPromises, timeoutPromise]);
+		const icons = results
+			.slice(0, -1)
+			.filter((r) => r.status === "fulfilled")
+			.map((r) => (r as PromiseFulfilledResult<{ url: string }>).value.url);
+
+		return respond.ok(
+			ctx,
+			{ chapters, icons },
+			"Chapters fetched successfully.",
+			200,
+		);
 	})
 
 	.get("/:id", authenticated, async (ctx) => {
@@ -124,13 +144,17 @@ export default new Hono()
 			return respond.err(ctx, "Course not found.", 404);
 		}
 
+		const { url: icon } = await ai.image.generateIconImage({
+			prompt: course.icon.prompt,
+		});
+
 		return respond.ok(
 			ctx,
 			{
 				id: course.id,
 				title: course.title,
 				description: course.description,
-				icon: course.icon,
+				icon: icon,
 			},
 			"Course fetched successfully.",
 			200,
