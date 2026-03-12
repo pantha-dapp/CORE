@@ -4,15 +4,19 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IPanthaOrchestrator.sol";
 import "./errors/EPanthaCertificationAuthority.sol";
+import "./PanthaCertificate.sol";
 
 contract PanthaCertificationAuthority {
     IPanthaOrchestrator public immutable orchestrator;
+    PanthaCertificate public immutable certificate;
 
     mapping(address => bytes32) public actionChainMerkleRoots;
     mapping(bytes32 => bool) public usedActionChainRoots;
 
     constructor() {
         orchestrator = IPanthaOrchestrator(msg.sender); // expect orcestaror to be the deployer
+
+        certificate = new PanthaCertificate();
     }
 
     modifier onlyOrchestrator() {
