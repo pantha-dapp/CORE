@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./interfaces/IPanthaOrchestrator.sol";
 import "./errors/EPanthaKeyStore.sol";
+import "./errors/EPanthaCertificationAuthority.sol";
 
 contract PanthaKeyStore is EIP712 {
     using ECDSA for bytes32;
