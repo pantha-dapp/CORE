@@ -16,7 +16,7 @@ import ChapterDetails from "./ChapterDetails";
 // import Chapters from "./Chapters";
 import Dashboard from "./Dashboard";
 import Events from "./Events";
-import LandingPage from "./LandingPage";
+import IndexPage from "./IndexPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
@@ -75,7 +75,7 @@ const indexRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/",
 	component: function Index() {
-		return withPageErrorBoundary(LandingPage)({});
+		return withPageErrorBoundary(IndexPage)({});
 	},
 });
 
@@ -98,6 +98,7 @@ const onboardingRoute = createRoute({
 		return (
 			<ProtectedRoute type="loggedInOnly">
 				<Onboarding />
+				<Navigation />
 			</ProtectedRoute>
 		);
 	},
@@ -136,7 +137,6 @@ const ChapterDetailRoute = createRoute({
 	component: function ChapterDetailRoute() {
 		return (
 			<ProtectedRoute type="loggedInOnly">
-				{/* Add your ChapterDetail component here */}
 				<ChapterDetails />
 				<Navigation />
 			</ProtectedRoute>
