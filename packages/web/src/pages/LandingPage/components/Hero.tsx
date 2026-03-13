@@ -21,7 +21,9 @@ export function Hero() {
 		<div
 			className="relative h-screen overflow-hidden flex flex-col font-tusker transition-colors duration-[2s] ease-out"
 			style={{
-				backgroundColor: wordsCanStart ? "#8584bd" : "var(--landing-1-bg)",
+				backgroundColor: wordsCanStart
+					? "var(--color-landing-hero-bg)"
+					: "var(--landing-1-bg)",
 				color: "var(--landing-1-text)",
 			}}
 		>

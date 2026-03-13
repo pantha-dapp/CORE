@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { DotsBackground } from "../../../shared/components/DotsBackground";
 import { HowItWorksStep1 } from "./HowItWorksStep1";
 import { HowItWorksStep2 } from "./HowItWorksStep2";
 import { HowItWorksStep3 } from "./HowItWorksStep3";
@@ -17,8 +18,6 @@ const STEP2_COLOR = { r: 0xf9, g: 0xcc, b: 0x73 }; // #f9cc73
 const STEP3_COLOR = { r: 0xf8, g: 0xc1, b: 0xba }; // #f8c1ba
 const STEP4_COLOR = { r: 0xac, g: 0x4f, b: 0x98 }; // #ac4f98
 const INITIAL_COLOR = { r: 0x85, g: 0x84, b: 0xbd }; // from Hero
-
-const DOT_SIZE = 2;
 
 function sectionScrollProgress(
 	rect: DOMRect,
@@ -326,15 +325,7 @@ export function HowItWorks() {
 						className="relative w-[calc(100%+48px)] -mx-6 overflow-hidden border-t-4 border-b-4 border-black"
 						style={{ backgroundColor: bgColor }}
 					>
-						<div
-							className="absolute inset-0 animate-dots-scroll pointer-events-none"
-							style={
-								{
-									backgroundImage: `radial-gradient(circle at 4px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 12px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 20px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 28px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 8px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 16px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 24px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 32px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px)`,
-									backgroundSize: "36px 16px",
-								} as React.CSSProperties
-							}
-						/>
+						<DotsBackground className="absolute inset-0" />
 						{/* Front card - black border on all sides including top and bottom */}
 						<div
 							className="relative z-10 mx-4 my-4 border-4 border-black min-h-0"

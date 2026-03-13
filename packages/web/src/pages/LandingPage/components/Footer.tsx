@@ -12,8 +12,7 @@ export const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
 	return (
 		<footer
 			ref={ref}
-			className="relative z-10 px-6 md:px-12 py-20 md:py-28"
-			style={{ backgroundColor: "#375027", color: "white" }}
+			className="relative z-10 px-6 md:px-12 py-20 md:py-28 bg-landing-footer-bg text-white"
 		>
 			<div className="max-w-5xl mx-auto">
 				<h2 className="font-tusker font-bold text-4xl md:text-5xl lg:text-6xl mb-6 md:mb-8">
@@ -30,7 +29,7 @@ export const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
 							href={href}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-[#375027] hover:border-white hover:bg-white/10 transition-colors"
+							className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-landing-footer-bg hover:border-white hover:bg-white/10 transition-colors"
 							aria-label={label}
 						>
 							<Icon size={20} />

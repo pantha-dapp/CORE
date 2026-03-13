@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { DotsBackground } from "../../../shared/components/DotsBackground";
 
 const CARDS = [
 	{
@@ -22,8 +23,6 @@ const CARDS = [
 ] as const;
 
 const OVERLAP = 450;
-
-const DOT_SIZE = 2;
 
 const PREV_COLOR = { r: 0xac, g: 0x4f, b: 0x98 }; // HowItWorks end purple
 const TARGET_COLOR = { r: 0xf8, g: 0xc1, b: 0xba };
@@ -102,18 +101,7 @@ export function TokenEconomy() {
 										transform: cardTransform,
 									}}
 								>
-									<div
-										className="absolute inset-0 animate-dots-scroll"
-										style={
-											{
-												// Staggered rows: row1 dots between row0, same density (no alternating gaps)
-												// Tile 36x16: row0 at 4,12,20,28 | row1 at 8,16,24,32 (between row0)
-												backgroundImage: `radial-gradient(circle at 4px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 12px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 20px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 28px 4px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 8px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 16px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 24px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px), radial-gradient(circle at 32px 12px, black ${DOT_SIZE}px, transparent ${DOT_SIZE}px)`,
-												backgroundSize: "36px 16px",
-												"--dot-gap": "36px",
-											} as React.CSSProperties
-										}
-									/>
+									<DotsBackground className="absolute inset-0" />
 									{/* Front card - centered inside back card */}
 									<div
 										className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-48px)] min-h-[50vh] border-4 border-black flex items-center justify-center px-10 py-16 md:px-16 md:py-20"

@@ -6,64 +6,34 @@ import {
 	useUserInfo,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
+import { Info, Lock, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import Button from "../../shared/components/Button";
 
-// Component to display course icon with title
-function CourseIcon({
+// Simple course name button for drawer selection
+function CourseNameItem({
 	courseId,
 	isActive,
-	progressLabel,
 	onClick,
 }: {
 	courseId: string;
 	isActive: boolean;
-	progressLabel: string;
 	onClick: () => void;
 }) {
 	const courseDetails = useCourseById({ id: courseId });
-	const Chapterdata = useCourseChaptersByCourseId({ courseId });
 	if (courseDetails.isLoading) {
-		return (
-			<div className="flex flex-col items-center gap-2 min-w-20">
-				<div className="w-14 h-14 rounded-xl bg-gray-700 animate-pulse" />
-				<div className="h-3 w-16 bg-gray-700 rounded animate-pulse" />
-			</div>
-		);
+		return <div className="h-11 w-full animate-pulse rounded-lg bg-gray-200" />;
 	}
-
 	return (
 		<button
 			type="button"
-			className={`min-w-52 rounded-3xl border p-3 text-left transition-all ${
-				isActive
-					? "border-green-400/60 bg-green-500/15 shadow-lg shadow-green-500/10"
-					: "border-gray-700 bg-gray-800/70 hover:border-gray-500 hover:bg-gray-800"
-			}`}
 			onClick={onClick}
+			className={`w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+				isActive
+					? "bg-landing-hero-bg dark:bg-dark-surface text-landing-hero-text dark:text-gray-100"
+					: "bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-surface"
+			} font-montserrat`}
 		>
-			<div className="flex items-center gap-3">
-				<div
-					className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-all ${
-						isActive ? "bg-green-500 text-white" : "bg-gray-700 text-gray-100"
-					}`}
-				>
-					<img
-						src={
-							Chapterdata.data?.icons[Chapterdata.data?.chapters[0].id] ??
-							undefined
-						}
-						alt={courseDetails.data?.title || "Course icon"}
-						className="h-8 w-8"
-					/>
-				</div>
-				<div className="min-w-0 flex-1">
-					<p className="line-clamp-2 text-sm font-semibold leading-tight text-white">
-						{courseDetails.data?.title || "Course"}
-					</p>
-					<p className="mt-1 text-xs text-gray-400">{progressLabel}</p>
-				</div>
-			</div>
+			{courseDetails.data?.title ?? "Course"}
 		</button>
 	);
 }
@@ -239,11 +209,6 @@ export default function Dashboard() {
 		return `${remainingChapters} chapter${remainingChapters === 1 ? "" : "s"} left to finish this course.`;
 	})();
 
-	function getPathOffset(index: number) {
-		const offsets = [0, 54, -34, 72, -50, 20, -16, 46];
-		return offsets[index % offsets.length] ?? 0;
-	}
-
 	function handleChapterStart(chapterId?: string) {
 		const chapterToStart =
 			chapters.find((chapter) => chapter.id === chapterId) ?? selectedChapter;
@@ -265,251 +230,349 @@ export default function Dashboard() {
 	}
 
 	if (enrolledCourses.isLoading) {
-		return <div>Loading your courses...</div>;
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-landing-hero-bg dark:bg-dark-bg">
+				<p className="text-landing-hero-text dark:text-dark-muted font-montserrat">
+					Loading your courses…
+				</p>
+			</div>
+		);
 	}
 
 	return (
-		<div className="min-h-screen bg-linear-to-b from-[#101828] via-[#122033] to-[#0f172a] text-white pb-32">
-			{/* ───────── STICKY TOP BAR + PANTHA CARD ───────── */}
-			<div className="sticky top-0 z-50 border-b border-white/5 bg-linear-to-b from-[#101828] via-[#101828] to-[#101828]/95 px-4 pb-3 shadow-lg backdrop-blur-xl">
-				{/* TOP SAFE SPACE */}
-				<div className="h-1" />
-
-				{/* TOP BAR: SINGLE ROW */}
-				<div className="flex items-center justify-between gap-2">
-					{/* Course Icon Button - Opens drawer */}
-					<Button
-						onClick={() => setShowCourseDrawer(!showCourseDrawer)}
-						variant="quantum"
-						className="h-11 w-11 rounded-2xl bg-white/5 ring-1 ring-white/10"
-					>
-						<span className="text-xl font-bold text-white">📚</span>
-					</Button>
-
-					{/* Streak */}
-					<div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
-						<span className="text-xl">🔥</span>
-						<p className="text-sm font-bold text-orange-400">{currentStreak}</p>
-					</div>
-
-					{/* Gems/Earnings */}
-					<div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
-						<span className="text-xl">💎</span>
-						<p className="text-sm font-bold text-yellow-400">1,250</p>
-					</div>
-
-					{/* Energy */}
-					<div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
-						<span className="text-xl">⚡</span>
-						<p className="text-sm font-bold text-blue-400">85</p>
-					</div>
-				</div>
-
-				{/* COURSE DRAWER (SLIDES DOWN) */}
-				<div
-					className={`overflow-hidden rounded-3xl border border-white/10 bg-[#192334] p-3 transition-all duration-300 ease-in-out ${
-						showCourseDrawer
-							? "max-h-752 opacity-100 mb-3 mt-2"
-							: "max-h-0 opacity-0 p-0"
-					}`}
-				>
-					<div className="mb-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-						<div className="flex items-start justify-between gap-3">
-							<div className="min-w-0 flex-1">
-								<p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-									Selected course
-								</p>
-								<h2 className="mt-1 line-clamp-1 text-base font-extrabold text-white">
-									{selectedCourseDetails.data?.title || "Select a course"}
-								</h2>
-								<p className="mt-1 text-sm text-gray-400">{heroMessage}</p>
-							</div>
-						</div>
-
-						<div className="mt-3 flex items-center gap-3">
-							<div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
-								<div
-									className="h-full rounded-full bg-linear-to-r from-[#58CC02] via-[#89E219] to-[#1CB0F6] transition-all duration-500"
-									style={{ width: `${progressPercent}%` }}
-								/>
-							</div>
-						</div>
-					</div>
-
-					<h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-						Your Courses
-					</h3>
-					<div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-						{enrolledCourses.data?.courses.map((course) => (
-							<CourseIcon
-								key={course.courseId}
-								courseId={course.courseId}
-								isActive={selectedCourseId === course.courseId}
-								progressLabel={`Progress ${course.progress}`}
-								onClick={() => {
-									setSelectedCourseId(course.courseId);
-									setShowCourseDrawer(false);
-								}}
-							/>
-						))}
-
-						{/* Add Course Button */}
-						<div className="flex min-w-20 flex-col items-center gap-2">
-							<Button
-								variant="tertiary"
-								className="h-10 w-10 justify-center rounded-xl border border-dashed border-white/20 bg-white/5"
-								onClick={() => router.navigate({ to: "/onboarding" })}
+		<div className="min-h-screen relative overflow-hidden bg-landing-hero-bg dark:bg-dark-bg pb-32">
+			<div className="relative overflow-y-auto px-4">
+				{/* ───────── HEADER ───────── */}
+				<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
+					<div className="rounded-xl bg-white/95 dark:bg-dark-card/95 shadow-lg p-3 backdrop-blur-sm">
+						<div className="flex items-center justify-between gap-3">
+							<button
+								type="button"
+								onClick={() => setShowCourseDrawer(!showCourseDrawer)}
+								className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-lg bg-gray-50 dark:bg-dark-surface px-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-dark-surface"
+								aria-label="Courses"
 							>
-								<span className="text-white font-bold text-2xl">+</span>
-							</Button>
-							<p className="text-xs text-gray-300 text-center">Add Course</p>
+								<span className="text-lg shrink-0">📚</span>
+								<span className="truncate text-sm font-medium text-gray-800 dark:text-dark-text font-montserrat">
+									{selectedCourseDetails.data?.title ?? "Select course"}
+								</span>
+								<span className="ml-auto shrink-0 text-gray-400 dark:text-dark-muted">
+									▼
+								</span>
+							</button>
+
+							<div className="flex items-center">
+								<div className="flex items-center gap-1.5 rounded-full  px-1.5 py-1.5">
+									<span className="text-sm">🔥</span>
+									<span className="text-sm font-semibold text-orange-600 font-montserrat tabular-nums">
+										{currentStreak}
+									</span>
+								</div>
+								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
+									<span className="text-sm">💎</span>
+									<span className="text-sm font-semibold text-amber-600 font-montserrat tabular-nums">
+										1,250
+									</span>
+								</div>
+								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
+									<span className="text-sm">⚡</span>
+									<span className="text-sm font-semibold text-blue-600 font-montserrat tabular-nums">
+										85
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* COURSE DRAWER */}
+						<div
+							className={`overflow-hidden transition-all duration-300 ease-in-out ${
+								showCourseDrawer
+									? "mt-3 max-h-[400px] opacity-100"
+									: "max-h-0 opacity-0"
+							}`}
+						>
+							<div className="space-y-1.5 border-t border-gray-200 pt-3">
+								{enrolledCourses.data?.courses.map((course) => (
+									<CourseNameItem
+										key={course.courseId}
+										courseId={course.courseId}
+										isActive={selectedCourseId === course.courseId}
+										onClick={() => {
+											setSelectedCourseId(course.courseId);
+											setShowCourseDrawer(false);
+										}}
+									/>
+								))}
+								<button
+									type="button"
+									onClick={() => {
+										router.navigate({ to: "/onboarding" });
+										setShowCourseDrawer(false);
+									}}
+									className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-dark-border bg-gray-50 dark:bg-dark-surface py-3 text-sm font-medium text-gray-600 dark:text-dark-muted transition-colors hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-dark-surface font-montserrat"
+								>
+									<span className="text-lg">+</span>
+									Add course
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			{/* ───────── SCROLLABLE CONTENT ───────── */}
-			<div className="px-4 pb-28 pt-4">
-				{/* SELECTED COURSE INFO & LEARNING PATH */}
-				<div>
-					{/* Course Title & Description */}
-					{selectedCourseDetails.isLoading ? (
-						<div className="mb-6">
-							<div className="mb-2 h-8 w-48 animate-pulse rounded bg-gray-700" />
-							<div className="h-4 w-full animate-pulse rounded bg-gray-700" />
+				{/* ───────── COURSE DETAILS (when selected) ───────── */}
+				{selectedCourseId && (
+					<button
+						type="button"
+						onClick={() => setShowCourseDrawer(true)}
+						className="my-2 w-full flex items-start gap-4 rounded-xl bg-white dark:bg-dark-card p-4 text-left shadow-md transition-colors hover:bg-gray-50 dark:hover:bg-dark-surface active:bg-gray-100 dark:active:bg-dark-surface"
+					>
+						<div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-dark-surface">
+							{selectedCourseDetails.data?.icon ? (
+								<img
+									src={selectedCourseDetails.data.icon}
+									alt={selectedCourseDetails.data?.title ?? "Course"}
+									className="h-12 w-12 object-contain"
+								/>
+							) : courseChapters.data?.chapters?.[0] &&
+								courseChapters.data?.icons?.[
+									courseChapters.data.chapters[0].id
+								] ? (
+								<img
+									src={
+										courseChapters.data.icons[
+											courseChapters.data.chapters[0].id
+										]
+									}
+									alt={selectedCourseDetails.data?.title ?? "Course"}
+									className="h-12 w-12 object-contain"
+								/>
+							) : (
+								<span className="text-2xl">📚</span>
+							)}
 						</div>
-					) : (
-						<div className="mb-5 flex items-center justify-between gap-4">
-							<div>
-								<h3 className="text-lg font-bold text-white">Learning Path</h3>
-								<p className="mt-1 text-sm text-gray-400">
-									Pick up where you left off and unlock the next chapter.
-								</p>
-							</div>
-							<div className="rounded-full bg-white/5 px-4 py-2 text-sm font-semibold text-gray-200 ring-1 ring-white/10">
-								{completedChapters}/{totalChapters || 0} completed
-							</div>
-						</div>
-					)}
-
-					<div className="space-y-2">
-						{courseChapters.isLoading ? (
-							// Loading state for chapters
-							[1, 2, 3].map((index) => (
-								<div
-									key={index}
-									className="relative flex h-28 items-start justify-center"
-								>
-									<div
-										className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/10 bg-[#192334] shadow-lg shadow-black/20"
-										style={{
-											transform: `translateX(${getPathOffset(index)}px)`,
-										}}
-									>
-										<div className="h-6 w-6 animate-pulse rounded-full bg-gray-700" />
-									</div>
-								</div>
-							))
-						) : chapters.length > 0 ? (
-							// Display actual chapters
-							chapters.map((chapter, index) => {
-								const isCompleted = index < completedChapters;
-								const isCurrent = index === completedChapters;
-								const isLocked = index > completedChapters;
-								const isSelected = selectedChapter?.id === chapter.id;
-								const offset = getPathOffset(index);
-
-								return (
-									<div
-										key={chapter.id}
-										data-chapter-index={index}
-										className="relative flex h-30 items-start justify-center"
-									>
+						<div className="min-w-0 flex-1">
+							<h3 className="text-base font-bold text-gray-900 dark:text-dark-text font-tusker line-clamp-1">
+								{selectedCourseDetails.data?.title ?? "Course"}
+							</h3>
+							<p className="mt-0.5 text-sm text-gray-600 dark:text-dark-muted font-montserrat line-clamp-2">
+								{selectedCourseDetails.data?.description ?? heroMessage}
+							</p>
+							{totalChapters > 0 && (
+								<div className="mt-2 flex items-center gap-2">
+									<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-border">
 										<div
-											className="relative"
-											style={{ transform: `translateX(${offset}px)` }}
+											className="h-full rounded-full bg-gray-800 dark:bg-dark-accent transition-all"
+											style={{ width: `${progressPercent}%` }}
+										/>
+									</div>
+									<span className="text-xs font-semibold tabular-nums text-gray-700 dark:text-dark-muted">
+										{progressPercent}%
+									</span>
+								</div>
+							)}
+							<p className="mt-1 text-sm text-gray-600 dark:text-dark-muted font-montserrat">
+								{totalChapters > 0 ? (
+									<>
+										<span className="font-semibold tabular-nums text-gray-900 dark:text-dark-text">
+											{completedChapters}
+										</span>
+										<span> of {totalChapters} chapters</span>
+										{remainingChapters > 0 && (
+											<span className="text-gray-500 dark:text-dark-muted">
+												{" "}
+												· {remainingChapters} to go
+											</span>
+										)}
+									</>
+								) : (
+									(selectedCourseDetails.data?.title ?? "Select a course")
+								)}
+							</p>
+						</div>
+						<span
+							className="shrink-0 text-gray-400 dark:text-dark-muted"
+							aria-hidden
+						>
+							<Info />
+						</span>
+					</button>
+				)}
+
+				{/* ───────── LEARNING PATH / ROADMAP ───────── */}
+				<div className="pb-28">
+					{/* Curvy roadmap with dotted line */}
+					<div className="relative">
+						{courseChapters.isLoading ? (
+							<div className="flex flex-col items-center gap-4">
+								{[1, 2, 3].map((i) => (
+									<div
+										key={i}
+										className="h-24 w-full max-w-xs rounded-xl bg-white/30 animate-pulse"
+									/>
+								))}
+							</div>
+						) : chapters.length > 0 ? (
+							<>
+								{/* Curved dotted SVG path - behind cards, hidden under card backgrounds */}
+								<svg
+									className="absolute inset-0 w-full h-full pointer-events-none"
+									viewBox={`0 0 100 ${Math.max(100, chapters.length * 100)}`}
+									preserveAspectRatio="xMidYMid meet"
+									aria-hidden="true"
+								>
+									<title>Roadmap</title>
+									<path
+										d={(() => {
+											const cardH = 100;
+											const cardTop = (i: number) => 50 + i * cardH;
+											const cardBottom = (i: number) =>
+												50 + (i + 1) * cardH - 10;
+											if (chapters.length === 0) return "";
+											if (chapters.length === 1) {
+												const left = 0 % 2 === 0;
+												const top = cardTop(0);
+												const bottom = cardBottom(0);
+												const midY = (top + bottom) / 2;
+												return left
+													? `M 8 ${top} C 8 ${midY}, 32 ${midY}, 32 ${bottom}`
+													: `M 92 ${top} C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
+											}
+											let d = "";
+											for (let i = 0; i < chapters.length; i++) {
+												const isLeft = i % 2 === 0;
+												const top = cardTop(i);
+												const bottom = cardBottom(i);
+												const midY = (top + bottom) / 2;
+												if (i === 0) {
+													d += isLeft
+														? `M 8 ${top} C 8 ${midY}, 32 ${midY}, 32 ${bottom}`
+														: `M 92 ${top} C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
+												} else {
+													const prevBottom = cardBottom(i - 1);
+													const prevLeft = (i - 1) % 2 === 0;
+													if (prevLeft && !isLeft) {
+														d += ` C 50 ${prevBottom + 25}, 50 ${top - 25}, 92 ${top}`;
+														d += ` C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
+													} else if (!prevLeft && isLeft) {
+														d += ` C 50 ${prevBottom + 25}, 50 ${top - 25}, 8 ${top}`;
+														d += ` C 8 ${midY}, 32 ${midY}, 32 ${bottom}`;
+													} else if (prevLeft && isLeft) {
+														d += ` C 32 ${prevBottom + 25}, 8 ${top - 25}, 8 ${top}`;
+														d += ` C 8 ${midY}, 32 ${midY}, 32 ${bottom}`;
+													} else {
+														d += ` C 68 ${prevBottom + 25}, 92 ${top - 25}, 92 ${top}`;
+														d += ` C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
+													}
+												}
+											}
+											return d;
+										})()}
+										fill="none"
+										stroke="rgba(255,255,255,0.6)"
+										strokeWidth="1.5"
+										strokeDasharray="5 6"
+										strokeLinecap="round"
+									/>
+								</svg>
+
+								{chapters.map((chapter, index) => {
+									const isCompleted = index < completedChapters;
+									const isCurrent = index === completedChapters;
+									const isLocked = index > completedChapters;
+									const isSelected = selectedChapter?.id === chapter.id;
+									const iconUrl = courseChapters.data?.icons?.[chapter.id];
+									const alignRight = index % 2 === 1;
+
+									return (
+										<div
+											key={chapter.id}
+											className={`relative z-10 flex py-3 ${alignRight ? "justify-end" : "justify-start"}`}
 										>
 											<button
 												type="button"
 												onClick={() => {
-													if (isLocked) {
-														return;
-													}
-
 													setSelectedChapterId(chapter.id);
 													setChapterPopupId(chapter.id);
 												}}
-												disabled={isLocked}
-												className={`group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-center font-bold outline-none transition-all duration-200 ease-out will-change-transform focus:outline-none focus-visible:outline-none ${
+												className={`relative w-full max-w-[200px] rounded-xl p-3 text-left transition-all shadow-md focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
 													isCompleted
-														? "bg-linear-to-b from-[#73d85f] via-[#58cc46] to-[#46b737] text-white shadow-[0_4px_0_0_#2f8f2d,0_10px_18px_rgba(34,197,94,0.20)] hover:-translate-y-0.5 hover:shadow-[0_5px_0_0_#2f8f2d,0_12px_22px_rgba(34,197,94,0.24)] active:translate-y-0.5 active:shadow-[0_2px_0_0_#2f8f2d,0_6px_12px_rgba(34,197,94,0.16)]"
+														? "bg-green-500 text-white shadow-green-500/30"
 														: isCurrent
-															? "bg-linear-to-b from-[#52d3fc] via-[#1cb0f6] to-[#1697dc] text-white shadow-[0_4px_0_0_#0f6ea8,0_10px_18px_rgba(28,176,246,0.24)] hover:-translate-y-0.5 hover:shadow-[0_5px_0_0_#0f6ea8,0_12px_22px_rgba(28,176,246,0.28)] active:translate-y-0.5 active:shadow-[0_2px_0_0_#0f6ea8,0_6px_12px_rgba(28,176,246,0.18)]"
-															: "cursor-not-allowed bg-linear-to-b from-[#3b4659] to-[#2a3446] text-slate-400 opacity-90 shadow-[0_4px_0_0_#1a2231,0_8px_16px_rgba(2,6,23,0.20)]"
-												} ${isSelected ? "scale-[1.03]" : ""}`}
+															? "bg-amber-500 text-white shadow-amber-500/30"
+															: "bg-white dark:bg-dark-card text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+												} ${isSelected ? "ring-2 ring-white scale-[1.02]" : ""}`}
 											>
-												<span
-													className={`pointer-events-none absolute inset-0.75 rounded-full bg-linear-to-b ${
-														isLocked
-															? "from-white/12 via-white/4 to-transparent"
-															: "from-white/20 via-white/6 to-transparent"
-													}`}
-												/>
-												<span className="pointer-events-none absolute inset-x-3 top-1.5 h-2 rounded-full bg-white/18 blur-sm" />
-												<span className="relative z-10 text-base font-black tracking-tight sm:text-lg">
-													{isLocked ? "🔒" : index + 1}
-												</span>
-
-												<img
-													src={
-														courseChapters.data?.icons[chapter.id] ?? undefined
-													}
-													alt={chapter.title ?? `Chapter ${index + 1}`}
-												/>
-											</button>
-											<div className="mt-2 text-center">
-												<p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400">
-													Chapter {index + 1}
+												{/* Top: icon, chapter number, lock (if locked) */}
+												<div className="relative flex items-center gap-2">
+													<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 overflow-hidden">
+														{iconUrl ? (
+															<img
+																src={iconUrl}
+																alt={chapter.title ?? `Chapter ${index + 1}`}
+																className="h-9 w-9 object-contain"
+															/>
+														) : (
+															<span className="text-lg font-bold">
+																{index + 1}
+															</span>
+														)}
+													</div>
+													<span className="text-sm font-bold font-tusker">
+														Chapter {index + 1}
+													</span>
+													{isLocked && (
+														<span
+															className="ml-auto flex items-center justify-center rounded p-1 text-gray-600"
+															aria-hidden
+														>
+															<Lock className="h-4 w-4" strokeWidth={2.5} />
+														</span>
+													)}
+												</div>
+												{/* Bottom: chapter name */}
+												<p className="mt-2 text-xs font-medium line-clamp-2 font-montserrat opacity-90">
+													{chapter.title || "Untitled chapter"}
 												</p>
-											</div>
+											</button>
 										</div>
-									</div>
-								);
-							})
+									);
+								})}
+							</>
 						) : selectedEnrollment ? (
-							<p className="text-gray-400">
+							<p className="text-landing-hero-text/80 dark:text-gray-400 font-montserrat py-8 text-center">
 								No chapters available yet for this course.
 							</p>
 						) : (
-							<p className="text-gray-400">Select a course to see chapters</p>
+							<p className="text-landing-hero-text/80 dark:text-gray-400 font-montserrat py-8 text-center">
+								Select a course to see chapters
+							</p>
 						)}
 					</div>
 				</div>
 			</div>
 
 			{popupChapter && (
-				<div className="fixed inset-0 z-70 flex items-center justify-center bg-[#020617]/70 px-4 py-6 backdrop-blur-sm sm:px-6">
+				<div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 px-4 py-6 sm:px-6">
 					<button
 						type="button"
 						className="absolute inset-0"
 						onClick={() => setChapterPopupId(undefined)}
 						aria-label="Close chapter popup"
 					/>
-					<div className="relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-[28px] border border-white/10 bg-linear-to-b from-[#1e2b42] to-[#182234] p-4 shadow-2xl shadow-black/40 sm:p-5">
-						<div className="pointer-events-none absolute inset-x-6 top-0 h-20 rounded-full bg-white/10 blur-2xl" />
+					<div className="relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white dark:bg-dark-card p-4 shadow-xl sm:p-5">
 						<div className="mb-4 flex items-start justify-between gap-3">
 							<div className="min-w-0 flex-1">
 								<div className="mb-2 flex flex-wrap items-center gap-2">
-									<span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-300 ring-1 ring-white/5">
+									<span className="rounded-lg bg-gray-100 border border-gray-200 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-600 font-tusker ">
 										Chapter {popupChapterIndex + 1}
 									</span>
 									<span
-										className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ${
+										className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] font-tusker ${
 											popupChapterCompleted
-												? "bg-green-500/20 text-green-300"
+												? "bg-green-100 text-green-700 border border-green-200"
 												: popupChapterCurrent
-													? "bg-blue-500/20 text-blue-300"
-													: "bg-white/5 text-gray-400"
+													? "bg-blue-100 text-blue-700 border border-blue-200"
+													: "bg-gray-100 text-gray-500 border border-gray-200"
 										}`}
 									>
 										{popupChapterCompleted
@@ -519,51 +582,56 @@ export default function Dashboard() {
 												: "Locked"}
 									</span>
 								</div>
-								<h4 className="text-lg font-extrabold leading-tight text-white">
+								<h4 className="text-lg mt-6 font-bold leading-tight text-gray-900 dark:text-gray-100 font-tusker">
 									{popupChapter.title}
 								</h4>
 							</div>
 							<button
 								type="button"
 								onClick={() => setChapterPopupId(undefined)}
-								className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg text-gray-300 ring-1 ring-white/10 transition hover:bg-white/10"
+								className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-surface border-2 border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors font-montserrat"
 								aria-label="Close chapter popup"
 							>
-								×
+								<X className="h-5 w-5" />
 							</button>
 						</div>
 
 						{popupChapter.description && (
-							<p className="text-sm leading-relaxed text-gray-400">
+							<p className="text-sm leading-relaxed text-gray-800 dark:text-gray-300 font-montserrat">
 								{popupChapter.description}
 							</p>
 						)}
 
 						<div className="mt-4 flex flex-wrap items-center gap-2">
 							{popupChapterCurrent && (
-								<span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">
+								<span className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 font-montserrat">
 									Your next lesson
 								</span>
 							)}
 							{popupChapterCompleted && (
-								<span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">
+								<span className="rounded-lg bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 font-montserrat">
 									Ready to review
 								</span>
 							)}
 						</div>
 
 						<div className="mt-5 flex items-center gap-3">
-							<Button
+							<button
+								type="button"
 								onClick={() => handleChapterStart(popupChapter.id)}
 								disabled={popupChapterLocked}
-								className="min-w-32 rounded-2xl border-b-6 border-b-green-800 bg-linear-to-b from-[#7fe86c] to-[#46b72f] px-5 py-3 text-white shadow-[0_12px_24px_rgba(34,197,94,0.28)] hover:from-[#8bef79] hover:to-[#4fc636] active:border-b-2"
+								className="min-w-32 rounded-lg px-5 py-3 font-medium font-montserrat bg-landing-button-primary text-white hover:opacity-90 disabled:bg-gray-300 disabled:text-gray-600 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:opacity-70"
 							>
-								{popupChapterCompleted ? "Review" : "Start"}
-							</Button>
+								{popupChapterLocked
+									? "Locked"
+									: popupChapterCompleted
+										? "Review"
+										: "Start"}
+							</button>
 							<button
 								type="button"
 								onClick={() => setChapterPopupId(undefined)}
-								className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-gray-200 transition hover:bg-white/10"
+								className="rounded-lg border-2 border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-surface font-montserrat"
 							>
 								Later
 							</button>
