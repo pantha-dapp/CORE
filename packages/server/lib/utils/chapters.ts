@@ -1,3 +1,4 @@
+import { tryCatch } from "@pantha/shared";
 import { and, eq, lte } from "drizzle-orm";
 import type { Ai } from "../ai";
 import type { Db } from "../db";
@@ -22,79 +23,82 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 	}
 	preparing.add(id);
 
-	const chaptersTillNow = await db
-		.select()
-		.from(db.schema.courseChapters)
-		.where(
-			and(
-				eq(db.schema.courseChapters.courseId, chapter.courseId),
-				lte(db.schema.courseChapters.order, chapter.order),
-			),
-		)
-		.orderBy(db.schema.courseChapters.order);
+	try {
+		const chaptersTillNow = await db
+			.select()
+			.from(db.schema.courseChapters)
+			.where(
+				and(
+					eq(db.schema.courseChapters.courseId, chapter.courseId),
+					lte(db.schema.courseChapters.order, chapter.order),
+				),
+			)
+			.orderBy(db.schema.courseChapters.order);
 
-	const chaptersTillNowWithTopics = await Promise.all(
-		chaptersTillNow.map(async (ch) => {
-			const topics = await db
-				.select()
-				.from(db.schema.chapterTopics)
-				.where(eq(db.schema.chapterTopics.chapterId, ch.id));
+		const chaptersTillNowWithTopics = await Promise.all(
+			chaptersTillNow.map(async (ch) => {
+				const topics = await db
+					.select()
+					.from(db.schema.chapterTopics)
+					.where(eq(db.schema.chapterTopics.chapterId, ch.id));
 
-			return {
-				...ch,
-				topics: topics.map((t) => t.topic),
-			};
-		}),
-	);
+				return {
+					...ch,
+					topics: topics.map((t) => t.topic),
+				};
+			}),
+		);
 
-	const { pages: generatedPages } = await ai.llm.generateChapterPages({
-		chapter: {
-			overview: {
-				title: chapter.title,
-				description: chapter.description,
-				intent: chapter.intent,
-				topics: chapter.topics,
+		const { pages: generatedPages } = await ai.llm.generateChapterPages({
+			chapter: {
+				overview: {
+					title: chapter.title,
+					description: chapter.description,
+					intent: chapter.intent,
+					topics: chapter.topics,
+				},
 			},
-		},
-		chapterNo: chaptersTillNow.length + 1,
-		courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
-			title: ch.title,
-			description: ch.description,
-			intent: ch.intent,
-			topics: ch.topics,
-		})),
-		minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
-	});
+			chapterNo: chaptersTillNow.length + 1,
+			courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
+				title: ch.title,
+				description: ch.description,
+				intent: ch.intent,
+				topics: ch.topics,
+			})),
+			minimumPages: 10 + Math.ceil(chaptersTillNow.length / 15),
+		});
 
-	generatedPages.forEach((page, index) => {
-		const { type, content } = page;
+		generatedPages.forEach((page, index) => {
+			const { type, content } = page;
 
-		switch (type) {
-			case "fill_in_the_blanks":
-				if (!content.words.includes("$1")) delete generatedPages[index];
-				if (content.words.includes("$0")) delete generatedPages[index];
-				break;
+			switch (type) {
+				case "fill_in_the_blanks":
+					if (!content.words.includes("$1")) delete generatedPages[index];
+					if (content.words.includes("$0")) delete generatedPages[index];
+					break;
 
-			default:
-				break;
-		}
-	});
+				default:
+					break;
+			}
+		});
 
-	await db
-		.insert(db.schema.chapterPages)
-		.values(
-			generatedPages
-				.filter((i) => !!i)
-				.map((page, index) => ({
-					chapterId: id,
-					order: index + 1,
-					content: page,
-				})),
-		)
-		.returning();
+		await db
+			.insert(db.schema.chapterPages)
+			.values(
+				generatedPages
+					.filter((i) => !!i)
+					.map((page, index) => ({
+						chapterId: id,
+						order: index + 1,
+						content: page,
+					})),
+			)
+			.returning();
 
-	preparing.delete(id);
-	prepareChapterImages(id, { db, ai }).catch(console.error);
+		prepareChapterImages(id, { db, ai }).catch(console.error);
+	} finally {
+		preparing.delete(id);
+	}
 }
 
 export async function prepareChapterImages(
@@ -118,34 +122,46 @@ export async function prepareChapterImages(
 
 		switch (type) {
 			case "identify_shown_object_in_image":
-				await ai.image.generatePageImage({ prompt: content.image.prompt });
+				await tryCatch(
+					ai.image.generatePageImage({ prompt: content.image.prompt }),
+				);
 				break;
 			case "identify_object_from_images":
 				for (const img of content.images) {
-					await ai.image.generatePageImage({ prompt: img.prompt });
+					await tryCatch(ai.image.generatePageImage({ prompt: img.prompt }));
 				}
 				break;
 			case "example_uses":
-				content.image &&
-					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				if (content.image)
+					await tryCatch(
+						ai.image.generatePageImage({ prompt: content.image.prompt }),
+					);
 				break;
 			case "fill_in_the_blanks":
-				content.image &&
-					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				if (content.image)
+					await tryCatch(
+						ai.image.generatePageImage({ prompt: content.image.prompt }),
+					);
 				break;
 			case "matching":
 				break;
 			case "quiz":
-				content.image &&
-					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				if (content.image)
+					await tryCatch(
+						ai.image.generatePageImage({ prompt: content.image.prompt }),
+					);
 				break;
 			case "teach_and_explain_content":
-				content.image &&
-					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				if (content.image)
+					await tryCatch(
+						ai.image.generatePageImage({ prompt: content.image.prompt }),
+					);
 				break;
 			case "true_false":
-				content.image &&
-					(await ai.image.generatePageImage({ prompt: content.image.prompt }));
+				if (content.image)
+					await tryCatch(
+						ai.image.generatePageImage({ prompt: content.image.prompt }),
+					);
 				break;
 
 			default:
