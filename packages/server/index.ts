@@ -15,4 +15,5 @@ export default {
 	port: env.PORT ? parseInt(env.PORT, 10) : 31001,
 	fetch: app.fetch,
 	websocket: websocket,
+	idleTimeout: 120,
 };

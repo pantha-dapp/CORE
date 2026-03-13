@@ -85,103 +85,75 @@ export default new Hono<RouterEnv>()
 				);
 			nextChapter && prepareChapter(nextChapter.id, { db, ai });
 
+			for (const p of pages) {
+				const { type, content } = p.content;
+				switch (type) {
+					case "fill_in_the_blanks":
+						content.wrongOptions = content.wrongOptions.concat(content.answers);
+						content.answers = [];
+						break;
+					case "identify_object_from_images":
+						content.correctImageIndex = -1;
+						break;
+					case "identify_shown_object_in_image":
+						content.correctOptionIndex = -1;
+						break;
+					case "quiz":
+						content.correctOptionIndex = -1;
+						break;
+					case "true_false":
+						content.isTrue = false;
+						break;
+					default:
+						break;
+				}
+			}
+
 			const images: Record<
 				string,
 				{ url: string } | { images: { url: string }[] }
 			> = {};
 
-			//safepages generaton
-			pages.forEach(async (p) => {
-				const { type, content } = p.content;
-
-				switch (type) {
-					case "example_uses":
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
+			await Promise.race([
+				Promise.all(
+					pages.map(async (p) => {
+						try {
+							const { type, content } = p.content;
+							switch (type) {
+								case "example_uses":
+								case "fill_in_the_blanks":
+								case "identify_shown_object_in_image":
+								case "quiz":
+								case "teach_and_explain_content":
+								case "true_false":
+									if (content.image) {
+										const { url } = await ai.image.generatePageImage({
+											prompt: content.image.prompt,
+										});
+										images[p.id] = { url };
+									}
+									break;
+								case "identify_object_from_images": {
+									const results = await Promise.all(
+										content.images.map((img: { prompt: string }) =>
+											ai.image.generatePageImage({
+												prompt: img.prompt,
+											}),
+										),
+									);
+									images[p.id] = { images: results };
+									break;
+								}
+								default:
+									break;
+							}
+						} catch {
+							/* skip failed image lookups */
 						}
-						return;
-					case "fill_in_the_blanks": {
-						content.wrongOptions = content.wrongOptions.concat(content.answers);
-						content.answers = [];
-
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
-						}
-
-						return;
-					}
-					case "identify_object_from_images": {
-						content.correctImageIndex = -1;
-
-						const imgs: { url: string }[] = [];
-						for (const image of content.images) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: image.prompt,
-							});
-							imgs.push({ url });
-						}
-						images[p.id] = { images: imgs };
-
-						return;
-					}
-					case "identify_shown_object_in_image": {
-						content.correctOptionIndex = -1;
-
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
-						}
-
-						return;
-					}
-					case "matching": {
-						// sanitization needed but lets do this later
-						return;
-					}
-					case "quiz": {
-						content.correctOptionIndex = -1;
-
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
-						}
-
-						return;
-					}
-					case "teach_and_explain_content": {
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
-						}
-						return;
-					}
-					case "true_false": {
-						content.isTrue = false;
-
-						if (content.image) {
-							const { url } = await ai.image.generatePageImage({
-								prompt: content.image.prompt,
-							});
-							images[p.id] = { url };
-						}
-						return;
-					}
-					default:
-						return;
-				}
-			});
+					}),
+				),
+				Bun.sleep(5000),
+			]);
 
 			return respond.ok(
 				ctx,

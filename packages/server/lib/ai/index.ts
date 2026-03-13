@@ -207,15 +207,20 @@ export function createAi(args: {
 		}
 
 		imageProcessing[uuid] = (async () => {
+			const inputEmbedding = await aiClient.embedding.text(
+				similarityQueryOverride ?? prompt,
+			);
+			const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
+			if (similarImage && similarImage.score > cacheThreshold) {
+				delete imageProcessing[uuid];
+				return { url: similarImage.payload.imageUrl };
+			}
+
 			await acquireImageSlot();
 			try {
-				const inputEmbedding = await aiClient.embedding.text(
-					similarityQueryOverride ?? prompt,
-				);
-				const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
-				if (similarImage && similarImage.score > cacheThreshold) {
-					delete imageProcessing[uuid];
-					return { url: similarImage.payload.imageUrl };
+				const recheck = await findSimilarPregeneratedImage(inputEmbedding);
+				if (recheck && recheck.score > cacheThreshold) {
+					return { url: recheck.payload.imageUrl };
 				}
 
 				const { buffer } = await aiClient.image.generate({

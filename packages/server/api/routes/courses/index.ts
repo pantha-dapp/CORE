@@ -111,27 +111,22 @@ export default new Hono()
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
 
-		const iconPromises = chapters.map((chapter) =>
-			ai.image.generateIconImage({ prompt: chapter.icon.prompt }),
-		);
-
-		const timeoutPromise = new Promise((resolve) =>
-			setTimeout(() => resolve("TIMEOUT"), 5000),
-		);
-
-		const results = await Promise.allSettled([...iconPromises, timeoutPromise]);
-		const icons = chapters.reduce(
-			(acc, chapter, index) => {
-				const result = results[index];
-				if (result?.status === "fulfilled") {
-					acc[chapter.id] = (
-						result as PromiseFulfilledResult<{ url: string }>
-					).value.url;
-				}
-				return acc;
-			},
-			{} as Record<string, string>,
-		);
+		const icons: Record<string, string> = {};
+		await Promise.race([
+			Promise.all(
+				chapters.map(async (chapter) => {
+					try {
+						const { url } = await ai.image.generateIconImage({
+							prompt: chapter.icon.prompt,
+						});
+						icons[chapter.id] = url;
+					} catch {
+						/* skip failed icons */
+					}
+				}),
+			),
+			Bun.sleep(5000),
+		]);
 
 		return respond.ok(
 			ctx,
@@ -152,9 +147,10 @@ export default new Hono()
 			return respond.err(ctx, "Course not found.", 404);
 		}
 
-		const { url: icon } = await ai.image.generateIconImage({
-			prompt: course.icon.prompt,
-		});
+		const iconResult = await Promise.race([
+			ai.image.generateIconImage({ prompt: course.icon.prompt }),
+			Bun.sleep(5000).then(() => null),
+		]);
 
 		return respond.ok(
 			ctx,
@@ -162,7 +158,7 @@ export default new Hono()
 				id: course.id,
 				title: course.title,
 				description: course.description,
-				icon: icon,
+				icon: iconResult?.url ?? null,
 			},
 			"Course fetched successfully.",
 			200,

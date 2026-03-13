@@ -206,6 +206,7 @@ function callOpenaiCompat(args: Parameters<typeof fetch>[1]) {
 			Authorization: `Bearer ${process.env.CEREBRAS_API_KEY}`,
 		},
 		...args,
+		signal: AbortSignal.timeout(60_000),
 	});
 }
 
@@ -219,6 +220,7 @@ async function generateEmbeddings(input: string) {
 			model: env.AI_EMBEDDING_TEXT_MODEL,
 			input: input,
 		}),
+		signal: AbortSignal.timeout(15_000),
 	});
 
 	const data = await payload.json();
@@ -258,6 +260,7 @@ async function generateTranslation(args: {
 		headers: {
 			"Content-Type": "application/json",
 		},
+		signal: AbortSignal.timeout(30_000),
 		body: JSON.stringify({
 			model: "translategemma:4b",
 			stream: false,
@@ -298,6 +301,7 @@ export async function generateImage(args: { prompt: string }) {
 			quality: "low",
 			background: "transparent",
 		}),
+		signal: AbortSignal.timeout(120_000),
 	});
 
 	if (!resp.ok) {
