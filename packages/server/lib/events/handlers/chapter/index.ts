@@ -1,3 +1,4 @@
+import { bytes8, identifierB8 } from "@pantha/contracts";
 import { and, eq, gt } from "drizzle-orm";
 import type { AppState } from "../../../../api/routes/types";
 import { userCourses } from "../../../db/schema/user";
@@ -5,7 +6,7 @@ import { prepareChapter } from "../../../utils/chapters";
 import { registerActivityForStreaks } from "../../../utils/streaks";
 
 export default function (appState: AppState) {
-	const { eventBus: event, db, ai } = appState;
+	const { eventBus: event, db, ai, contracts } = appState;
 
 	event.on("chapter.completed", async ({ walletAddress }) => {
 		registerActivityForStreaks(db, walletAddress);
@@ -36,7 +37,6 @@ export default function (appState: AppState) {
 					),
 				);
 		}
-		// store the progress of the user in the chapter
 	});
 
 	event.on("chapter.completed", async ({ chapterId }) => {
@@ -55,5 +55,46 @@ export default function (appState: AppState) {
 			.limit(2);
 		if (nextChapter) prepareChapter(nextChapter.id, { db, ai });
 		if (followingChapter) prepareChapter(followingChapter.id, { db, ai });
+	});
+
+	event.on("chapter.completed", async ({ walletAddress, chapterId }) => {
+		const user = await db.userByWallet({ userWallet: walletAddress });
+		if (!user) return;
+
+		const hash = await contracts.PanthaOrchestrator.write.mintXp([
+			user.walletAddress,
+			BigInt(10),
+			bytes8("CHPTCMPL"),
+			identifierB8(chapterId),
+		]);
+
+		const [xpLog] = await db
+			.insert(db.schema.userXpLog)
+			.values({
+				userWallet: walletAddress,
+				xpGained: 10,
+				transactionHash: hash,
+			})
+			.returning();
+		if (!xpLog) return;
+
+		contracts.$publicClient
+			.waitForTransactionReceipt({ hash })
+			.then((receipt) => {
+				if (receipt.status === "success") {
+					db.update(db.schema.userXpLog)
+						.set({ success: true })
+						.where(eq(db.schema.userXpLog.id, xpLog.id));
+				} else {
+					db.delete(db.schema.userXpLog).where(
+						eq(db.schema.userXpLog.id, xpLog.id),
+					);
+				}
+			})
+			.catch(() => {
+				db.delete(db.schema.userXpLog).where(
+					eq(db.schema.userXpLog.id, xpLog.id),
+				);
+			});
 	});
 }
