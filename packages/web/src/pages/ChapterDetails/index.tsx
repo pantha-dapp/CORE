@@ -1,5 +1,4 @@
 import {
-	ChapterNotReadyError,
 	useAnswerExplanation,
 	useChapterGameAnswer,
 	useChapterGameSession,
@@ -7,9 +6,11 @@ import {
 	useChapterPages,
 	useCourseById,
 	useCourseChaptersByCourseId,
+	useJobStatus,
 } from "@pantha/react/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { ExampleUses } from "./components/ExampleUses";
 import { FillInTheBlanks } from "./components/FillInTheBlanks";
@@ -77,15 +78,27 @@ export default function ChapterDetails() {
 		useCourseChaptersByCourseId({
 			courseId: courseId,
 		});
-	const {
-		data: pagesData,
-		isLoading: pagesLoading,
-		isError: pagesError,
-		error: pagesErrorObj,
-		isFetching: pagesFetching,
-	} = useChapterPages({ chapterId });
+	const queryClient = useQueryClient();
 
-	const pagesReady = !!pagesData?.pages?.length;
+	const { data: pagesData, isLoading: pagesLoading } = useChapterPages({
+		chapterId,
+	});
+
+	// When server is still preparing pages it returns { jobId } (202)
+	const preparingJobId =
+		pagesData && "jobId" in pagesData ? pagesData.jobId : undefined;
+	const pagesReady =
+		!!pagesData && "pages" in pagesData && !!pagesData.pages?.length;
+
+	const jobStatus = useJobStatus({ jobId: preparingJobId });
+	const isJobPending = !!preparingJobId && jobStatus.data?.state !== "success";
+
+	// Once the preparation job succeeds, refetch pages
+	useEffect(() => {
+		if (preparingJobId && jobStatus.data?.state === "success") {
+			queryClient.invalidateQueries({ queryKey: ["chapterPages", chapterId] });
+		}
+	}, [preparingJobId, jobStatus.data?.state, queryClient, chapterId]);
 
 	const { data: session, isLoading: sessionLoading } = useChapterGameSession({
 		chapterId,
@@ -153,23 +166,21 @@ export default function ChapterDetails() {
 	// 	};
 	// }, []);
 
-	const isChapterPreparing =
-		!!pagesError && pagesErrorObj instanceof ChapterNotReadyError;
 	const isLoading =
 		courseLoading ||
 		chaptersLoading ||
 		pagesLoading ||
 		sessionLoading ||
-		(isChapterPreparing && pagesFetching);
+		isJobPending;
 
-	if (isLoading || isChapterPreparing) {
+	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg flex items-center justify-center px-6 py-8">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-landing-hero-text dark:border-dark-accent mx-auto mb-4" />
 					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat">
-						{isChapterPreparing
-							? "Chapter is being prepared. Retrying in 10 seconds..."
+						{isJobPending
+							? "Chapter is being prepared..."
 							: "Loading chapter..."}
 					</p>
 				</div>
@@ -181,7 +192,13 @@ export default function ChapterDetails() {
 		(ch) => ch.id === chapterId,
 	);
 
-	if (!course || !chaptersData || !pagesData || !currentChapter) {
+	if (
+		!course ||
+		!chaptersData ||
+		!pagesData ||
+		!("pages" in pagesData) ||
+		!currentChapter
+	) {
 		return (
 			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-6 py-8">
 				<div className="max-w-4xl mx-auto text-center">
@@ -204,10 +221,13 @@ export default function ChapterDetails() {
 	}
 
 	const currentPageIndex = session?.currentPage ?? 0;
-	const totalPages = pagesData.pages.length;
+	// pagesData is narrowed to have `pages` after the guard above
+	const pages = (pagesData as Extract<typeof pagesData, { pages: unknown[] }>)
+		.pages;
+	const totalPages = pages.length;
 	console.log("pages length", totalPages);
 	const displayedPageIndex = answerResult?.pageIndex ?? currentPageIndex;
-	const currentPage = pagesData.pages[displayedPageIndex];
+	const currentPage = pages[displayedPageIndex];
 	const isShowingAnswerResult = answerResult !== null;
 	const explanationContent = answerExplanation.data?.explanation;
 	const isExplanationReady =
