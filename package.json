@@ -1,50 +1,53 @@
 {
-    "name": "pantha",
-    "module": "index.ts",
-    "devDependencies": {
-        "@biomejs/biome": "2.3.11",
-        "@types/bun": "latest",
-        "@types/jsonwebtoken": "^9.0.10",
-        "@types/marked": "^6.0.0",
-        "husky": "^9.1.7",
-        "lint-staged": "^16.2.7"
-    },
-    "peerDependencies": {
-        "typescript": "^5"
-    },
-    "workspaces": [
-        "packages/server",
-        "packages/lib/shared",
-        "packages/lib/react-sdk",
-        "packages/web",
-        "packages/contracts"
-    ],
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "fmt-lint": "biome check --write",
-        "prepare": "husky",
-        "client:dev": "bun run --cwd packages/web dev",
-        "server:dev": "bun run --cwd packages/server dev",
-        "tests": "bun run --cwd packages/server tests"
-    },
-    "lint-staged": {
-        "*.{js,ts,tsx,jsx,json,css}": "biome check --write"
-    },
-    "dependencies": {
-        "@filoz/synapse-sdk": "^0.39.0",
-        "@qdrant/js-client-rest": "^1.16.2",
-        "@tanstack/ai": "^0.2.1",
-        "@tanstack/ai-gemini": "^0.3.1",
-        "@tanstack/ai-grok": "^0.1.0",
-        "@tanstack/ai-ollama": "^0.3.0",
-        "@tanstack/ai-openai": "^0.2.0",
-        "jsonwebtoken": "^9.0.3",
-        "marked": "^17.0.3",
-        "sharp": "^0.34.5",
-        "sqlite-vec": "^0.1.7-alpha.2",
-        "viem": "^2.44.4",
-        "zod": "^4.3.6",
-        "zod-to-json-schema": "^3.25.1"
-    }
+	"name": "pantha",
+	"module": "index.ts",
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@types/bun": "latest",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/marked": "^6.0.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"workspaces": [
+		"packages/server",
+		"packages/lib/shared",
+		"packages/lib/react-sdk",
+		"packages/web",
+		"packages/contracts"
+	],
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"fmt-lint": "biome check --write",
+		"prepare": "husky",
+		"client:dev": "bun run --cwd packages/web dev",
+		"server:dev": "bun run --cwd packages/server dev",
+		"tests": "bun run --cwd packages/server tests"
+	},
+	"lint-staged": {
+		"*.{js,ts,tsx,jsx,json,css}": "biome check --write"
+	},
+	"overrides": {
+		"viem": "2.44.4"
+	},
+	"dependencies": {
+		"@filoz/synapse-sdk": "^0.39.0",
+		"@qdrant/js-client-rest": "^1.16.2",
+		"@tanstack/ai": "^0.2.1",
+		"@tanstack/ai-gemini": "^0.3.1",
+		"@tanstack/ai-grok": "^0.1.0",
+		"@tanstack/ai-ollama": "^0.3.0",
+		"@tanstack/ai-openai": "^0.2.0",
+		"jsonwebtoken": "^9.0.3",
+		"marked": "^17.0.3",
+		"sharp": "^0.34.5",
+		"sqlite-vec": "^0.1.7-alpha.2",
+		"viem": "^2.44.4",
+		"zod": "^4.3.6",
+		"zod-to-json-schema": "^3.25.1"
+	}
 }
