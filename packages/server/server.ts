@@ -1,9 +1,12 @@
+import { getContracts } from "@pantha/contracts";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RedisClient } from "bun";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { flowTestnet } from "viem/chains";
 import { attachAppState } from "./api/middleware/attachAppState";
 import { apiRouter } from "./api/routes/router";
 import type { AppState } from "./api/routes/types";
@@ -18,23 +21,18 @@ import { DefaultPolicyManager } from "./lib/policies";
 
 const vectorDbClient = new QdrantClient({
 	host: env.QDRANT_HOST,
-	// port: parseInt(env.QDRANT_PORT, 10),
-	// apiKey: env.QDRANT_API_KEY,
-	checkCompatibility: false,
+	port: parseInt(env.QDRANT_PORT, 10),
+	checkCompatibility: true,
 });
-
-const db = createDb(env.SQLITE_FILE_PATH, {
-	vectorDbClient,
-	redisClient: new RedisClient(env.REDIS_CONNECTION_URI),
-});
-
+const redisClient = new RedisClient(env.REDIS_CONNECTION_URI);
+const db = createDb(env.SQLITE_FILE_PATH, { vectorDbClient, redisClient });
 const objectStorage = new ObjectStorageService({
 	s3: {
 		accessKeyId: env.S3_ACCESS_KEY_ID,
 		secretAccessKey: env.S3_SECRET_ACCESS_KEY,
 		endpoint: env.S3_ENDPOINT,
 		bucket: env.S3_BUCKET,
-		rootDir: ["pantha-server"],
+		rootDir: ["pantha-dev"],
 	},
 	synapse: {
 		account: privateKeyToAccount(
@@ -46,23 +44,31 @@ const objectStorage = new ObjectStorageService({
 		source: "pantha-server",
 	},
 });
-
-const ai = createAi({ aiClient: aiAdapter, vectorDbClient, objectStorage });
-
+const ai = createAi({ vectorDbClient, aiClient: aiAdapter, objectStorage });
 const eventBus = new InMemoryEventBus();
-
-const policyManager = new DefaultPolicyManager({
-	db,
+const policyManager = new DefaultPolicyManager({ db });
+const contracts = getContracts({
+	chainId: 545,
+	// @ts-expect-error -- bun installs two viem@2.44.4 cache entries (workspace vs root); structurally identical at runtime
+	client: createWalletClient({
+		account: privateKeyToAccount(
+			(env.EVM_PRIVATE_KEY.startsWith("0x")
+				? env.EVM_PRIVATE_KEY
+				: `0x${env.EVM_PRIVATE_KEY}`) as `0x${string}`,
+		),
+		transport: http(flowTestnet.rpcUrls.default.http[0]),
+		chain: flowTestnet,
+	}),
 });
 
 const appState: AppState = {
-	db,
 	ai,
+	db,
 	eventBus,
 	policyManager,
 	objectStorage,
+	contracts,
 };
-
 // Register event handlers so emitted events are handled (DB updates, prep, etc.)
 registerEventHandlers(appState);
 
@@ -77,6 +83,33 @@ export const app = new Hono()
 			credentials: true,
 		}),
 	)
+	.use("*", async (c, next) => {
+		const id = crypto.randomUUID();
+		const start = Date.now();
 
+		console.log(`[${id}] -> ${c.req.method} ${c.req.path}`);
+
+		try {
+			await next();
+		} finally {
+			const duration = Date.now() - start;
+			console.log(`[${id}] <- ${c.req.method} ${c.req.path} ${duration}ms`);
+		}
+	})
+	.use("*", async (c, next) => {
+		const start = Date.now();
+
+		try {
+			await next();
+		} finally {
+			const duration = Date.now() - start;
+
+			if (duration > 10000) {
+				console.error(
+					`[TIMEOUT?] ${c.req.method} ${c.req.path} took ${duration}ms`,
+				);
+			}
+		}
+	})
 	.use(attachAppState(appState))
 	.route("/api", apiRouter);
