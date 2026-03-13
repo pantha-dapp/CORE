@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useChapterGameSession(args: { chapterId?: string }) {
+export function useChapterGameSession(args: {
+	chapterId?: string;
+	/** When false, session is not fetched. Use to wait until chapter pages are ready. */
+	enabled?: boolean;
+}) {
 	const { wallet, api } = usePanthaContext();
-	const { chapterId } = args;
+	const { chapterId, enabled: enabledOverride } = args;
 
-	const enabled = !!wallet && !!chapterId;
+	const enabled = (enabledOverride ?? true) && !!wallet && !!chapterId;
 
 	return useQuery({
 		queryKey: ["last-chapter-game-session", chapterId],
