@@ -2,6 +2,7 @@ interface Props {
 	correctCount: number;
 	incorrectCount: number;
 	totalPages: number;
+	xpEarned: number;
 	onBackClick: () => void;
 }
 
@@ -9,6 +10,7 @@ export function CompletionScreen({
 	correctCount,
 	incorrectCount,
 	totalPages,
+	xpEarned,
 	onBackClick,
 }: Props) {
 	const percentage = Math.round((correctCount / totalPages) * 100);
@@ -49,6 +51,15 @@ export function CompletionScreen({
 					</p>
 					<p className="text-4xl font-bold text-gray-800 dark:text-dark-text tabular-nums">
 						{totalPages}
+					</p>
+				</div>
+
+				<div className="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 dark:border dark:border-yellow-500/30 p-2 col-span-3">
+					<p className="text-yellow-700 dark:text-yellow-400 text-sm font-semibold mb-2 font-montserrat">
+						XP Earned
+					</p>
+					<p className="text-4xl font-bold text-yellow-600 dark:text-yellow-400 tabular-nums">
+						{xpEarned}
 					</p>
 				</div>
 			</div>

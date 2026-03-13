@@ -271,13 +271,13 @@ export default function Dashboard() {
 								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
 									<span className="text-sm">💎</span>
 									<span className="text-sm font-semibold text-amber-600 font-montserrat tabular-nums">
-										1,250
+										{userInfo.data?.user.xpCount ?? 0}
 									</span>
 								</div>
 								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
 									<span className="text-sm">⚡</span>
 									<span className="text-sm font-semibold text-blue-600 font-montserrat tabular-nums">
-										85
+										{userInfo.data?.user.xp ?? 0}
 									</span>
 								</div>
 							</div>
@@ -287,7 +287,7 @@ export default function Dashboard() {
 						<div
 							className={`overflow-hidden transition-all duration-300 ease-in-out ${
 								showCourseDrawer
-									? "mt-3 max-h-[400px] opacity-100"
+									? "mt-3 max-h-100 opacity-100"
 									: "max-h-0 opacity-0"
 							}`}
 						>
@@ -494,7 +494,7 @@ export default function Dashboard() {
 													setSelectedChapterId(chapter.id);
 													setChapterPopupId(chapter.id);
 												}}
-												className={`relative w-full max-w-[200px] rounded-xl p-3 text-left transition-all shadow-md focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+												className={`relative w-full max-w-50 rounded-xl p-3 text-left transition-all shadow-md focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
 													isCompleted
 														? "bg-green-500 text-white shadow-green-500/30"
 														: isCurrent

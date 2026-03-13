@@ -26,10 +26,12 @@ export default function ChapterDetails() {
 	const [completionReport, setCompletionReport] = useState<{
 		correct: number;
 		incorrect: number;
+		xpEarned: number;
 	} | null>(null);
 	const [pendingCompletionReport, setPendingCompletionReport] = useState<{
 		correct: number;
 		incorrect: number;
+		xpEarned: number;
 	} | null>(null);
 	const [answerResult, setAnswerResult] = useState<{
 		correct: boolean;
@@ -264,6 +266,7 @@ export default function ChapterDetails() {
 					correct: result.report?.correct ?? 0,
 					incorrect:
 						(result.report?.total ?? 0) - (result.report?.correct ?? 0),
+					xpEarned: result.report?.xp ?? 0,
 				});
 			}
 		} catch (error) {
@@ -284,6 +287,7 @@ export default function ChapterDetails() {
 					correct: result.report?.correct ?? 0,
 					incorrect:
 						(result.report?.total ?? 0) - (result.report?.correct ?? 0),
+					xpEarned: result.report?.xp ?? 0,
 				});
 			}
 		} catch (error) {
@@ -654,6 +658,7 @@ export default function ChapterDetails() {
 								correctCount={completionReport?.correct ?? 0}
 								incorrectCount={completionReport?.incorrect ?? 0}
 								totalPages={totalPages}
+								xpEarned={completionReport?.xpEarned ?? 0}
 								onBackClick={handleBackClick}
 							/>
 						) : currentPage ? (
