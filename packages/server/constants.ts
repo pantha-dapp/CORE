@@ -13,5 +13,5 @@ const JWTPrivateKey = keccak256(
 const JWTPublicKey = privateKeyToAccount(JWTPrivateKey).publicKey;
 export const JWTKeypair = { private: JWTPrivateKey, public: JWTPublicKey };
 
-export const DOMAIN = "https://filosign.xyz";
-export const URI = "https://filosign.xyz";
+export const DOMAIN = "https://learnwithpantha.xyz";
+export const URI = "https://learnwithpantha.xyz";
