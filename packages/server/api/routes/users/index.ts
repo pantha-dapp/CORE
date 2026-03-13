@@ -1,5 +1,5 @@
 import { zEvmAddress } from "@pantha/shared/zod";
-import { and, eq, sql, sum } from "drizzle-orm";
+import { and, eq, lte, or, sql, sum } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import z from "zod";
@@ -204,12 +204,28 @@ export default new Hono()
 					totalXp: sum(db.schema.userXpLog.xpGained),
 				})
 				.from(db.schema.userXpLog)
-				.where(eq(db.schema.userXpLog.userWallet, wallet))
+				.where(
+					and(
+						eq(db.schema.userXpLog.userWallet, wallet),
+						or(
+							eq(db.schema.userXpLog.status, "success"),
+							eq(db.schema.userXpLog.status, "pending"),
+						),
+					),
+				)
 				.then((rows) => rows[0]?.totalXp ?? "0");
 
-			db.$db.run(
-				sql`DELETE FROM user_xp_log WHERE success = 0 AND created_at <= datetime('now', '-5 minutes')`,
-			);
+			await db
+				.delete(db.schema.userXpLog)
+				.where(
+					and(
+						eq(db.schema.userXpLog.status, "pending"),
+						lte(
+							db.schema.userXpLog.createdAt,
+							sql`unixepoch('now', '-5 minutes')`,
+						),
+					),
+				);
 
 			return respond.ok(
 				ctx,

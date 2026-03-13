@@ -270,6 +270,7 @@ export default new Hono<RouterEnv>()
 					{
 						chapterId: session.chapterId,
 						walletAddress: userWallet,
+						correct: session.correct.length,
 					},
 				);
 
