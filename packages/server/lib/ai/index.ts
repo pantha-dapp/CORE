@@ -118,7 +118,7 @@ export function createAi(args: {
 			const result = await generateChapterPagesRaw(args);
 
 			for (const page of result.pages) {
-				const { success: parseSuccess, error: parseError } =
+				const { success: parseSuccess } =
 					generateChapterPageOutputTypedSchema.safeParse(page);
 				if (!parseSuccess) {
 					delete result.pages[result.pages.indexOf(page)];

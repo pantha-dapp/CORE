@@ -92,7 +92,9 @@ export function Matching({
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">Match the Pairs</h3>
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				Match the Pairs
+			</h3>
 			{imageUrl && (
 				<img src={imageUrl} alt="Matching" className="rounded-lg w-full" />
 			)}
@@ -120,7 +122,9 @@ export function Matching({
 								} ${isMatched ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								<div className="flex items-center justify-between gap-2">
-									<span className="text-gray-800 dark:text-dark-text">{pair.left}</span>
+									<span className="text-gray-800 dark:text-dark-text">
+										{pair.left}
+									</span>
 									{isMatched && (
 										<button
 											type="button"
@@ -156,7 +160,9 @@ export function Matching({
 										: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
 								} ${selectedLeft !== null && !isMatched ? "hover:border-gray-400 dark:hover:border-dark-accent" : ""}`}
 							>
-								<span className="text-gray-800 dark:text-dark-text">{item.right}</span>
+								<span className="text-gray-800 dark:text-dark-text">
+									{item.right}
+								</span>
 							</button>
 						);
 					})}
@@ -179,7 +185,9 @@ export function Matching({
 			)}
 
 			{showResult && (
-				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
+				<div
+					className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+				>
 					<div className="mb-4 flex items-start gap-3">
 						<div
 							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
@@ -187,7 +195,9 @@ export function Matching({
 							{isCorrect ? "🎯" : "🔁"}
 						</div>
 						<div>
-							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
+							<p
+								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+							>
 								{isCorrect ? "Pairs matched!" : "Almost there"}
 							</p>
 							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">

@@ -54,7 +54,9 @@ export function IdentifyShownObjectInImage({
 
 			{/* Image Description */}
 			<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
-				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">{prompt}</p>
+				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">
+					{prompt}
+				</p>
 			</div>
 
 			{/* Options */}
@@ -78,10 +80,14 @@ export function IdentifyShownObjectInImage({
 									? "border-gray-800 dark:border-dark-accent bg-gray-100 dark:bg-dark-surface"
 									: "border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-gray-300 dark:hover:border-dark-border"
 							} ${isSelectedCorrect ? "border-green-500 dark:border-green-500/50 bg-green-50 dark:bg-green-900/20" : ""} ${
-								isSelectedIncorrect ? "border-red-500 dark:border-red-500/50 bg-red-50 dark:bg-red-900/20" : ""
+								isSelectedIncorrect
+									? "border-red-500 dark:border-red-500/50 bg-red-50 dark:bg-red-900/20"
+									: ""
 							}`}
 						>
-							<p className="text-gray-800 dark:text-dark-text font-semibold">{option}</p>
+							<p className="text-gray-800 dark:text-dark-text font-semibold">
+								{option}
+							</p>
 						</button>
 					);
 				})}
@@ -89,7 +95,9 @@ export function IdentifyShownObjectInImage({
 
 			{/* Submit Button */}
 			{showResult ? (
-				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
+				<div
+					className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+				>
 					<div className="mb-4 flex items-start gap-3">
 						<div
 							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
@@ -97,7 +105,9 @@ export function IdentifyShownObjectInImage({
 							{isCorrect ? "👀" : "🧠"}
 						</div>
 						<div>
-							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
+							<p
+								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+							>
 								{isCorrect ? "Correct read!" : "Good try"}
 							</p>
 							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">

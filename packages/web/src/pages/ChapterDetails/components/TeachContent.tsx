@@ -27,13 +27,15 @@ export function TeachContent({ topic, markdown, imageUrl, onContinue }: Props) {
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">{topic}</h3>
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				{topic}
+			</h3>
 			{imageUrl && (
 				<img src={imageUrl} alt={topic} className="rounded-lg w-full" />
 			)}
-			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: Markdown content from AI */}
 			<div
 				className="text-gray-800 dark:text-dark-text leading-relaxed [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-dark-accent font-montserrat"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: kana pdad
 				dangerouslySetInnerHTML={{ __html: htmlContent }}
 			/>
 			<button

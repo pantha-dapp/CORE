@@ -32,19 +32,29 @@ export function ExampleUses({
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">{topic}</h3>
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				{topic}
+			</h3>
 			{imageUrl && (
 				<img src={imageUrl} alt={topic} className="rounded-lg w-full" />
 			)}
-			<p className="text-gray-800 dark:text-dark-text font-montserrat">{text}</p>
+			<p className="text-gray-800 dark:text-dark-text font-montserrat">
+				{text}
+			</p>
 			{examples.length > 0 && (
 				<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
-					<p className="font-semibold mb-3 text-gray-700 dark:text-dark-muted font-montserrat">Examples:</p>
+					<p className="font-semibold mb-3 text-gray-700 dark:text-dark-muted font-montserrat">
+						Examples:
+					</p>
 					<ul className="space-y-2">
 						{examples.map((example) => (
 							<li key={example} className="flex items-start gap-2">
-								<span className="text-gray-600 dark:text-dark-muted mt-1">•</span>
-								<span className="text-gray-800 dark:text-dark-text font-montserrat">{example}</span>
+								<span className="text-gray-600 dark:text-dark-muted mt-1">
+									•
+								</span>
+								<span className="text-gray-800 dark:text-dark-text font-montserrat">
+									{example}
+								</span>
 							</li>
 						))}
 					</ul>

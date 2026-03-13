@@ -106,7 +106,9 @@ export function FillInTheBlanks({
 	if (blankCount === 0) {
 		return (
 			<div className="space-y-6">
-				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">Fill in the Blanks</h3>
+				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+					Fill in the Blanks
+				</h3>
 				<div className="bg-amber-50 dark:bg-amber-900/20 dark:border dark:border-amber-500/30 p-5 rounded-xl text-center space-y-3">
 					<p className="text-amber-800 dark:text-amber-400 text-sm font-medium font-montserrat">
 						⚠️ This question couldn't be displayed properly.
@@ -160,7 +162,9 @@ export function FillInTheBlanks({
 
 	return (
 		<div className="space-y-6">
-			<h3 className="text-2xl font-bold text-gray-900 font-tusker">Fill in the Blanks</h3>
+			<h3 className="text-2xl font-bold text-gray-900 font-tusker">
+				Fill in the Blanks
+			</h3>
 
 			{imageUrl && (
 				<img src={imageUrl} alt="Question" className="rounded-lg w-full" />
@@ -184,14 +188,14 @@ export function FillInTheBlanks({
 						foundAny = true;
 						// Plain text before this placeholder
 						if (match.index > lastIndex) {
-						parts.push(
-							<span
-								key={`w-${wordIdx}-t-${lastIndex}`}
-								className="text-gray-800 dark:text-dark-text"
-							>
-								{word.slice(lastIndex, match.index)}
-							</span>,
-						);
+							parts.push(
+								<span
+									key={`w-${wordIdx}-t-${lastIndex}`}
+									className="text-gray-800 dark:text-dark-text"
+								>
+									{word.slice(lastIndex, match.index)}
+								</span>,
+							);
 						}
 						// Blank button for this $N
 						const blankIndex = parseInt(match[1], 10) - 1;
@@ -225,7 +229,10 @@ export function FillInTheBlanks({
 							.slice(0, wordIdx)
 							.filter((w) => w === word).length;
 						parts.push(
-							<span key={`w-${wordIdx}-tail-${occ}`} className="text-gray-800 dark:text-dark-text">
+							<span
+								key={`w-${wordIdx}-tail-${occ}`}
+								className="text-gray-800 dark:text-dark-text"
+							>
 								{tail}{" "}
 							</span>,
 						);
@@ -280,7 +287,9 @@ export function FillInTheBlanks({
 			)}
 
 			{showResult && (
-				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
+				<div
+					className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+				>
 					<div className="mb-4 flex items-start gap-3">
 						<div
 							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
@@ -288,7 +297,9 @@ export function FillInTheBlanks({
 							{isCorrect ? "📝" : "🔤"}
 						</div>
 						<div>
-							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
+							<p
+								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+							>
 								{isCorrect ? "Well filled!" : "Almost there"}
 							</p>
 							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">

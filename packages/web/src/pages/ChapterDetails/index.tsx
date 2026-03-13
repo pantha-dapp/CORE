@@ -83,7 +83,7 @@ export default function ChapterDetails() {
 		isFetching: pagesFetching,
 	} = useChapterPages({ chapterId });
 
-	const pagesReady = !!(pagesData?.pages?.length);
+	const pagesReady = !!pagesData?.pages?.length;
 
 	const { data: session, isLoading: sessionLoading } = useChapterGameSession({
 		chapterId,
@@ -183,7 +183,9 @@ export default function ChapterDetails() {
 		return (
 			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-6 py-8">
 				<div className="max-w-4xl mx-auto text-center">
-					<h1 className="text-3xl font-bold text-landing-hero-text dark:text-dark-text font-tusker mb-4">Chapter Not Found</h1>
+					<h1 className="text-3xl font-bold text-landing-hero-text dark:text-dark-text font-tusker mb-4">
+						Chapter Not Found
+					</h1>
 					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat mb-8">
 						The chapter you're looking for doesn't exist.
 					</p>
@@ -604,21 +606,31 @@ export default function ChapterDetails() {
 							<span className="text-sm font-semibold text-gray-700 dark:text-dark-muted tabular-nums shrink-0">
 								{displayedPageIndex + 1}/{totalPages}
 							</span>
-							<span className="text-gray-400 dark:text-dark-muted shrink-0" aria-hidden>
+							<span
+								className="text-gray-400 dark:text-dark-muted shrink-0"
+								aria-hidden
+							>
 								{showChapterDetails ? "▲" : "▼"}
 							</span>
 						</div>
 					) : (
 						<div className="flex items-center justify-between">
-							<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">Chapter complete</span>
-							<span className="text-gray-400 dark:text-dark-muted shrink-0" aria-hidden>
+							<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
+								Chapter complete
+							</span>
+							<span
+								className="text-gray-400 dark:text-dark-muted shrink-0"
+								aria-hidden
+							>
 								{showChapterDetails ? "▲" : "▼"}
 							</span>
 						</div>
 					)}
 					{/* Chapter details - shown when expanded */}
 					{showChapterDetails && (
-						<div className={`pt-4 border-t border-gray-100 dark:border-dark-border ${!isComplete ? "mt-4" : "mt-3"}`}>
+						<div
+							className={`pt-4 border-t border-gray-100 dark:border-dark-border ${!isComplete ? "mt-4" : "mt-3"}`}
+						>
 							<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
 								{course.title}
 							</p>
@@ -648,7 +660,9 @@ export default function ChapterDetails() {
 							renderPage(currentPage)
 						) : (
 							<div className="text-center p-8">
-								<p className="text-gray-400 dark:text-dark-muted">No content available</p>
+								<p className="text-gray-400 dark:text-dark-muted">
+									No content available
+								</p>
 							</div>
 						)}
 					</div>

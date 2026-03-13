@@ -41,7 +41,9 @@ export function TrueFalse({
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">True or False</h3>
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				True or False
+			</h3>
 			{imageUrl && (
 				<img src={imageUrl} alt="True/False" className="rounded-lg w-full" />
 			)}
@@ -103,7 +105,9 @@ export function TrueFalse({
 			)}
 
 			{showResult && (
-				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
+				<div
+					className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+				>
 					<div className="mb-4 flex items-start gap-3">
 						<div
 							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
@@ -111,7 +115,9 @@ export function TrueFalse({
 							{isCorrect ? "⭐" : "🧩"}
 						</div>
 						<div>
-							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
+							<p
+								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+							>
 								{isCorrect ? "Correct!" : "Give it one quick review"}
 							</p>
 							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
