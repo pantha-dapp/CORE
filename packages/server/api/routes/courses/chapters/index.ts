@@ -1,3 +1,4 @@
+import { tryCatch } from "@pantha/shared";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
@@ -5,6 +6,7 @@ import { prepareChapter } from "../../../../lib/utils/chapters";
 import { respond } from "../../../../lib/utils/respond";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
+import { createJob } from "../../jobs";
 import type { RouterEnv } from "../../types";
 import session from "./session";
 
@@ -65,12 +67,28 @@ export default new Hono<RouterEnv>()
 
 			const pages = await db.chapterPagesById({ chapterId: id });
 			if (!pages || pages.length === 0) {
-				prepareChapter(chapter.id, { db, ai });
-				return respond.err(
+				const redisKey = `chapter-preparing:${id}`;
+				const existingJobId = await db.redis.get(redisKey);
+				if (existingJobId) {
+					return respond.ok(
+						ctx,
+						{ jobId: existingJobId },
+						"Chapter pages are being prepared.",
+						202,
+					);
+				}
+
+				const { id: jobId, promise } = createJob(db.redis, () =>
+					prepareChapter(chapter.id, { db, ai }),
+				);
+				await db.redis.setex(redisKey, 300, jobId);
+				promise.finally(() => db.redis.del(redisKey));
+
+				return respond.ok(
 					ctx,
-					"Chapter pages unavailable at the moment.",
-					503,
-					{ "Retry-After": "30" },
+					{ jobId },
+					"Chapter pages are being prepared.",
+					202,
 				);
 			}
 
@@ -83,7 +101,8 @@ export default new Hono<RouterEnv>()
 						eq(db.schema.courseChapters.order, chapter.order + 1),
 					),
 				);
-			nextChapter && prepareChapter(nextChapter.id, { db, ai });
+			nextChapter &&
+				prepareChapter(nextChapter.id, { db, ai }).catch(console.error);
 
 			for (const p of pages) {
 				const { type, content } = p.content;
@@ -117,38 +136,38 @@ export default new Hono<RouterEnv>()
 			await Promise.race([
 				Promise.all(
 					pages.map(async (p) => {
-						try {
-							const { type, content } = p.content;
-							switch (type) {
-								case "example_uses":
-								case "fill_in_the_blanks":
-								case "identify_shown_object_in_image":
-								case "quiz":
-								case "teach_and_explain_content":
-								case "true_false":
-									if (content.image) {
-										const { url } = await ai.image.generatePageImage({
+						const { type, content } = p.content;
+						switch (type) {
+							case "example_uses":
+							case "fill_in_the_blanks":
+							case "identify_shown_object_in_image":
+							case "quiz":
+							case "teach_and_explain_content":
+							case "true_false":
+								if (content.image) {
+									const { data } = await tryCatch(
+										ai.image.generatePageImage({
 											prompt: content.image.prompt,
-										});
-										images[p.id] = { url };
-									}
-									break;
-								case "identify_object_from_images": {
-									const results = await Promise.all(
+										}),
+									);
+									if (data) images[p.id] = data;
+								}
+								break;
+							case "identify_object_from_images": {
+								const { data } = await tryCatch(
+									Promise.all(
 										content.images.map((img: { prompt: string }) =>
 											ai.image.generatePageImage({
 												prompt: img.prompt,
 											}),
 										),
-									);
-									images[p.id] = { images: results };
-									break;
-								}
-								default:
-									break;
+									),
+								);
+								if (data) images[p.id] = { images: data };
+								break;
 							}
-						} catch {
-							/* skip failed image lookups */
+							default:
+								break;
 						}
 					}),
 				),
