@@ -80,6 +80,7 @@ async function llmJson<T, R>(args: {
 	const jsonSchema = toJSONSchema(args.outputSchema);
 
 	const resp = await callOpenaiCompat({
+		signal: AbortSignal.timeout(180_000),
 		body: JSON.stringify({
 			model: "gpt-oss-120b",
 			messages: [
@@ -141,6 +142,7 @@ async function jsonHeal(
 	const jsonSchema = toJSONSchema(args.outputSchema);
 
 	const resp = await callOpenaiCompat({
+		signal: AbortSignal.timeout(180_000),
 		body: JSON.stringify({
 			model: "gpt-oss-120b",
 			messages: [
@@ -205,8 +207,8 @@ function callOpenaiCompat(args: Parameters<typeof fetch>[1]) {
 			"Content-Type": "application/json",
 			Authorization: `Bearer ${process.env.CEREBRAS_API_KEY}`,
 		},
-		...args,
 		signal: AbortSignal.timeout(60_000),
+		...args,
 	});
 }
 
@@ -285,34 +287,62 @@ ${text}`,
 	return message.content;
 }
 
-export async function generateImage(args: { prompt: string }) {
+export async function generateImage(args: { prompt: string }, maxRetries = 3) {
 	const { prompt } = args;
-	const resp = await fetch("https://api.openai.com/v1/images/generations", {
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-		},
-		method: "POST",
-		body: JSON.stringify({
-			model: "gpt-image-1.5",
-			prompt: prompt,
-			n: 1,
-			size: "1024x1024",
-			quality: "low",
-			background: "transparent",
-		}),
-		signal: AbortSignal.timeout(120_000),
-	});
 
-	if (!resp.ok) {
-		const error = await resp.json();
-		throw new Error(`OpenAI API error: ${JSON.stringify(error)}`);
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		const resp = await fetch("https://api.openai.com/v1/images/generations", {
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+			},
+			method: "POST",
+			body: JSON.stringify({
+				model: "gpt-image-1.5",
+				prompt: prompt,
+				n: 1,
+				size: "1024x1024",
+				quality: "low",
+				background: "transparent",
+			}),
+			signal: AbortSignal.timeout(120_000),
+		});
+
+		if (!resp.ok) {
+			const error = await resp.json();
+
+			if (
+				resp.status === 429 &&
+				attempt < maxRetries &&
+				error?.error?.code === "rate_limit_exceeded"
+			) {
+				const retryAfterHeader = resp.headers.get("retry-after");
+				const retryMatch = error.error.message?.match(
+					/try again in (\d+(?:\.\d+)?)s/,
+				);
+				const waitSeconds = retryAfterHeader
+					? Number(retryAfterHeader)
+					: retryMatch
+						? Number(retryMatch[1])
+						: 15;
+				const waitMs = Math.ceil(waitSeconds * 1000) + 1000;
+				console.warn(
+					`[generateImage] Rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`,
+				);
+				await Bun.sleep(waitMs);
+				continue;
+			}
+
+			throw new Error(`OpenAI API error: ${JSON.stringify(error)}`);
+		}
+
+		const data = (await resp.json()) as { data: [{ b64_json: string }] };
+		const b64 = data.data[0].b64_json;
+		const imageBuffer = Buffer.from(b64, "base64");
+		const webpBuffer = await pngBufferToCompressedWebpBuffer(imageBuffer);
+
+		return { buffer: webpBuffer };
 	}
 
-	const data = (await resp.json()) as { data: [{ b64_json: string }] };
-	const b64 = data.data[0].b64_json;
-	const imageBuffer = Buffer.from(b64, "base64");
-	const webpBuffer = await pngBufferToCompressedWebpBuffer(imageBuffer);
-
-	return { buffer: webpBuffer };
+	throw new Error("generateImage: max retries exceeded");
 }

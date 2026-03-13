@@ -1,4 +1,4 @@
-import { jsonStringify } from "@pantha/shared";
+import { jsonStringify, tryCatch } from "@pantha/shared";
 import type { ZodObject, z } from "zod";
 import { createVectorDb, type VectorDbClient } from "../db/vec/client";
 import type { ObjectStorageResourceKey } from "../objectStorage";
@@ -183,8 +183,8 @@ export function createAi(args: {
 		"image-prompt-outputs",
 	);
 	async function findSimilarPregeneratedImage(embedding: number[]) {
-		const [cachedEntry] = await imagePromptOutputs.querySimilar(embedding, 1);
-		return cachedEntry;
+		const results = await imagePromptOutputs.querySimilar(embedding, 1);
+		return results[0];
 	}
 	async function generateOrFindImage(args: {
 		prompt: string;
@@ -251,7 +251,12 @@ export function createAi(args: {
 			}
 		})();
 
-		return await imageProcessing[uuid];
+		const { data, error } = await tryCatch(imageProcessing[uuid]);
+		if (error) {
+			delete imageProcessing[uuid];
+			throw error;
+		}
+		return data;
 	}
 	type GenerateImageArgs = Pick<
 		Parameters<typeof generateOrFindImage>[0],
