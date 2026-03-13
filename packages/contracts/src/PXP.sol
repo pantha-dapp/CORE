@@ -13,6 +13,10 @@ contract PXP is ERC20, Ownable {
         _mint(to, amount);
     }
 
+    function decimals() public pure override returns (uint8) {
+        return 0;
+    }
+
     /// @notice Transfers are disabled - PXP is soulbound
     function transfer(address, uint256) public pure override returns (bool) {
         revert NonTransferable();
