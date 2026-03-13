@@ -312,7 +312,7 @@ export default new Hono<RouterEnv>()
 						// Push all candidate courses to the ongoing session's state
 						ongoingSession.candidateCourses = [];
 						if (similarCoursesToIdeal.length > 0) {
-							const courseIds = similarCoursesToIdeal
+							const courseIds: string[] = similarCoursesToIdeal
 								.filter((c) => {
 									return c.score > 0.7;
 								})
