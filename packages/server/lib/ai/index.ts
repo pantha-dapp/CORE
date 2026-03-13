@@ -18,249 +18,273 @@ import intentClarification from "./tasks/intentClarification";
 import learningIntentSummarizer from "./tasks/learningIntentSummarizer";
 
 export function createAi(args: {
-    aiClient: AiClient;
-    vectorDbClient: VectorDbClient;
-    objectStorage: ObjectStorageService;
+	aiClient: AiClient;
+	vectorDbClient: VectorDbClient;
+	objectStorage: ObjectStorageService;
 }) {
-    const { aiClient, vectorDbClient, objectStorage } = args;
-    const llmCache = createAiCache(vectorDbClient);
-    const imageProcessing: Record<string, Promise<{ url: string }>> = {};
-    function createLlmGenerateFunction<T extends ZodObject, R extends ZodObject>(
-        schemas: {
-            input: T;
-            output: R;
-        },
-        systemPrompt: string,
-    ) {
-        async function llmGenerate(
-            input: z.infer<T>,
-            prompt?: string,
-            noCache?: boolean,
-        ): Promise<z.infer<R>> {
-            schemas.input.parse(input);
-            const inputEmbedding = noCache
-                ? []
-                : await aiClient.embedding.text(
-                    jsonStringify({ systemPrompt, prompt, input }),
-                );
+	const { aiClient, vectorDbClient, objectStorage } = args;
+	const llmCache = createAiCache(vectorDbClient);
+	const imageProcessing: Record<string, Promise<{ url: string }>> = {};
+	let _activeImageCount = 0;
+	const _imageQueue: Array<() => void> = [];
+	function acquireImageSlot(): Promise<void> {
+		if (_activeImageCount < 2) {
+			_activeImageCount++;
+			return Promise.resolve();
+		}
+		return new Promise((resolve) => {
+			_imageQueue.push(() => {
+				_activeImageCount++;
+				resolve();
+			});
+		});
+	}
+	function releaseImageSlot() {
+		_activeImageCount--;
+		const next = _imageQueue.shift();
+		if (next) next();
+	}
+	function createLlmGenerateFunction<T extends ZodObject, R extends ZodObject>(
+		schemas: {
+			input: T;
+			output: R;
+		},
+		systemPrompt: string,
+	) {
+		async function llmGenerate(
+			input: z.infer<T>,
+			prompt?: string,
+			noCache?: boolean,
+		): Promise<z.infer<R>> {
+			schemas.input.parse(input);
+			const inputEmbedding = noCache
+				? []
+				: await aiClient.embedding.text(
+						jsonStringify({ systemPrompt, prompt, input }),
+					);
 
-            if (!noCache) {
-                const cachedResponse = await llmCache.getCachedResponse<z.infer<R>>(
-                    inputEmbedding,
-                    schemas.output,
-                );
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-            }
+			if (!noCache) {
+				const cachedResponse = await llmCache.getCachedResponse<z.infer<R>>(
+					inputEmbedding,
+					schemas.output,
+				);
+				if (cachedResponse) {
+					return cachedResponse;
+				}
+			}
 
-            const response = await aiClient.llm.json({
-                input: input,
-                outputSchema: schemas.output,
-                prompt: prompt ?? "",
-                systemPrompts: [systemPrompt ?? ""],
-            });
+			const response = await aiClient.llm.json({
+				input: input,
+				outputSchema: schemas.output,
+				prompt: prompt ?? "",
+				systemPrompts: [systemPrompt ?? ""],
+			});
 
-            if (!noCache) {
-                llmCache.setCachedResponse(response, inputEmbedding);
-            }
+			if (!noCache) {
+				llmCache.setCachedResponse(response, inputEmbedding);
+			}
 
-            return schemas.output.parse(response);
-        }
+			return schemas.output.parse(response);
+		}
 
-        return llmGenerate;
-    }
+		return llmGenerate;
+	}
 
-    const generateChapterPagesRaw = createLlmGenerateFunction(
-        {
-            input: generateChapterPages.inputSchema,
-            output: generateChapterPages.outputSchema,
-        },
-        generateChapterPages.prompt,
-    );
-    const llm = {
-        clarificationQuestionGenerator: createLlmGenerateFunction(
-            {
-                input: clarificationQuestionGenerator.inputSchema,
-                output: clarificationQuestionGenerator.outputSchema,
-            },
-            clarificationQuestionGenerator.prompt,
-        ),
-        courseSelectionEvaluator: createLlmGenerateFunction(
-            {
-                input: courseSelectionEvaluator.inputSchema,
-                output: courseSelectionEvaluator.outputSchema,
-            },
-            courseSelectionEvaluator.prompt,
-        ),
-        generateChapterPages: async (
-            args: Parameters<typeof generateChapterPagesRaw>[0],
-        ) => {
-            const result = await generateChapterPagesRaw(args);
+	const generateChapterPagesRaw = createLlmGenerateFunction(
+		{
+			input: generateChapterPages.inputSchema,
+			output: generateChapterPages.outputSchema,
+		},
+		generateChapterPages.prompt,
+	);
+	const llm = {
+		clarificationQuestionGenerator: createLlmGenerateFunction(
+			{
+				input: clarificationQuestionGenerator.inputSchema,
+				output: clarificationQuestionGenerator.outputSchema,
+			},
+			clarificationQuestionGenerator.prompt,
+		),
+		courseSelectionEvaluator: createLlmGenerateFunction(
+			{
+				input: courseSelectionEvaluator.inputSchema,
+				output: courseSelectionEvaluator.outputSchema,
+			},
+			courseSelectionEvaluator.prompt,
+		),
+		generateChapterPages: async (
+			args: Parameters<typeof generateChapterPagesRaw>[0],
+		) => {
+			const result = await generateChapterPagesRaw(args);
 
-            for (const page of result.pages) {
-                const { success: parseSuccess, error: parseError } =
-                    generateChapterPageOutputTypedSchema.safeParse(page);
-                if (!parseSuccess) {
-                    if (page.type === "fill_in_the_blanks") {
-                        // delete this page
-                        delete result.pages[result.pages.indexOf(page)];
-                    } else {
-                        console.error("Failed to validate generated page", {
-                            error: String(parseError).slice(0, 255),
-                            page: jsonStringify(page),
-                        });
-                        throw new Error("Failed to validate generated page");
-                    }
-                }
-            }
+			for (const page of result.pages) {
+				const { success: parseSuccess, error: parseError } =
+					generateChapterPageOutputTypedSchema.safeParse(page);
+				if (!parseSuccess) {
+					if (page.type === "fill_in_the_blanks") {
+						// delete this page
+						delete result.pages[result.pages.indexOf(page)];
+					} else {
+						console.error("Failed to validate generated page", {
+							error: String(parseError).slice(0, 255),
+							page: jsonStringify(page),
+						});
+						throw new Error("Failed to validate generated page");
+					}
+				}
+			}
 
-            const parsed = generateChapterPageOutputTypedSchema
-                .array()
-                .safeParse(result.pages.filter((p) => !!p));
+			const parsed = generateChapterPageOutputTypedSchema
+				.array()
+				.safeParse(result.pages.filter((p) => !!p));
 
-            if (!parsed.success) {
-                console.error("Failed to validate generated pages", {
-                    error: String(parsed.error).slice(0, 255),
-                    result: jsonStringify(result),
-                });
-                throw new Error("Failed to validate generated pages");
-            }
+			if (!parsed.success) {
+				console.error("Failed to validate generated pages", {
+					error: String(parsed.error).slice(0, 255),
+					result: jsonStringify(result),
+				});
+				throw new Error("Failed to validate generated pages");
+			}
 
-            return {
-                pages: parsed.data,
-            };
-        },
-        generateIdealCourseDescriptor: createLlmGenerateFunction(
-            {
-                input: generateIdealCourseDescriptor.inputSchema,
-                output: generateIdealCourseDescriptor.outputSchema,
-            },
-            generateIdealCourseDescriptor.prompt,
-        ),
-        generateNewCourseSkeleton: createLlmGenerateFunction(
-            {
-                input: generateNewCourseSkeleton.inputSchema,
-                output: generateNewCourseSkeleton.outputSchema,
-            },
-            generateNewCourseSkeleton.prompt,
-        ),
-        intentClarification: createLlmGenerateFunction(
-            {
-                input: intentClarification.inputSchema,
-                output: intentClarification.outputSchema,
-            },
-            intentClarification.prompt,
-        ),
-        learningIntentSummarizer: createLlmGenerateFunction(
-            {
-                input: learningIntentSummarizer.inputSchema,
-                output: learningIntentSummarizer.outputSchema,
-            },
-            learningIntentSummarizer.prompt,
-        ),
-        generateAnswerExplanation: createLlmGenerateFunction(
-            {
-                input: generateAnswerExplanation.inputSchema,
-                output: generateAnswerExplanation.outputSchema,
-            },
-            generateAnswerExplanation.prompt,
-        ),
-    };
+			return {
+				pages: parsed.data,
+			};
+		},
+		generateIdealCourseDescriptor: createLlmGenerateFunction(
+			{
+				input: generateIdealCourseDescriptor.inputSchema,
+				output: generateIdealCourseDescriptor.outputSchema,
+			},
+			generateIdealCourseDescriptor.prompt,
+		),
+		generateNewCourseSkeleton: createLlmGenerateFunction(
+			{
+				input: generateNewCourseSkeleton.inputSchema,
+				output: generateNewCourseSkeleton.outputSchema,
+			},
+			generateNewCourseSkeleton.prompt,
+		),
+		intentClarification: createLlmGenerateFunction(
+			{
+				input: intentClarification.inputSchema,
+				output: intentClarification.outputSchema,
+			},
+			intentClarification.prompt,
+		),
+		learningIntentSummarizer: createLlmGenerateFunction(
+			{
+				input: learningIntentSummarizer.inputSchema,
+				output: learningIntentSummarizer.outputSchema,
+			},
+			learningIntentSummarizer.prompt,
+		),
+		generateAnswerExplanation: createLlmGenerateFunction(
+			{
+				input: generateAnswerExplanation.inputSchema,
+				output: generateAnswerExplanation.outputSchema,
+			},
+			generateAnswerExplanation.prompt,
+		),
+	};
 
-    const imagePromptOutputs = createVectorDb(
-        vectorDbClient,
-        "image-prompt-outputs",
-    );
-    async function findSimilarPregeneratedImage(embedding: number[]) {
-        const [cachedEntry] = await imagePromptOutputs.querySimilar(embedding, 1);
-        return cachedEntry;
-    }
-    async function generateOrFindImage(args: {
-        prompt: string;
-        key: ObjectStorageResourceKey;
-        cacheThreshold?: number;
-        similarityQueryOverride?: string;
-    }) {
-        const {
-            prompt,
-            cacheThreshold = 0.95,
-            similarityQueryOverride,
-            key,
-        } = args;
+	const imagePromptOutputs = createVectorDb(
+		vectorDbClient,
+		"image-prompt-outputs",
+	);
+	async function findSimilarPregeneratedImage(embedding: number[]) {
+		const [cachedEntry] = await imagePromptOutputs.querySimilar(embedding, 1);
+		return cachedEntry;
+	}
+	async function generateOrFindImage(args: {
+		prompt: string;
+		key: ObjectStorageResourceKey;
+		cacheThreshold?: number;
+		similarityQueryOverride?: string;
+	}) {
+		const {
+			prompt,
+			cacheThreshold = 0.95,
+			similarityQueryOverride,
+			key,
+		} = args;
 
-        const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
-        const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
+		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
 
-        if (imageProcessing[uuid]) {
-            return await imageProcessing[uuid];
-        }
+		if (imageProcessing[uuid]) {
+			return await imageProcessing[uuid];
+		}
 
-        imageProcessing[uuid] = (async () => {
-            const inputEmbedding = await aiClient.embedding.text(
-                similarityQueryOverride ?? prompt,
-            );
-            const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
-            if (similarImage && similarImage.score > cacheThreshold) {
-                delete imageProcessing[uuid];
-                return { url: similarImage.payload.imageUrl };
-            }
+		imageProcessing[uuid] = (async () => {
+			await acquireImageSlot();
+			try {
+				const inputEmbedding = await aiClient.embedding.text(
+					similarityQueryOverride ?? prompt,
+				);
+				const similarImage = await findSimilarPregeneratedImage(inputEmbedding);
+				if (similarImage && similarImage.score > cacheThreshold) {
+					delete imageProcessing[uuid];
+					return { url: similarImage.payload.imageUrl };
+				}
 
-            const { buffer } = await aiClient.image.generate({
-                prompt: prompt,
-            });
+				const { buffer } = await aiClient.image.generate({
+					prompt: prompt,
+				});
 
-            const { hotStorage, persistentStorage } = objectStorage.upload({
-                path: [key, uuid],
-                data: buffer,
-            });
+				const { hotStorage, persistentStorage } = objectStorage.upload({
+					path: [key, uuid],
+					data: buffer,
+				});
 
-            const { url: tmpUrl } = await hotStorage;
+				const { url: tmpUrl } = await hotStorage;
 
-            persistentStorage.then(({ url }) => {
-                imagePromptOutputs.writeEntry(uuid, {
-                    vector: inputEmbedding,
-                    payload: { imageUrl: url },
-                });
+				persistentStorage.then(({ url }) => {
+					imagePromptOutputs.writeEntry(uuid, {
+						vector: inputEmbedding,
+						payload: { imageUrl: url },
+					});
 
-                objectStorage.unloadHot({ path: [key, uuid] });
-            });
+					objectStorage.unloadHot({ path: [key, uuid] });
+				});
 
-            return { url: tmpUrl };
-        })();
+				return { url: tmpUrl };
+			} finally {
+				releaseImageSlot();
+			}
+		})();
 
-        return await imageProcessing[uuid];
-    }
-    type GenerateImageArgs = Pick<
-        Parameters<typeof generateOrFindImage>[0],
-        "prompt" | "cacheThreshold" | "similarityQueryOverride"
-    >;
+		return await imageProcessing[uuid];
+	}
+	type GenerateImageArgs = Pick<
+		Parameters<typeof generateOrFindImage>[0],
+		"prompt" | "cacheThreshold" | "similarityQueryOverride"
+	>;
 
-    const image = {
-        generateIconImage: (args: GenerateImageArgs) =>
-            generateOrFindImage({
-                prompt: `${generateIconImage.prompt}\n${args.prompt}`,
-                cacheThreshold: args.cacheThreshold ?? 0.85,
-                similarityQueryOverride: `Icon: ${args.prompt}`,
-                key: "course-icons",
-            }),
+	const image = {
+		generateIconImage: (args: GenerateImageArgs) =>
+			generateOrFindImage({
+				prompt: `${generateIconImage.prompt}\n${args.prompt}`,
+				cacheThreshold: args.cacheThreshold ?? 0.85,
+				similarityQueryOverride: `Icon: ${args.prompt}`,
+				key: "course-icons",
+			}),
 
-        generatePageImage: (args: GenerateImageArgs) =>
-            generateOrFindImage({
-                prompt: `${generatePageImage.prompt}\n${args.prompt}`,
-                cacheThreshold: args.cacheThreshold ?? 0.9,
-                similarityQueryOverride: args.prompt,
-                key: "chapter-page-images",
-            }),
-    };
+		generatePageImage: (args: GenerateImageArgs) =>
+			generateOrFindImage({
+				prompt: `${generatePageImage.prompt}\n${args.prompt}`,
+				cacheThreshold: args.cacheThreshold ?? 0.9,
+				similarityQueryOverride: args.prompt,
+				key: "chapter-page-images",
+			}),
+	};
 
-    return {
-        llm,
-        image,
-        embedding: aiClient.embedding,
-        translate: aiClient.translation.generate,
-        $client: aiClient,
-    };
+	return {
+		llm,
+		image,
+		embedding: aiClient.embedding,
+		translate: aiClient.translation.generate,
+		$client: aiClient,
+	};
 }
 
 export type Ai = ReturnType<typeof createAi>;
