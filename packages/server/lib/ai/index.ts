@@ -235,12 +235,14 @@ export function createAi(args: {
 				const { url: tmpUrl } = await hotStorage;
 
 				persistentStorage.then(({ url }) => {
-					imagePromptOutputs.writeEntry(uuid, {
-						vector: inputEmbedding,
-						payload: { imageUrl: url },
-					});
-
-					objectStorage.unloadHot({ path: [key, uuid] });
+					imagePromptOutputs
+						.writeEntry(uuid, {
+							vector: inputEmbedding,
+							payload: { imageUrl: url },
+						})
+						.then(() => {
+							objectStorage.unloadHot({ path: [key, uuid] });
+						});
 				});
 
 				return { url: tmpUrl };
