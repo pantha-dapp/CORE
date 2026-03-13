@@ -40,6 +40,9 @@ export const userXpLog = t.sqliteTable("user_xp_log", {
 	userWallet: tEvmAddress().notNull(),
 	xpGained: t.real("xp_gained").notNull(),
 	transactionHash: tHex("transaction_hash"),
-	success: t.int("success", { mode: "boolean" }).notNull().default(false),
+	status: t
+		.text("status", { enum: ["pending", "success", "failed"] })
+		.notNull()
+		.default("pending"),
 	createdAt: timestamps.createdAt,
 });

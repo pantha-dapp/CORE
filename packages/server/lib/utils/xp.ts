@@ -44,6 +44,7 @@ export async function mintXpForChapter({
 			userWallet: walletAddress,
 			xpGained: xpAmount,
 			transactionHash: hash,
+			status: "pending",
 		})
 		.returning();
 	if (!xpLog) return;
@@ -52,18 +53,22 @@ export async function mintXpForChapter({
 		.waitForTransactionReceipt({ hash })
 		.then((receipt) => {
 			if (receipt.status === "success") {
-				db.update(db.schema.userXpLog)
-					.set({ success: true })
+				return db
+					.update(db.schema.userXpLog)
+					.set({ status: "success" })
 					.where(eq(db.schema.userXpLog.id, xpLog.id));
 			} else {
-				db.delete(db.schema.userXpLog).where(
-					eq(db.schema.userXpLog.id, xpLog.id),
-				);
+				return db
+					.update(db.schema.userXpLog)
+					.set({ status: "failed" })
+					.where(eq(db.schema.userXpLog.id, xpLog.id));
 			}
 		})
-		.catch(() => {
-			db.delete(db.schema.userXpLog).where(
-				eq(db.schema.userXpLog.id, xpLog.id),
-			);
+		.catch((e) => {
+			console.error("Error waiting for transaction receipt", e);
+			return db
+				.update(db.schema.userXpLog)
+				.set({ status: "failed" })
+				.where(eq(db.schema.userXpLog.id, xpLog.id));
 		});
 }
