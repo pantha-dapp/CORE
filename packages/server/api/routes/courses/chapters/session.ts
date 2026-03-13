@@ -1,5 +1,6 @@
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import type { DbSchema } from "../../../../lib/db/schema";
@@ -239,10 +240,33 @@ export default new Hono<RouterEnv>()
 			gameSessions.set(userWallet, session);
 
 			if (session.currentPage >= session.pages.length) {
-				eventBus.emit("chapter.completed", {
-					chapterId: session.chapterId,
-					walletAddress: userWallet,
-				});
+				// Check if user has previously completed this chapter
+				const { db } = ctx.var.appState;
+				const chapter = await db.chapterById({ chapterId: session.chapterId });
+				if (!chapter) {
+					return respond.err(ctx, "Chapter not found", 404);
+				}
+
+				const [userCourse] = await db
+					.select()
+					.from(db.schema.userCourses)
+					.where(
+						and(
+							eq(db.schema.userCourses.userWallet, userWallet),
+							eq(db.schema.userCourses.courseId, chapter.courseId),
+						),
+					);
+
+				const isFirstCompletion =
+					!userCourse || userCourse.progress <= chapter.order;
+
+				eventBus.emit(
+					isFirstCompletion ? "chapter.completed" : "chapter.revised",
+					{
+						chapterId: session.chapterId,
+						walletAddress: userWallet,
+					},
+				);
 
 				return respond.ok(
 					ctx,
@@ -256,9 +280,6 @@ export default new Hono<RouterEnv>()
 					},
 					"Session completed.",
 					200,
-					// "Error processing answer: " +
-					// 	(error instanceof Error ? error.message : String(error)),
-					// 500,
 				);
 			}
 

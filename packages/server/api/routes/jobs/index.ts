@@ -1,4 +1,3 @@
-import { SECOND } from "@pantha/shared/constants";
 import type { RedisClient } from "bun";
 import { Hono } from "hono";
 import { respond } from "../../../lib/utils/respond";
