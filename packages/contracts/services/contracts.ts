@@ -10,7 +10,7 @@ import {
 	toHex,
 	type WalletClient,
 } from "viem";
-import { definitions } from "../definitions";
+import { definitions } from "../definitions.gen";
 
 function getKeyedClient<T extends Client | WalletClient>(client: T) {
 	return {
@@ -43,33 +43,35 @@ export function getContracts<T extends Wallet>(options: {
 	}
 
 	const contractDefinitions = definitions[key as keyof typeof definitions];
+	const keyedClient = getKeyedClient(client);
 
 	return {
 		PanthaOrchestrator: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PanthaOrchestrator,
 		}),
 		PXP: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PXP,
 		}),
 		PanthaCertificate: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PanthaCertificate,
 		}),
 		PanthaKeyStore: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PanthaKeyStore,
 		}),
 		PanthaCertificationAuthority: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PanthaCertificationAuthority,
 		}),
 		PanthaToken: getContract({
-			client: getKeyedClient(client),
+			client: keyedClient,
 			...contractDefinitions.PanthaToken,
 		}),
 		$client: client,
+		$publicClient: keyedClient.public,
 	};
 }
 
