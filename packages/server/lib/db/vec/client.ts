@@ -2,38 +2,57 @@ import { tryCatch } from "@pantha/shared";
 import type { QdrantClient } from "@qdrant/js-client-rest";
 import z from "zod";
 
+type CourseEmbeddingsRecord = {
+	courseId: string;
+};
+type LlmRespCacheRecord = {
+	content: string;
+	lastHitAt: number;
+	hits: number;
+};
+type ImagePromptOutputRecord = {
+	imageUrl: string;
+};
+
+type CollectionDef<T = unknown> = {
+	size: number;
+	distance: "Cosine" | "Dot" | "Euclid" | "Manhattan";
+	schema: z.ZodType;
+	idField: string | null;
+	_type?: T;
+};
+
 const collectionDefinitions = {
 	"course-embeddings": {
 		size: 768,
-		distance: "Cosine",
+		distance: "Cosine" as const,
 		schema: z.object({
 			courseId: z.string(),
 		}),
+		idField: "courseId" as const,
+		_type: undefined as unknown as CourseEmbeddingsRecord,
 	},
 	"llm-resp-vec-cache": {
 		size: 768,
-		distance: "Cosine",
+		distance: "Cosine" as const,
 		schema: z.object({
 			content: z.string(),
 			lastHitAt: z.number(),
 			hits: z.number(),
 		}),
+		idField: null,
+		_type: undefined as unknown as LlmRespCacheRecord,
 	},
 	"image-prompt-outputs": {
 		size: 768,
-		distance: "Cosine",
+		distance: "Cosine" as const,
 		schema: z.object({
 			imageUrl: z.string(),
 		}),
+		idField: null,
+		_type: undefined as unknown as ImagePromptOutputRecord,
 	},
-} as const satisfies Record<
-	string,
-	{
-		size: number;
-		distance: "Cosine" | "Dot" | "Euclid" | "Manhattan";
-		schema: z.ZodObject;
-	}
->;
+} satisfies Record<string, CollectionDef>;
 
 export type VectorDbClientKey = keyof typeof collectionDefinitions;
 export type VectorDbClient = QdrantClient;
@@ -42,7 +61,13 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	vecDbClient: VectorDbClient,
 	key: T,
 ) {
-	const def = collectionDefinitions[key];
+	const defOrUndefined = collectionDefinitions[key];
+
+	if (!defOrUndefined) {
+		throw new Error(`Unknown collection: ${key}`);
+	}
+
+	const def: CollectionDef = defOrUndefined;
 
 	function getNumericId(id: string): number {
 		const hash = Number(BigInt(Bun.hash(id)) & BigInt("0x7FFFFFFFFFFFFFFF"));
@@ -161,27 +186,44 @@ export function createVectorDb<T extends VectorDbClientKey>(
 			with_payload: true,
 		});
 
-		return entries.points.map((entry) => ({
-			id: String(entry.id),
-			score: z.number().parse(entry.score),
-			payload: def.schema.parse(entry.payload) as PayloadType,
-		}));
+		return entries.points.map((entry) => {
+			const payload = def.schema.parse(entry.payload) as PayloadType;
+			const id = def.idField
+				? (payload[def.idField as keyof PayloadType] as string)
+				: (entry.id as number);
+			return {
+				id: id as (typeof collectionDefinitions)[T]["idField"] extends null
+					? number
+					: string,
+				score: z.number().parse(entry.score),
+				payload,
+			};
+		});
 	}
 
-	async function updatePayload(id: string, payload: Partial<PayloadType>) {
+	async function updatePayload(
+		id: string | number,
+		payload: Partial<PayloadType>,
+	) {
 		await ready;
-		const existing = await readEntry(id);
-		if (!existing) {
+		const numericId = typeof id === "number" ? id : getNumericId(id);
+
+		const points = await vecDbClient.retrieve(key, {
+			ids: [numericId],
+			with_payload: true,
+		});
+		const point = points?.[0];
+		if (!point) {
 			throw new Error("Entry not found");
 		}
-		def.schema.partial().parse(payload);
+
+		const existing = def.schema.parse(point.payload) as PayloadType;
 
 		const updatedPayload = {
-			...existing.payload,
+			...existing,
 			...payload,
 		} as PayloadType;
 
-		const numericId = getNumericId(id);
 		await vecDbClient.setPayload(key, {
 			points: [numericId],
 			payload: updatedPayload,
