@@ -7,6 +7,7 @@ export function useAnswerExplanation() {
 
 	return useQuery({
 		queryKey: ["previousAnswerExplanation"],
+		enabled: false,
 		queryFn: async () => {
 			if (!wallet) {
 				throw new Error("not connected");
@@ -25,5 +26,8 @@ export function useAnswerExplanation() {
 			return explanationResponse.data;
 		},
 		staleTime: 2 * MINUTE,
+		refetchOnMount: false,
+		refetchOnReconnect: false,
+		refetchOnWindowFocus: false,
 	});
 }

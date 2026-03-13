@@ -227,7 +227,7 @@ export default new Hono<RouterEnv>()
 						}
 						const { questions } = clarificationQuestionResult.data;
 
-						questions.forEach((q) => {
+						questions.slice(0, ongoingSession.questionsBudget).forEach((q) => {
 							ongoingSession.questionsBudget--;
 							ongoingSession.questions.push({
 								...q,
@@ -263,7 +263,7 @@ export default new Hono<RouterEnv>()
 					(q) => q.answer === undefined,
 				);
 
-				if (pendingQuestions.length > 0 && ongoingSession.questionsBudget > 0) {
+				if (pendingQuestions.length > 0) {
 					ongoingSession.lock = false;
 
 					return respond.ok(
@@ -367,34 +367,42 @@ export default new Hono<RouterEnv>()
 								evaluation.uncertantiesRemaining ||
 								ongoingSession.uncertainties;
 
-							const clarificationQuestionGeneratorResult = await tryCatch(
-								ai.llm.clarificationQuestionGenerator({
-									inferredGoal: ongoingSession.inferredGoal ?? "",
-									uncertainties: ongoingSession.uncertainties,
-									previous: ongoingSession.questions.map((q) => ({
-										question: q.text,
-										purpose: q.purpose,
-										answer: q.answer ?? "unanswered",
-									})),
-									questionsToGenerate: Math.min(
-										evaluation.questionCount || 3,
-										ongoingSession.questionsBudget,
-									),
-									courses: ongoingSession.candidateCourses,
-								}),
-							);
-							if (clarificationQuestionGeneratorResult.error) {
-								throw "Failed to generate additional clarification questions.";
-							}
-							const { questions } = clarificationQuestionGeneratorResult.data;
+							if (ongoingSession.questionsBudget <= 0) {
+								// Budget exhausted — cannot ask more questions; fail the job
+								// so the client sees a failure rather than a silently stuck session.
+								throw "Question budget exhausted. Please restart the session.";
+							} else {
+								const clarificationQuestionGeneratorResult = await tryCatch(
+									ai.llm.clarificationQuestionGenerator({
+										inferredGoal: ongoingSession.inferredGoal ?? "",
+										uncertainties: ongoingSession.uncertainties,
+										previous: ongoingSession.questions.map((q) => ({
+											question: q.text,
+											purpose: q.purpose,
+											answer: q.answer ?? "unanswered",
+										})),
+										questionsToGenerate: Math.min(
+											evaluation.questionCount || 3,
+											ongoingSession.questionsBudget,
+										),
+										courses: ongoingSession.candidateCourses,
+									}),
+								);
+								if (clarificationQuestionGeneratorResult.error) {
+									throw "Failed to generate additional clarification questions.";
+								}
+								const { questions } = clarificationQuestionGeneratorResult.data;
 
-							questions.forEach((q) => {
-								ongoingSession.questionsBudget--;
-								ongoingSession.questions.push({
-									...q,
-									key: crypto.randomUUID().slice(0, 8),
-								});
-							});
+								questions
+									.slice(0, ongoingSession.questionsBudget)
+									.forEach((q) => {
+										ongoingSession.questionsBudget--;
+										ongoingSession.questions.push({
+											...q,
+											key: crypto.randomUUID().slice(0, 8),
+										});
+									});
+							}
 						}
 
 						if (evaluation.decision === "select_existing_course") {
@@ -424,11 +432,7 @@ export default new Hono<RouterEnv>()
 							ongoingSession.courseId = chosenCourseId;
 						}
 
-						if (
-							evaluation.decision === "create_new_course" ||
-							(evaluation.decision === "ask_more_questions" &&
-								ongoingSession.questionsBudget > 0)
-						) {
+						if (evaluation.decision === "create_new_course") {
 							let generatedCourseId = "";
 							if (!evaluation.courseGenerationInstructions) {
 								throw "No instructions for course generation";
@@ -513,10 +517,11 @@ export default new Hono<RouterEnv>()
 										}
 									}
 								})
-								.catch(() => {
-									if (!generatedCourseId || generatedCourseId.length === 0) {
+								.catch((err) => {
+									if (generatedCourseId) {
 										coursesVectorDb.deleteEntry(generatedCourseId);
 									}
+									throw err;
 								});
 							await db.enrollUserInCourse({
 								userWallet: userWallet,
