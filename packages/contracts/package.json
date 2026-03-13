@@ -1,36 +1,38 @@
 {
-    "name": "@pantha/contracts",
-    "version": "1.0.0",
-    "type": "module",
-    "main": "./dist/exports.ts",
-    "types": "./dist/exports.d.ts",
-    "files": [
-        "dist/**/*",
-        "artifacts/**/*"
-    ],
-    "exports": {
-        ".": {
-            "default": "./exports.ts"
-        }
-    },
-    "scripts": {
-        "compile": "bun scripts/generateInterfaces.ts; hardhat compile",
-        "migrate": "bun compile; bun scripts/deploy.ts"
-    },
-    "devDependencies": {
-        "@nomicfoundation/hardhat-ignition": "^3.0.9",
-        "@nomicfoundation/hardhat-network-helpers": "^3.0.4",
-        "@nomicfoundation/hardhat-toolbox-viem": "^5.0.3",
-        "@nomicfoundation/hardhat-viem": "^3.0.4",
-        "@solidity-parser/parser": "^0.18.0",
-        "@types/node": "^22.8.5",
-        "forge-std": "foundry-rs/forge-std#v1.9.4",
-        "glob": "^13.0.6",
-        "hardhat": "^3.1.12",
-        "typescript": "~5.8.0",
-        "viem": "^2.43.0"
-    },
-    "dependencies": {
-        "@openzeppelin/contracts": "^5.6.1"
-    }
+	"name": "@pantha/contracts",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "./dist/exports.ts",
+	"types": "./dist/exports.d.ts",
+	"files": [
+		"dist/**/*",
+		"artifacts/**/*"
+	],
+	"exports": {
+		".": {
+			"default": "./exports.ts"
+		}
+	},
+	"scripts": {
+		"compile": "bun scripts/generateInterfaces.ts; hardhat compile",
+		"migrate": "bun compile; bun scripts/deploy.ts"
+	},
+	"devDependencies": {
+		"@nomicfoundation/hardhat-ignition": "^3.0.9",
+		"@nomicfoundation/hardhat-network-helpers": "^3.0.4",
+		"@nomicfoundation/hardhat-toolbox-viem": "^5.0.3",
+		"@nomicfoundation/hardhat-viem": "^3.0.4",
+		"@solidity-parser/parser": "^0.18.0",
+		"@types/node": "^22.8.5",
+		"forge-std": "foundry-rs/forge-std#v1.9.4",
+		"glob": "^13.0.6",
+		"hardhat": "^3.1.12",
+		"typescript": "~5.8.0"
+	},
+	"peerDependencies": {
+		"viem": "^2.43.0"
+	},
+	"dependencies": {
+		"@openzeppelin/contracts": "^5.6.1"
+	}
 }
