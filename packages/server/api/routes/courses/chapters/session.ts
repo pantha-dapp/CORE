@@ -152,7 +152,7 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { eventBus } = ctx.var.appState;
+			const { eventBus, db } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { answer } = ctx.req.valid("json");
 
@@ -239,6 +239,10 @@ export default new Hono<RouterEnv>()
 			session.currentPage += 1;
 
 			gameSessions.set(userWallet, session);
+			db.insert(db.schema.userAnswerLogs).values({
+				pageId: page.id,
+				correct: correct,
+			});
 
 			if (session.currentPage >= session.pages.length) {
 				// Check if user has previously completed this chapter
