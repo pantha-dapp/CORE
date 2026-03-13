@@ -1,4 +1,5 @@
 import { bytes8, identifierB8 } from "@pantha/contracts";
+import { tryCatch } from "@pantha/shared";
 import { eq } from "drizzle-orm";
 import type { Address } from "viem";
 import type { AppState } from "../../api/routes/types";
@@ -23,12 +24,19 @@ export async function mintXpForChapter({
 	const user = await db.userByWallet({ userWallet: walletAddress });
 	if (!user) return;
 
-	const hash = await contracts.PanthaOrchestrator.write.mintXp([
-		user.walletAddress,
-		BigInt(xpAmount),
-		bytes8(contractsEventName),
-		identifierB8(chapterId),
-	]);
+	const { data: hash, error: contractError } = await tryCatch(
+		contracts.PanthaOrchestrator.write.mintXp([
+			user.walletAddress,
+			BigInt(xpAmount),
+			bytes8(contractsEventName),
+			identifierB8(chapterId),
+		]),
+	);
+
+	if (contractError || !hash) {
+		console.error("Erro minting xp", contractError);
+		return;
+	}
 
 	const [xpLog] = await db
 		.insert(db.schema.userXpLog)
