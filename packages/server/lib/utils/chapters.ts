@@ -59,7 +59,7 @@ export async function prepareChapter(id: string, config: { db: Db; ai: Ai }) {
 				},
 			},
 			chapterNo: chaptersTillNow.length + 1,
-			courseTillNowOverview: chaptersTillNowWithTopics.map((ch) => ({
+			courseTillNowOverview: chaptersTillNowWithTopics.slice(-6).map((ch) => ({
 				title: ch.title,
 				description: ch.description,
 				intent: ch.intent,
