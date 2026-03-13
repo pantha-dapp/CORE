@@ -12,10 +12,12 @@ export const eventPayloadDefs = {
 	"chapter.completed": z.object({
 		walletAddress: zEvmAddress(),
 		chapterId: z.string(),
+		correct: z.number().optional(),
 	}),
 	"chapter.revised": z.object({
 		walletAddress: zEvmAddress(),
 		chapterId: z.string(),
+		correct: z.number().optional(),
 	}),
 
 	"streak.extended": z.object({
