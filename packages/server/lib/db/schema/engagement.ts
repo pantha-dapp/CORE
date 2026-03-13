@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { tEvmAddress, timestamps } from "../helpers.base";
+import { tEvmAddress, tHex, timestamps, tUuid } from "../helpers.base";
 import { users } from "./user";
 
 export const userDailyActivity = t.sqliteTable(
@@ -33,4 +33,13 @@ export const friendStreaks = t.sqliteTable("friend_streaks", {
 	currentStreak: t.integer("current_streak").notNull().default(0),
 	lastActiveDate: t.text("last_active_date"),
 	updatedAt: timestamps.updatedAt,
+});
+
+export const userXpLog = t.sqliteTable("user_xp_log", {
+	id: tUuid("id").primaryKey(),
+	userWallet: tEvmAddress().notNull(),
+	xpGained: t.real("xp_gained").notNull(),
+	transactionHash: tHex("transaction_hash"),
+	success: t.int("success", { mode: "boolean" }).notNull().default(false),
+	createdAt: timestamps.createdAt,
 });
