@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Button from "../../../shared/components/Button";
 
 interface Props {
 	pairs: Array<{ left: string; right: string }>;
@@ -93,11 +92,11 @@ export function Matching({
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-2xl font-bold">Match the Pairs</h3>
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">Match the Pairs</h3>
 			{imageUrl && (
 				<img src={imageUrl} alt="Matching" className="rounded-lg w-full" />
 			)}
-			<p className="text-gray-300">
+			<p className="text-gray-800 dark:text-dark-text font-montserrat">
 				Click a term on the left, then click its match on the right.
 			</p>
 
@@ -114,14 +113,14 @@ export function Matching({
 								type="button"
 								onClick={() => handleLeftClick(idx)}
 								disabled={showResult || isMatched}
-								className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+								className={`w-full text-left p-4 rounded-xl border-2 transition-all font-montserrat ${
 									isSelected
-										? "border-blue-500 bg-blue-500/10"
-										: "border-gray-600 hover:border-gray-500"
+										? "border-gray-800 dark:border-dark-accent bg-gray-100 dark:bg-dark-surface"
+										: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
 								} ${isMatched ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								<div className="flex items-center justify-between gap-2">
-									<span>{pair.left}</span>
+									<span className="text-gray-800 dark:text-dark-text">{pair.left}</span>
 									{isMatched && (
 										<button
 											type="button"
@@ -129,7 +128,7 @@ export function Matching({
 												e.stopPropagation();
 												!showResult && clearMatch(idx);
 											}}
-											className="text-xs text-red-400 hover:text-red-300"
+											className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
 										>
 											✗
 										</button>
@@ -151,54 +150,47 @@ export function Matching({
 								type="button"
 								onClick={() => handleRightClick(item.originalIdx)}
 								disabled={showResult || isMatched}
-								className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+								className={`w-full text-left p-4 rounded-xl border-2 transition-all font-montserrat ${
 									isMatched
-										? "opacity-50 cursor-not-allowed border-gray-600"
-										: "border-gray-600 hover:border-gray-500"
-								} ${selectedLeft !== null && !isMatched ? "hover:border-blue-400" : ""}`}
+										? "opacity-50 cursor-not-allowed border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface"
+										: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
+								} ${selectedLeft !== null && !isMatched ? "hover:border-gray-400 dark:hover:border-dark-accent" : ""}`}
 							>
-								{item.right}
+								<span className="text-gray-800 dark:text-dark-text">{item.right}</span>
 							</button>
 						);
 					})}
 				</div>
 			</div>
 
-			<div className="text-sm text-gray-400">
+			<div className="text-sm text-gray-600 dark:text-dark-muted font-montserrat">
 				Matches: {Object.keys(matches).length} / {pairs.length}
 			</div>
 
 			{!showResult && (
-				<Button
+				<button
+					type="button"
 					onClick={handleSubmit}
-					className="w-full mt-6"
 					disabled={!allMatched || isSubmitting}
+					className="w-full mt-6 rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 disabled:opacity-50 font-montserrat"
 				>
 					{isSubmitting ? "Checking..." : "Submit Answer"}
-				</Button>
+				</button>
 			)}
 
 			{showResult && (
-				<div
-					className={`overflow-hidden rounded-[1.75rem] border-2 p-5 shadow-[0_16px_40px_rgba(0,0,0,0.18)] ${
-						isCorrect
-							? "border-emerald-400/35 bg-linear-to-br from-emerald-500/18 to-emerald-400/8"
-							: "border-rose-400/35 bg-linear-to-br from-rose-500/18 to-rose-400/8"
-					}`}
-				>
+				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
 					<div className="mb-4 flex items-start gap-3">
 						<div
-							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-xl ${isCorrect ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100" : "border-rose-300/30 bg-rose-300/15 text-rose-100"}`}
+							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
 						>
 							{isCorrect ? "🎯" : "🔁"}
 						</div>
 						<div>
-							<p
-								className={`text-lg font-black ${isCorrect ? "text-emerald-300" : "text-rose-300"}`}
-							>
+							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
 								{isCorrect ? "Pairs matched!" : "Almost there"}
 							</p>
-							<p className="mt-1 text-sm leading-6 text-slate-200">
+							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
 								Check the explanation, then go to the next question.
 							</p>
 						</div>
@@ -207,7 +199,7 @@ export function Matching({
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-sm font-black text-cyan-200 transition hover:bg-cyan-400/16"
+							className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3.5 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
 						>
 							<span>💡</span>
 							<span>
@@ -217,14 +209,13 @@ export function Matching({
 							</span>
 						</button>
 					)}
-					<Button
+					<button
+						type="button"
 						onClick={onContinue}
-						className="mt-3 w-full"
-						icon="arrow-right"
-						iconPosition="right"
+						className="mt-3 w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
 					>
-						Next Question
-					</Button>
+						Next Question →
+					</button>
 				</div>
 			)}
 		</div>

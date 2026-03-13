@@ -1,4 +1,5 @@
 import {
+	ChapterNotReadyError,
 	useAnswerExplanation,
 	useChapterGameAnswer,
 	useChapterGameSession,
@@ -9,7 +10,6 @@ import {
 } from "@pantha/react/hooks";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import Button from "../../shared/components/Button";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { ExampleUses } from "./components/ExampleUses";
 import { FillInTheBlanks } from "./components/FillInTheBlanks";
@@ -44,6 +44,7 @@ export default function ChapterDetails() {
 	>(null);
 	const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [showChapterDetails, setShowChapterDetails] = useState(false);
 	const deleteSessionMutation = useChapterGameSessionDelete();
 	const answerExplanation = useAnswerExplanation();
 
@@ -74,11 +75,19 @@ export default function ChapterDetails() {
 		useCourseChaptersByCourseId({
 			courseId: courseId,
 		});
-	const { data: pagesData, isLoading: pagesLoading } = useChapterPages({
-		chapterId,
-	});
+	const {
+		data: pagesData,
+		isLoading: pagesLoading,
+		isError: pagesError,
+		error: pagesErrorObj,
+		isFetching: pagesFetching,
+	} = useChapterPages({ chapterId });
+
+	const pagesReady = !!(pagesData?.pages?.length);
+
 	const { data: session, isLoading: sessionLoading } = useChapterGameSession({
 		chapterId,
+		enabled: pagesReady,
 	});
 	const submitAnswer = useChapterGameAnswer({ chapterId: chapterId ?? "" });
 
@@ -142,15 +151,25 @@ export default function ChapterDetails() {
 	// 	};
 	// }, []);
 
+	const isChapterPreparing =
+		!!pagesError && pagesErrorObj instanceof ChapterNotReadyError;
 	const isLoading =
-		courseLoading || chaptersLoading || pagesLoading || sessionLoading;
+		courseLoading ||
+		chaptersLoading ||
+		pagesLoading ||
+		sessionLoading ||
+		(isChapterPreparing && pagesFetching);
 
-	if (isLoading) {
+	if (isLoading || isChapterPreparing) {
 		return (
-			<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-6 py-8 flex items-center justify-center">
+			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg flex items-center justify-center px-6 py-8">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
-					<p className="text-gray-400">Loading chapter...</p>
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-landing-hero-text dark:border-dark-accent mx-auto mb-4" />
+					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat">
+						{isChapterPreparing
+							? "Chapter is being prepared. Retrying in 10 seconds..."
+							: "Loading chapter..."}
+					</p>
 				</div>
 			</div>
 		);
@@ -162,15 +181,19 @@ export default function ChapterDetails() {
 
 	if (!course || !chaptersData || !pagesData || !currentChapter) {
 		return (
-			<div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white px-6 py-8">
+			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-6 py-8">
 				<div className="max-w-4xl mx-auto text-center">
-					<h1 className="text-3xl font-bold mb-4">Chapter Not Found</h1>
-					<p className="text-gray-400 mb-8">
+					<h1 className="text-3xl font-bold text-landing-hero-text dark:text-dark-text font-tusker mb-4">Chapter Not Found</h1>
+					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat mb-8">
 						The chapter you're looking for doesn't exist.
 					</p>
-					<Button onClick={() => router.navigate({ to: "/dashboard" })}>
+					<button
+						type="button"
+						onClick={() => router.navigate({ to: "/dashboard" })}
+						className="rounded-xl bg-white dark:bg-dark-card px-6 py-3 font-semibold text-gray-800 dark:text-dark-text shadow-md hover:bg-gray-50 dark:hover:bg-dark-surface font-montserrat"
+					>
 						← Go Home
-					</Button>
+					</button>
 				</div>
 			</div>
 		);
@@ -225,15 +248,13 @@ export default function ChapterDetails() {
 		try {
 			const submittedPageIndex = displayedPageIndex;
 			setIsExplanationOpen(false);
-			setExplanationPageIndex(submittedPageIndex);
-			setLoadedExplanationPageIndex(null);
 			const result = await submitAnswer.mutateAsync({ answer });
 			if (typeof result?.correct === "boolean") {
 				setAnswerResult({
 					correct: result.correct,
 					pageIndex: submittedPageIndex,
 				});
-				void refreshExplanationForPage(submittedPageIndex);
+				// Explanation is fetched only when user clicks "View Explanation"
 			}
 
 			if (result?.complete) {
@@ -415,35 +436,34 @@ export default function ChapterDetails() {
 	}
 
 	return (
-		<div className="min-h-screen bg-linear-to-b from-slate-950 via-[#0f1b33] to-[#1b2742] text-white px-4 py-6 sm:px-6 sm:py-8">
+		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-4 py-6 sm:px-6 sm:py-8">
 			{isExplanationOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-md">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
 					<button
 						type="button"
 						className="absolute inset-0"
 						onClick={() => setIsExplanationOpen(false)}
 						aria-label="Close explanation"
 					/>
-					<div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-4xl border border-white/10 bg-linear-to-br from-[#162847] via-[#1a2d4f] to-[#13233e] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-						<div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500" />
+					<div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-xl bg-white dark:bg-dark-card shadow-xl">
 						<div className="p-6 sm:p-8">
 							<div className="mb-6 flex items-start justify-between gap-4">
 								<div>
-									<p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300/90">
+									<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
 										Answer explanation
 									</p>
-									<h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+									<h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker sm:text-3xl">
 										Why this answer was{" "}
 										{answerResult?.correct ? "correct" : "incorrect"}
 									</h2>
-									<p className="mt-2 text-sm leading-6 text-slate-300 sm:text-base">
+									<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat sm:text-base">
 										Quick review before you move to the next question.
 									</p>
 								</div>
 								<button
 									type="button"
 									onClick={() => setIsExplanationOpen(false)}
-									className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-slate-300 transition hover:bg-white/10"
+									className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-surface text-xl text-gray-600 dark:text-dark-muted transition hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
 									aria-label="Close explanation"
 								>
 									×
@@ -451,64 +471,66 @@ export default function ChapterDetails() {
 							</div>
 
 							{isExplanationLoadingForCurrentAnswer ? (
-								<div className="rounded-[1.75rem] border border-cyan-400/15 bg-slate-950/25 p-6 shadow-inner shadow-black/20">
+								<div className="rounded-xl bg-gray-50 dark:bg-dark-surface p-6">
 									<div className="mb-4 flex items-center gap-3">
-										<div className="h-10 w-10 animate-pulse rounded-2xl bg-cyan-300/15" />
-										<div className="h-5 w-44 animate-pulse rounded-full bg-cyan-300/15" />
+										<div className="h-10 w-10 animate-pulse rounded-xl bg-gray-200 dark:bg-dark-border" />
+										<div className="h-5 w-44 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
 									</div>
 									<div className="space-y-2">
-										<div className="h-4 w-full animate-pulse rounded-full bg-slate-700" />
-										<div className="h-4 w-11/12 animate-pulse rounded-full bg-slate-700" />
-										<div className="h-4 w-4/5 animate-pulse rounded-full bg-slate-700" />
+										<div className="h-4 w-full animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
+										<div className="h-4 w-11/12 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
+										<div className="h-4 w-4/5 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
 									</div>
-									<p className="mt-5 text-sm font-medium text-slate-300">
+									<p className="mt-5 text-sm font-medium text-gray-600 dark:text-dark-muted font-montserrat">
 										Preparing your explanation...
 									</p>
 								</div>
 							) : isExplanationReady ? (
 								<div className="space-y-4">
-									<div className="rounded-[1.75rem] border border-white/10 bg-slate-950/30 p-6 shadow-inner shadow-black/20">
-										<p className="mb-3 inline-flex rounded-full bg-white/8 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">
+									<div className="rounded-xl bg-gray-50 dark:bg-dark-surface p-6">
+										<p className="mb-3 inline-flex rounded-lg bg-gray-200 dark:bg-dark-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-dark-muted font-tusker">
 											Breakdown
 										</p>
-										<p className="text-base leading-8 text-slate-100 sm:text-lg">
+										<p className="text-base leading-8 text-gray-800 dark:text-dark-text font-montserrat sm:text-lg">
 											{explanationContent?.explanation}
 										</p>
 									</div>
-									<div className="rounded-[1.75rem] border border-emerald-400/20 bg-linear-to-br from-emerald-500/12 to-teal-400/10 p-6">
-										<p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-300">
+									<div className="rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-6">
+										<p className="text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-400 font-tusker">
 											Key takeaway
 										</p>
-										<p className="mt-3 text-sm leading-7 text-emerald-50 sm:text-base">
+										<p className="mt-3 text-sm leading-7 text-gray-800 dark:text-dark-text font-montserrat sm:text-base">
 											{explanationContent?.keyTakeaway}
 										</p>
 									</div>
 								</div>
 							) : isExplanationErrorForCurrentAnswer ? (
-								<div className="rounded-[1.75rem] border border-red-500/20 bg-red-500/10 p-6">
-									<p className="font-semibold text-red-300">
+								<div className="rounded-xl bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30 p-6">
+									<p className="font-semibold text-red-700 dark:text-red-400 font-montserrat">
 										We could not load the explanation right now.
 									</p>
-									<Button
+									<button
+										type="button"
 										onClick={() =>
 											answerResult
-												? refreshExplanationForPage(answerResult.pageIndex)
-												: Promise.resolve()
+												? void refreshExplanationForPage(answerResult.pageIndex)
+												: undefined
 										}
-										className="mt-4"
+										className="mt-4 rounded-xl bg-gray-800 dark:bg-dark-accent px-4 py-2 font-semibold text-white hover:bg-gray-700 dark:hover:opacity-90 font-montserrat"
 									>
 										Try Again
-									</Button>
+									</button>
 								</div>
 							) : null}
 
 							<div className="mt-6 flex justify-end">
-								<Button
+								<button
+									type="button"
 									onClick={() => setIsExplanationOpen(false)}
-									icon="check"
+									className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-5 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
 								>
 									Got it
-								</Button>
+								</button>
 							</div>
 						</div>
 					</div>
@@ -517,87 +539,104 @@ export default function ChapterDetails() {
 
 			{/* Confirmation Dialog */}
 			{showConfirmDialog && (
-				<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-					<div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md shadow-2xl border border-gray-700 animate-in fade-in zoom-in-95 duration-300">
+				<div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+					<div className="bg-white dark:bg-dark-card rounded-xl p-8 max-w-md shadow-xl w-full">
 						<div className="mb-6">
-							<h2 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+							<h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
 								Leave Chapter?
 							</h2>
-							<div className="h-1 w-12 bg-linear-to-r from-blue-500 to-purple-500 rounded-full" />
 						</div>
-						<p className="text-gray-300 mb-8 leading-relaxed">
+						<p className="text-gray-600 dark:text-dark-muted mb-8 leading-relaxed font-montserrat">
 							If you go back, your progress in this chapter will be reset.
 							You'll start from question 1 next time.
 						</p>
 						<div className="flex gap-3">
-							<Button
+							<button
+								type="button"
 								onClick={handleCancelBack}
-								className="flex-1 bg-gray-700/50 hover:bg-gray-600 backdrop-blur-sm border border-gray-600 transition-all duration-200"
 								disabled={isDeleting}
+								className="flex-1 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border transition-colors disabled:opacity-50 font-montserrat"
 							>
 								No, Stay
-							</Button>
-							<Button
+							</button>
+							<button
+								type="button"
 								onClick={handleConfirmBack}
-								className="flex-1 bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 transition-all duration-200 shadow-lg"
 								disabled={isDeleting}
+								className="flex-1 rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50 font-montserrat"
 							>
 								{isDeleting ? "Resetting..." : "Yes, Go Back"}
-							</Button>
+							</button>
 						</div>
 					</div>
 				</div>
 			)}
 
-			<div className="mx-auto max-w-4xl pb-12">
+			<div className="mx-auto max-w-4xl pb-16">
 				{/* Header */}
-				<Button
+				<button
+					type="button"
 					onClick={handleBackClick}
-					variant="secondary"
-					className="mb-6 shadow-lg shadow-blue-950/30"
+					className="mb-6 rounded-xl bg-white dark:bg-dark-card px-4 py-3 font-semibold text-gray-800 dark:text-dark-text shadow-md hover:bg-gray-50 dark:hover:bg-dark-surface font-montserrat"
 				>
 					← Back to Chapters
-				</Button>
+				</button>
 
-				<div className="mb-6 rounded-4xl border border-white/8 bg-white/3 px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.2)] backdrop-blur-sm">
-					<p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-						{course.title}
-					</p>
-					<h1 className="mt-2 text-4xl font-black tracking-tight text-white">
-						{currentChapter.title}
-					</h1>
-					{currentChapter.description && (
-						<p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
-							{currentChapter.description}
-						</p>
+				{/* Chapter header + progress (collapsible) */}
+				<button
+					type="button"
+					onClick={() => setShowChapterDetails((v) => !v)}
+					className="mb-6 w-full rounded-xl bg-white dark:bg-dark-card px-4 py-3 shadow-md text-left hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors"
+				>
+					{/* Progress bar - always visible when not complete */}
+					{!isComplete ? (
+						<div className="flex items-center gap-3">
+							<div className="flex-1 min-w-0">
+								<div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-dark-border overflow-hidden">
+									<div
+										className="h-full rounded-full bg-landing-button-primary dark:bg-dark-accent transition-all duration-500"
+										style={{
+											width: `${((displayedPageIndex + 1) / totalPages) * 100}%`,
+										}}
+									/>
+								</div>
+							</div>
+							<span className="text-sm font-semibold text-gray-700 dark:text-dark-muted tabular-nums shrink-0">
+								{displayedPageIndex + 1}/{totalPages}
+							</span>
+							<span className="text-gray-400 dark:text-dark-muted shrink-0" aria-hidden>
+								{showChapterDetails ? "▲" : "▼"}
+							</span>
+						</div>
+					) : (
+						<div className="flex items-center justify-between">
+							<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">Chapter complete</span>
+							<span className="text-gray-400 dark:text-dark-muted shrink-0" aria-hidden>
+								{showChapterDetails ? "▲" : "▼"}
+							</span>
+						</div>
 					)}
-				</div>
-
-				{/* Progress Bar */}
-				{!isComplete && (
-					<div className="mb-8 rounded-4xl border border-white/8 bg-white/3 px-5 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm">
-						<div className="mb-3 flex justify-between text-sm text-slate-300">
-							<span className="font-black uppercase tracking-[0.16em] text-slate-400">
-								Progress
-							</span>
-							<span className="font-mono text-base font-bold text-white">
-								{displayedPageIndex + 1} / {totalPages}
-							</span>
+					{/* Chapter details - shown when expanded */}
+					{showChapterDetails && (
+						<div className={`pt-4 border-t border-gray-100 dark:border-dark-border ${!isComplete ? "mt-4" : "mt-3"}`}>
+							<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
+								{course.title}
+							</p>
+							<h1 className="mt-1 text-xl font-bold tracking-tight text-gray-900 dark:text-dark-text font-tusker">
+								{currentChapter.title}
+							</h1>
+							{currentChapter.description && (
+								<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat line-clamp-3">
+									{currentChapter.description}
+								</p>
+							)}
 						</div>
-						<div className="h-4 w-full rounded-full bg-slate-700/70 p-1">
-							<div
-								className="h-full rounded-full bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500 transition-all duration-500"
-								style={{
-									width: `${((displayedPageIndex + 1) / totalPages) * 100}%`,
-								}}
-							/>
-						</div>
-					</div>
-				)}
+					)}
+				</button>
 
 				{/* Content */}
 				{session ? (
-					<div className="rounded-4xl border border-white/8 bg-linear-to-br from-white/5 to-white/3 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-sm sm:p-6">
+					<div className="rounded-xl bg-white dark:bg-dark-card p-5 shadow-md sm:p-6">
 						{isComplete ? (
 							<CompletionScreen
 								correctCount={completionReport?.correct ?? 0}
@@ -609,7 +648,7 @@ export default function ChapterDetails() {
 							renderPage(currentPage)
 						) : (
 							<div className="text-center p-8">
-								<p className="text-gray-400">No content available</p>
+								<p className="text-gray-400 dark:text-dark-muted">No content available</p>
 							</div>
 						)}
 					</div>

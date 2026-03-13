@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Button from "../../../shared/components/Button";
 
 interface IdentifyShownObjectInImageProps {
 	options: string[];
@@ -45,17 +44,17 @@ export function IdentifyShownObjectInImage({
 		<div className="space-y-6">
 			{/* Title */}
 			<div>
-				<h3 className="text-2xl font-bold text-white mb-2">
+				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
 					Identify Object in Image
 				</h3>
-				<p className="text-gray-300">
+				<p className="text-gray-800 dark:text-dark-text font-montserrat">
 					Look at the image and select the correct answer
 				</p>
 			</div>
 
 			{/* Image Description */}
-			<div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-				<p className="text-lg text-white font-semibold">{prompt}</p>
+			<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
+				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">{prompt}</p>
 			</div>
 
 			{/* Options */}
@@ -71,21 +70,18 @@ export function IdentifyShownObjectInImage({
 					return (
 						<button
 							type="button"
-							// use option text + occurrence to create a stable key when duplicates exist
 							key={`option-${option}-${occurrence}`}
 							onClick={() => !showResult && setSelectedIndex(index)}
 							disabled={showResult || isSubmitting}
-							className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+							className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left font-montserrat ${
 								isSelected
-									? "border-blue-500 bg-blue-500/10 ring-2 ring-blue-400"
-									: "border-gray-600 bg-gray-700/30 hover:border-gray-500"
-							} ${isSelectedCorrect ? "border-green-500 bg-green-500/10 ring-green-400" : ""} ${
-								isSelectedIncorrect
-									? "border-red-500 bg-red-500/10 ring-red-400"
-									: ""
+									? "border-gray-800 dark:border-dark-accent bg-gray-100 dark:bg-dark-surface"
+									: "border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-gray-300 dark:hover:border-dark-border"
+							} ${isSelectedCorrect ? "border-green-500 dark:border-green-500/50 bg-green-50 dark:bg-green-900/20" : ""} ${
+								isSelectedIncorrect ? "border-red-500 dark:border-red-500/50 bg-red-50 dark:bg-red-900/20" : ""
 							}`}
 						>
-							<p className="text-white font-semibold">{option}</p>
+							<p className="text-gray-800 dark:text-dark-text font-semibold">{option}</p>
 						</button>
 					);
 				})}
@@ -93,26 +89,18 @@ export function IdentifyShownObjectInImage({
 
 			{/* Submit Button */}
 			{showResult ? (
-				<div
-					className={`overflow-hidden rounded-[1.75rem] border-2 p-5 shadow-[0_16px_40px_rgba(0,0,0,0.18)] ${
-						isCorrect
-							? "border-emerald-400/35 bg-linear-to-br from-emerald-500/18 to-emerald-400/8"
-							: "border-rose-400/35 bg-linear-to-br from-rose-500/18 to-rose-400/8"
-					}`}
-				>
+				<div className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}>
 					<div className="mb-4 flex items-start gap-3">
 						<div
-							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-xl ${isCorrect ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100" : "border-rose-300/30 bg-rose-300/15 text-rose-100"}`}
+							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
 						>
 							{isCorrect ? "👀" : "🧠"}
 						</div>
 						<div>
-							<p
-								className={`text-lg font-black ${isCorrect ? "text-emerald-300" : "text-rose-300"}`}
-							>
+							<p className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}>
 								{isCorrect ? "Correct read!" : "Good try"}
 							</p>
-							<p className="mt-1 text-sm leading-6 text-slate-200">
+							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
 								Open the explanation before heading to the next one.
 							</p>
 						</div>
@@ -121,7 +109,7 @@ export function IdentifyShownObjectInImage({
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-sm font-black text-cyan-200 transition hover:bg-cyan-400/16"
+							className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3.5 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
 						>
 							<span>💡</span>
 							<span>
@@ -131,23 +119,23 @@ export function IdentifyShownObjectInImage({
 							</span>
 						</button>
 					)}
-					<Button
+					<button
+						type="button"
 						onClick={onContinue}
-						className="mt-3 w-full"
-						icon="arrow-right"
-						iconPosition="right"
+						className="mt-3 w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
 					>
-						Next Question
-					</Button>
+						Next Question →
+					</button>
 				</div>
 			) : (
-				<Button
+				<button
+					type="button"
 					onClick={handleSubmit}
 					disabled={selectedIndex === null || isSubmitting}
-					className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 disabled:opacity-50 font-montserrat"
 				>
 					{isSubmitting ? "Submitting..." : "Submit Answer"}
-				</Button>
+				</button>
 			)}
 		</div>
 	);

@@ -1,5 +1,3 @@
-import Button from "../../../shared/components/Button";
-
 interface Props {
 	correctCount: number;
 	incorrectCount: number;
@@ -16,46 +14,50 @@ export function CompletionScreen({
 	const percentage = Math.round((correctCount / totalPages) * 100);
 
 	return (
-		<div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-xl p-8 text-center">
+		<div className="rounded-xl p-4 text-center">
 			<div className="text-6xl mb-4">🎉</div>
-			<h2 className="text-4xl font-bold mb-2">Chapter Complete!</h2>
-			<p className="text-gray-300 mb-8 text-lg">
+			<h2 className="text-3xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">Chapter Complete!</h2>
+			<p className="text-gray-600 dark:text-dark-muted mb-8 text-lg font-montserrat">
 				Great job! You've finished all pages in this chapter.
 			</p>
 
 			{/* Score Breakdown */}
 			<div className="grid grid-cols-3 gap-4 mb-8">
-				<div className="bg-green-900/20 border-2 border-green-500 rounded-xl p-6">
-					<p className="text-green-400 text-sm font-semibold mb-2">Correct</p>
-					<p className="text-5xl font-bold text-green-400">{correctCount}</p>
+				<div className="rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-2">
+					<p className="text-green-700 dark:text-green-400 text-sm font-semibold mb-2 font-montserrat">Correct</p>
+					<p className="text-4xl font-bold text-green-600 dark:text-green-400 tabular-nums">{correctCount}</p>
 				</div>
 
-				<div className="bg-red-900/20 border-2 border-red-500 rounded-xl p-6">
-					<p className="text-red-400 text-sm font-semibold mb-2">Incorrect</p>
-					<p className="text-5xl font-bold text-red-400">{incorrectCount}</p>
+				<div className="rounded-xl bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30 p-2">
+					<p className="text-red-700 dark:text-red-400 text-sm font-semibold mb-2 font-montserrat">Incorrect</p>
+					<p className="text-4xl font-bold text-red-600 dark:text-red-400 tabular-nums">{incorrectCount}</p>
 				</div>
 
-				<div className="bg-blue-900/20 border-2 border-blue-500 rounded-xl p-6">
-					<p className="text-blue-400 text-sm font-semibold mb-2">Total</p>
-					<p className="text-5xl font-bold text-blue-400">{totalPages}</p>
+				<div className="rounded-xl bg-gray-100 dark:bg-dark-surface p-2">
+					<p className="text-gray-700 dark:text-dark-muted text-sm font-semibold mb-2 font-montserrat">Total</p>
+					<p className="text-4xl font-bold text-gray-800 dark:text-dark-text tabular-nums">{totalPages}</p>
 				</div>
 			</div>
 
 			{/* Progress Percentage */}
 			<div className="mb-8">
-				<p className="text-gray-300 mb-3 font-semibold">Your Score</p>
-				<div className="w-full bg-gray-700 rounded-full h-4 mb-4">
+				<p className="text-gray-600 dark:text-dark-muted mb-3 font-semibold font-montserrat">Your Score</p>
+				<div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-4 mb-4 overflow-hidden">
 					<div
-						className="bg-linear-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-1000"
+						className="h-4 rounded-full bg-landing-button-primary dark:bg-dark-accent transition-all duration-1000"
 						style={{ width: `${percentage}%` }}
 					/>
 				</div>
-				<p className="text-4xl font-bold text-white">{percentage}%</p>
+				<p className="text-3xl font-bold text-gray-900 dark:text-dark-text tabular-nums">{percentage}%</p>
 			</div>
 
-			<Button onClick={onBackClick} className="mt-6 px-8">
+			<button
+				type="button"
+				onClick={onBackClick}
+				className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-8 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+			>
 				← Back to Chapters
-			</Button>
+			</button>
 		</div>
 	);
 }
