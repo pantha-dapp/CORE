@@ -74,16 +74,16 @@ export function Matching({
 		setIsSubmitting(true);
 
 		try {
-			const answer = pairs.flatMap((pair, idx) => {
+			const answeredPairs = pairs.map((pair, idx) => {
 				const rightIndex = matches[idx];
-				return [
-					pair.left,
-					rightIndex !== undefined ? (pairs[rightIndex]?.right ?? "") : "",
-				];
+				return {
+					left: pair.left,
+					right:
+						rightIndex !== undefined ? (pairs[rightIndex]?.right ?? "") : "",
+				};
 			});
 
-			await onSubmit(answer);
-			console.log("Submitted answer:", answer);
+			await onSubmit([JSON.stringify(answeredPairs)]);
 		} catch (error) {
 			console.error("Error submitting matching:", error);
 		} finally {

@@ -1,9 +1,7 @@
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
-import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import { config } from "../../../../config";
 import type { DbSchema } from "../../../../lib/db/schema";
 import { NotFoundError, ValidationError } from "../../../../lib/errors";
 import { respond } from "../../../../lib/utils/respond";
@@ -182,6 +180,7 @@ export default new Hono<RouterEnv>()
 			const { content, type } = page.content;
 
 			let correct = false;
+			session.answers[session.currentPage] = answer;
 			try {
 				switch (type) {
 					case "example_uses":
@@ -230,7 +229,6 @@ export default new Hono<RouterEnv>()
 					default:
 						break;
 				}
-				session.answers[session.currentPage] = answer;
 			} catch {
 				correct = false;
 			}
@@ -240,43 +238,18 @@ export default new Hono<RouterEnv>()
 
 			gameSessions.set(userWallet, session);
 
+			console.log("answer processed", {
+				answer,
+				correct,
+				currentPage: session.currentPage,
+				chapterId: session.chapterId,
+			});
+
 			if (session.currentPage >= session.pages.length) {
-				// Check if user has previously completed this chapter
-				const { db } = ctx.var.appState;
-				const chapter = await db.chapterById({ chapterId: session.chapterId });
-				if (!chapter) {
-					return respond.err(ctx, "Chapter not found", 404);
-				}
-
-				const [userCourse] = await db
-					.select()
-					.from(db.schema.userCourses)
-					.where(
-						and(
-							eq(db.schema.userCourses.userWallet, userWallet),
-							eq(db.schema.userCourses.courseId, chapter.courseId),
-						),
-					);
-
-				const isFirstCompletion =
-					!userCourse || userCourse.progress <= chapter.order;
-
-				eventBus.emit(
-					isFirstCompletion ? "chapter.completed" : "chapter.revised",
-					{
-						chapterId: session.chapterId,
-						walletAddress: userWallet,
-					},
-				);
-
-				const xpBase = isFirstCompletion
-					? config.xpMintedForChapterCompletion
-					: config.xpMintedForChapterRevision;
-				const xpGained =
-					Math.floor(xpBase / 2) +
-					Math.floor(
-						(xpBase * (session.correct.length / session.pages.length)) / 2,
-					);
+				eventBus.emit("chapter.completed", {
+					chapterId: session.chapterId,
+					walletAddress: userWallet,
+				});
 
 				return respond.ok(
 					ctx,
@@ -286,11 +259,13 @@ export default new Hono<RouterEnv>()
 						report: {
 							correct: session.correct.length,
 							total: session.pages.length,
-							xp: xpGained,
 						},
 					},
 					"Session completed.",
 					200,
+					// "Error processing answer: " +
+					// 	(error instanceof Error ? error.message : String(error)),
+					// 500,
 				);
 			}
 
