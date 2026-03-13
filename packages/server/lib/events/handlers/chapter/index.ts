@@ -58,21 +58,44 @@ export default function (appState: AppState) {
 		if (followingChapter) prepareChapter(followingChapter.id, { db, ai });
 	});
 
-	event.on("chapter.completed", async ({ walletAddress, chapterId }) => {
-		await mintXpForChapter({
-			walletAddress,
-			chapterId,
-			xpAmount: config.xpMintedForChapterCompletion,
-			contractsEventName: "CHPTCMPL",
-			appState,
-		});
-	});
+	event.on(
+		"chapter.completed",
+		async ({ walletAddress, chapterId, correct }) => {
+			const chapterPages = await db.chapterPagesById({ chapterId });
+			if (!chapterPages) return;
 
-	event.on("chapter.revised", async ({ walletAddress, chapterId }) => {
+			const xpBase = config.xpMintedForChapterCompletion;
+			const xpGained =
+				Math.floor(xpBase / 2) +
+				Math.floor(
+					(xpBase * (correct ?? chapterPages.length / chapterPages.length)) / 2,
+				);
+
+			await mintXpForChapter({
+				walletAddress,
+				chapterId,
+				xpAmount: xpGained,
+				contractsEventName: "CHPTCMPL",
+				appState,
+			});
+		},
+	);
+
+	event.on("chapter.revised", async ({ walletAddress, chapterId, correct }) => {
+		const chapterPages = await db.chapterPagesById({ chapterId });
+		if (!chapterPages) return;
+
+		const xpBase = config.xpMintedForChapterRevision;
+		const xpGained =
+			Math.floor(xpBase / 2) +
+			Math.floor(
+				(xpBase * (correct ?? chapterPages.length / chapterPages.length)) / 2,
+			);
+
 		await mintXpForChapter({
 			walletAddress,
 			chapterId,
-			xpAmount: config.xpMintedForChapterRevision,
+			xpAmount: xpGained,
 			contractsEventName: "CHPTREVS",
 			appState,
 		});
