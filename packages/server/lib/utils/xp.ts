@@ -7,7 +7,6 @@ interface MintXpParams {
 	walletAddress: Address;
 	chapterId: string;
 	xpAmount: number;
-	xpLogValue: number;
 	contractsEventName: string;
 	appState: AppState;
 }
@@ -16,7 +15,6 @@ export async function mintXpForChapter({
 	walletAddress,
 	chapterId,
 	xpAmount,
-	xpLogValue,
 	contractsEventName,
 	appState,
 }: MintXpParams) {
@@ -27,7 +25,7 @@ export async function mintXpForChapter({
 
 	const hash = await contracts.PanthaOrchestrator.write.mintXp([
 		user.walletAddress,
-		BigInt(xpAmount) * 10n ** 18n,
+		BigInt(xpAmount),
 		bytes8(contractsEventName),
 		identifierB8(chapterId),
 	]);
@@ -36,7 +34,7 @@ export async function mintXpForChapter({
 		.insert(db.schema.userXpLog)
 		.values({
 			userWallet: walletAddress,
-			xpGained: xpLogValue,
+			xpGained: xpAmount,
 			transactionHash: hash,
 		})
 		.returning();
