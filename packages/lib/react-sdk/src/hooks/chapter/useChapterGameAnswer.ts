@@ -50,6 +50,13 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 
 			if (data.complete) {
 				refreshSession();
+
+				queryClient.invalidateQueries({
+					queryKey: ["userInfo"],
+				});
+				queryClient.refetchQueries({
+					queryKey: ["userInfo"],
+				});
 			} else {
 				if (chapterId) {
 					queryClient.setQueryData(["last-chapter-game-session", chapterId], {
