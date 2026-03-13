@@ -44,6 +44,11 @@ export function createVectorDb<T extends VectorDbClientKey>(
 ) {
 	const def = collectionDefinitions[key];
 
+	function getNumericId(id: string): number {
+		const hash = Number(BigInt(Bun.hash(id)) & BigInt("0x7FFFFFFFFFFFFFFF"));
+		return hash % Number.MAX_SAFE_INTEGER;
+	}
+
 	const ready = vecDbClient
 		.createCollection(key, {
 			vectors: { size: def.size, distance: def.distance },
@@ -59,9 +64,10 @@ export function createVectorDb<T extends VectorDbClientKey>(
 
 	async function readEntry(id: string) {
 		await ready;
+		const numericId = getNumericId(id);
 		const res = await tryCatch(
 			vecDbClient.retrieve(key, {
-				ids: [id],
+				ids: [numericId],
 				with_vector: true,
 				with_payload: true,
 			}),
@@ -98,10 +104,11 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	) {
 		await ready;
 		def.schema.parse(options.payload);
+		const numericId = getNumericId(id);
 		await vecDbClient.upsert(key, {
 			points: [
 				{
-					id,
+					id: numericId,
 					...options,
 				},
 			],
@@ -113,7 +120,10 @@ export function createVectorDb<T extends VectorDbClientKey>(
 		const found = await tryCatch(readEntry(id));
 
 		if (found.data) {
-			await vecDbClient.delete(key, { filter: { must: { has_id: id } } });
+			const numericId = getNumericId(id);
+			await vecDbClient.delete(key, {
+				filter: { must: { has_id: numericId } },
+			});
 		}
 	}
 
@@ -171,8 +181,9 @@ export function createVectorDb<T extends VectorDbClientKey>(
 			...payload,
 		} as PayloadType;
 
+		const numericId = getNumericId(id);
 		await vecDbClient.setPayload(key, {
-			points: [id],
+			points: [numericId],
 			payload: updatedPayload,
 		});
 	}

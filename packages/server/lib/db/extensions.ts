@@ -1,6 +1,9 @@
 // import type { Address } from "viem";
-import { and, eq, like } from "drizzle-orm";
-import type { Address } from "viem";
+
+import { jsonStringify } from "@pantha/shared";
+import { and, desc, eq, like } from "drizzle-orm";
+import { type Address, type Hex, keccak256, toHex, verifyMessage } from "viem";
+import { InvalidStateError } from "../errors";
 import type { DbClient } from "./client";
 import schema from "./schema";
 
@@ -236,6 +239,63 @@ export function dbExtensionHelpers(db: DbClient) {
 		return users;
 	}
 
+	async function userActionPreviousHash(args: { userWallet: Address }) {
+		const { userWallet } = args;
+
+		const [prev] = await db
+			.select()
+			.from(schema.userActions)
+			.where(and(eq(schema.userActions.userWallet, userWallet)))
+			.orderBy(desc(schema.userActions.createdAt))
+			.limit(1);
+
+		return prev ? prev.hash : keccak256(toHex("GENESIS"));
+	}
+
+	async function registerAction(args: {
+		label: string;
+		userWallet: Address;
+		data: Record<string, unknown>;
+		signature: Hex;
+	}) {
+		const { data, label, userWallet, signature } = args;
+
+		const prevHash = await userActionPreviousHash({ userWallet });
+
+		const message = jsonStringify({
+			prevHash,
+			userWallet,
+			label,
+			data,
+		});
+
+		const hash = keccak256(toHex(message));
+
+		const valid = verifyMessage({
+			address: userWallet,
+			message,
+			signature,
+		});
+
+		if (!valid) {
+			throw new InvalidStateError("Invalid signature for user action.");
+		}
+
+		const [action] = await db
+			.insert(schema.userActions)
+			.values({
+				hash,
+				label,
+				userWallet,
+				prevHash,
+				data,
+				signature,
+			})
+			.returning();
+
+		return action;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -250,5 +310,7 @@ export function dbExtensionHelpers(db: DbClient) {
 		isUserFollowing,
 		isUserFriend,
 		searchUsersByUsername,
+		userActionPreviousHash,
+		registerAction,
 	};
 }
