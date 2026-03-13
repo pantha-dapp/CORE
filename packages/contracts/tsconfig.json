@@ -8,6 +8,11 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"moduleResolution": "bundler",
-		"outDir": "dist"
+		"outDir": "dist",
+		"baseUrl": ".",
+		"paths": {
+			"viem": ["../../node_modules/viem/index.ts"],
+			"viem/*": ["../../node_modules/viem/*"]
+		}
 	}
 }
