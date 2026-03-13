@@ -13,6 +13,10 @@ export const eventPayloadDefs = {
 		walletAddress: zEvmAddress(),
 		chapterId: z.string(),
 	}),
+	"chapter.revised": z.object({
+		walletAddress: zEvmAddress(),
+		chapterId: z.string(),
+	}),
 
 	"streak.extended": z.object({
 		walletAddress: zEvmAddress(),
