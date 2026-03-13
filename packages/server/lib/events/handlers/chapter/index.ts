@@ -1,5 +1,6 @@
 import { and, eq, gt } from "drizzle-orm";
 import type { AppState } from "../../../../api/routes/types";
+import { config } from "../../../../config";
 import { userCourses } from "../../../db/schema/user";
 import { prepareChapter } from "../../../utils/chapters";
 import { registerActivityForStreaks } from "../../../utils/streaks";
@@ -61,8 +62,7 @@ export default function (appState: AppState) {
 		await mintXpForChapter({
 			walletAddress,
 			chapterId,
-			xpAmount: 10,
-			xpLogValue: 25,
+			xpAmount: config.xpMintedForChapterCompletion,
 			contractsEventName: "CHPTCMPL",
 			appState,
 		});
@@ -72,9 +72,8 @@ export default function (appState: AppState) {
 		await mintXpForChapter({
 			walletAddress,
 			chapterId,
-			xpAmount: 5,
-			xpLogValue: 10,
-			contractsEventName: "CHPTCMPL",
+			xpAmount: config.xpMintedForChapterRevision,
+			contractsEventName: "CHPTREVS",
 			appState,
 		});
 	});
