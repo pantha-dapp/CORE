@@ -22,7 +22,7 @@ function CourseIcon({
 	onClick: () => void;
 }) {
 	const courseDetails = useCourseById({ id: courseId });
-
+	const Chapterdata = useCourseChaptersByCourseId({ courseId });
 	if (courseDetails.isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-2 min-w-20">
@@ -49,7 +49,10 @@ function CourseIcon({
 					}`}
 				>
 					<img
-						src={courseDetails.data?.icon?.url ?? undefined}
+						src={
+							Chapterdata.data?.icons[Chapterdata.data?.chapters[0].id] ??
+							undefined
+						}
 						alt={courseDetails.data?.title || "Course icon"}
 						className="h-8 w-8"
 					/>
@@ -458,8 +461,10 @@ export default function Dashboard() {
 												</span>
 
 												<img
-													src={chapter.icon.url ?? undefined}
-													alt={chapter.title}
+													src={
+														courseChapters.data?.icons[chapter.id] ?? undefined
+													}
+													alt={chapter.title ?? `Chapter ${index + 1}`}
 												/>
 											</button>
 											<div className="mt-2 text-center">
