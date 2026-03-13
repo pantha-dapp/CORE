@@ -3,6 +3,7 @@ import { MINUTE } from "@pantha/shared/constants";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
+import { config } from "../../../../config";
 import type { DbSchema } from "../../../../lib/db/schema";
 import { NotFoundError, ValidationError } from "../../../../lib/errors";
 import { respond } from "../../../../lib/utils/respond";
@@ -268,6 +269,15 @@ export default new Hono<RouterEnv>()
 					},
 				);
 
+				const xpBase = isFirstCompletion
+					? config.xpMintedForChapterCompletion
+					: config.xpMintedForChapterRevision;
+				const xpGained =
+					Math.floor(xpBase / 2) +
+					Math.floor(
+						(xpBase * (session.correct.length / session.pages.length)) / 2,
+					);
+
 				return respond.ok(
 					ctx,
 					{
@@ -276,6 +286,7 @@ export default new Hono<RouterEnv>()
 						report: {
 							correct: session.correct.length,
 							total: session.pages.length,
+							xp: xpGained,
 						},
 					},
 					"Session completed.",
