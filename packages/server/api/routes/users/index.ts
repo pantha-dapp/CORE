@@ -1,5 +1,5 @@
 import { zEvmAddress } from "@pantha/shared/zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql, sum } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import z from "zod";
@@ -199,6 +199,18 @@ export default new Hono()
 				.from(db.schema.userStreaks)
 				.where(eq(db.schema.userStreaks.userId, wallet));
 
+			const xp = await db
+				.select({
+					totalXp: sum(db.schema.userXpLog.xpGained),
+				})
+				.from(db.schema.userXpLog)
+				.where(eq(db.schema.userXpLog.userWallet, wallet))
+				.then((rows) => rows[0]?.totalXp ?? "0");
+
+			db.$db.run(
+				sql`DELETE FROM user_xp_log WHERE success = 0 AND created_at <= datetime('now', '-5 minutes')`,
+			);
+
 			return respond.ok(
 				ctx,
 				{
@@ -212,6 +224,8 @@ export default new Hono()
 							lastActiveDate: streak?.lastActiveDate ?? null,
 						},
 						profileVisibility: user.profileVisibility,
+						xpCount: Number(xp),
+						xp,
 					},
 				},
 				"User fetched successfully",
