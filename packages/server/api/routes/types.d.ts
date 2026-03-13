@@ -2,6 +2,7 @@ import type { Ai } from "../../lib/ai";
 import type { Db } from "../../lib/db";
 import type { EventBus } from "../../lib/events/bus";
 import type { DefaultPolicyManager } from "../../lib/policies";
+import type { PanthaContracts } from "@pantha/contracts";
 
 export type RouterEnv = {
 	Variables: {
@@ -15,4 +16,5 @@ export interface AppState {
 	objectStorage: ObjectStorageService;
 	db: Db;
 	ai: Ai;
+	contracts: PanthaContracts;
 }
