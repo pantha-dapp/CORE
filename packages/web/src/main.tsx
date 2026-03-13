@@ -1,4 +1,11 @@
 import "./globals.css";
+
+// Apply theme before React mounts to prevent flash
+(() => {
+	const stored = localStorage.getItem("pantha_theme");
+	if (stored === "dark") document.documentElement.classList.add("dark");
+})();
+
 import { usePanthaContext } from "@pantha/react";
 import { useLogout } from "@pantha/react/hooks";
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
@@ -14,6 +21,7 @@ import { ErrorBoundary } from "./shared/components/ErrorBoundary";
 import { privyConfig } from "./shared/config/privy";
 import { wagmiConfig } from "./shared/config/wagmi";
 import { PanthaProvider } from "./shared/contexts/AppWrapper";
+import { ThemeProvider } from "./shared/contexts/ThemeContext";
 
 // Root element
 const rootElement = document.getElementById("root");
@@ -72,10 +80,12 @@ const App = () => {
 					<QueryClientProvider client={queryClient}>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
-								<AppWrapper>
-									<RouterProvider router={router} />
-									<Toaster position="bottom-right" />
-								</AppWrapper>
+								<ThemeProvider>
+									<AppWrapper>
+										<RouterProvider router={router} />
+										<Toaster position="bottom-right" />
+									</AppWrapper>
+								</ThemeProvider>
 							</PanthaProvider>
 						</WagmiProvider>
 					</QueryClientProvider>

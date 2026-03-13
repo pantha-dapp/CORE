@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode for theme toggle */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @font-face {
 	font-family: "Haymer Small Capitals W01 Bold";
 	src: url("https://db.onlinewebfonts.com/t/1ca24d2cccceb2b040352e5bb9a04b13.eot");
@@ -31,6 +34,7 @@
 @theme {
 	--font-tusker: "Tusker Grotesk", system-ui, sans-serif;
 	--font-haymer: "Haymer Small Capitals W01 Bold", system-ui, sans-serif;
+	--font-montserrat: "Montserrat", system-ui, sans-serif;
 	--color-primary: #3b82f6;
 	--color-secondary: #8b5cf6;
 	--color-background: #1f2937;
@@ -42,18 +46,62 @@
 	--color-mute: #64748b;
 	--color-border: #e2e8f0;
 	--color-borderApp: #6a7282;
+	/* Landing / app theme colors */
 	--landing-1-bg: #9dadc5;
 	--landing-1-text: #f1e92e;
+	--color-landing-hero-bg: #8584bd;
+	--color-landing-hero-text: #f1e92e;
+	--color-landing-footer-bg: #375027;
+	--color-landing-button-primary: #000000;
+	--color-landing-button-text: #1e293b;
+	--color-landing-button-light-bg: #f8fafc;
+	/* Landing HowItWorks / TokenEconomy palette */
+	--color-landing-red: #c94245;
+	--color-landing-gold: #f9cc73;
+	--color-landing-peach: #f8c1ba;
+	--color-landing-magenta: #ac4f98;
+	--color-landing-slate: #61609a;
+	--color-landing-mint: #9dadc5;
+	/* Dark theme palette - deep indigo to match brand */
+	--color-dark-bg: #1a1b2e;
+	--color-dark-card: #25273c;
+	--color-dark-surface: #2d2f4a;
+	--color-dark-border: #3d3f5c;
+	--color-dark-text: #e2e8f0;
+	--color-dark-muted: #94a3b8;
+	--color-dark-accent: #818cf8;
 }
 
 body {
-	@apply bg-background text-foreground;
+	@apply bg-background text-foreground font-montserrat;
+}
+
+.dark body {
+	background-color: var(--color-dark-bg);
+	color: var(--color-dark-text);
+}
+
+/* DotsBackground: visible in both themes */
+:root {
+	--dots-color: black;
+}
+.dark {
+	--dots-color: rgba(255, 255, 255, 0.4);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	@apply font-tusker;
 }
 
 /* Scroll lock: prevents all scroll when section is locked */
 body.scroll-lock {
-	overflow: hidden !important;
-	position: fixed !important;
+	overflow: hidden;
+	position: fixed;
 	width: 100%;
 	top: var(--scroll-lock-top, 0);
 }

@@ -1,6 +1,5 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
-import Button from "./Button";
 import Icon, { type IconName } from "./Icon";
 
 interface NavItem {
@@ -8,45 +7,19 @@ interface NavItem {
 	icon: IconName;
 	label: string;
 	path: string;
-	color: string;
 }
 
 const navItems: NavItem[] = [
-	{
-		id: "home",
-		icon: "house",
-		label: "Home",
-		path: "/",
-		color: "#FF9600",
-	},
-	{
-		id: "learn",
-		icon: "graduation-cap",
-		label: "Learn",
-		path: "/dashboard",
-		color: "#58CC02",
-	},
-	{
-		id: "profile",
-		icon: "user-circle",
-		label: "Events",
-		path: "/events",
-		color: "#CE82FF",
-	},
+	{ id: "home", icon: "house", label: "Home", path: "/onboarding" },
+	{ id: "learn", icon: "graduation-cap", label: "Learn", path: "/dashboard" },
+	{ id: "profile", icon: "user-circle", label: "Events", path: "/events" },
 	{
 		id: "chat",
 		icon: "message-circle-heart",
 		label: "Social",
 		path: "/social",
-		color: "#FF4B8B",
 	},
-	{
-		id: "more",
-		icon: "more-horizontal",
-		label: "More",
-		path: "/profile",
-		color: "#1CB0F6",
-	},
+	{ id: "more", icon: "more-horizontal", label: "More", path: "/profile" },
 ];
 
 export default function Navigation() {
@@ -55,8 +28,7 @@ export default function Navigation() {
 	const currentPath = routerState.location.pathname;
 	const [showMoreDrawer, setShowMoreDrawer] = useState(false);
 
-	const handleMoreClick = (e: React.MouseEvent) => {
-		e.preventDefault();
+	const handleMoreClick = () => {
 		setShowMoreDrawer(!showMoreDrawer);
 	};
 
@@ -67,9 +39,9 @@ export default function Navigation() {
 
 	return (
 		<>
-			<nav className="fixed bottom-0 left-0 right-0 bg-background border-t-4 border-[#2d3748] pb-safe z-50">
+			<nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-dark-bg border-t-4 border-black dark:border-gray-600 font-tusker pb-safe">
 				<div className="max-w-5xl mx-auto px-2">
-					<div className="flex items-center justify-around h-20">
+					<div className="flex items-center justify-around h-16">
 						{navItems.map((item) => {
 							const isActive = currentPath === item.path;
 							const isMoreButton = item.id === "more";
@@ -82,59 +54,32 @@ export default function Navigation() {
 										onClick={handleMoreClick}
 										className="relative flex flex-col items-center justify-center flex-1 h-full group"
 									>
-										{isActive && (
-											<div
-												className="absolute inset-x-2 inset-y-2 rounded-2xl opacity-20 motion-preset-expand"
-												style={{ backgroundColor: item.color }}
-											/>
-										)}
-
 										<div
-											className={`relative z-10 mb-1 ${
+											className={`p-2 rounded-lg transition-all ${
 												isActive
-													? "motion-preset-bounce motion-scale-in-110 -translate-y-0.5"
-													: ""
+													? "bg-black dark:bg-dark-accent text-white dark:text-gray-900"
+													: "hover:bg-gray-100 dark:hover:bg-dark-surface"
 											}`}
 										>
-											<div
-												className={`p-2 rounded-xl transition-all duration-200 ${
-													isActive ? "shadow-lg" : ""
-												}`}
-												style={{
-													backgroundColor: isActive
-														? item.color
-														: "transparent",
-												}}
-											>
-												<Icon
-													name={item.icon}
-													size={24}
-													className={`transition-colors duration-200 ${
-														isActive ? "text-white" : "text-gray-400"
-													}`}
-												/>
-											</div>
+											<Icon
+												name={item.icon}
+												size={22}
+												className={
+													isActive
+														? "text-white dark:text-gray-900"
+														: "text-black dark:text-dark-text"
+												}
+											/>
 										</div>
-
 										<span
-											className={`text-xs font-bold transition-all duration-200 ${
+											className={`text-xs font-bold ${
 												isActive
-													? "text-white motion-scale-in-105"
-													: "text-gray-500"
+													? "text-black dark:text-dark-text"
+													: "text-gray-500 dark:text-dark-muted"
 											}`}
-											style={{
-												color: isActive ? item.color : undefined,
-											}}
 										>
 											{item.label}
 										</span>
-
-										<div
-											className={`absolute inset-x-2 inset-y-2 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-200 ${
-												!isActive ? "block" : "hidden"
-											}`}
-											style={{ backgroundColor: item.color }}
-										/>
 									</button>
 								);
 							}
@@ -145,57 +90,32 @@ export default function Navigation() {
 									to={item.path}
 									className="relative flex flex-col items-center justify-center flex-1 h-full group"
 								>
-									{isActive && (
-										<div
-											className="absolute inset-x-2 inset-y-2 rounded-2xl opacity-20 motion-preset-expand"
-											style={{ backgroundColor: item.color }}
-										/>
-									)}
-
 									<div
-										className={`relative z-10 mb-1 ${
+										className={`p-2 rounded-lg transition-all ${
 											isActive
-												? "motion-preset-bounce motion-scale-in-110 -translate-y-0.5"
-												: ""
+												? "bg-black dark:bg-dark-accent text-white dark:text-gray-900"
+												: "group-hover:bg-gray-100 dark:group-hover:bg-dark-surface"
 										}`}
 									>
-										<div
-											className={`p-2 rounded-xl transition-all duration-200 ${
-												isActive ? "shadow-lg" : ""
-											}`}
-											style={{
-												backgroundColor: isActive ? item.color : "transparent",
-											}}
-										>
-											<Icon
-												name={item.icon}
-												size={24}
-												className={`transition-colors duration-200 ${
-													isActive ? "text-white" : "text-gray-400"
-												}`}
-											/>
-										</div>
+										<Icon
+											name={item.icon}
+											size={22}
+											className={
+												isActive
+													? "text-white dark:text-gray-900"
+													: "text-black dark:text-dark-text"
+											}
+										/>
 									</div>
-
 									<span
-										className={`text-xs font-bold transition-all duration-200 ${
+										className={`text-xs font-bold ${
 											isActive
-												? "text-white motion-scale-in-105"
-												: "text-gray-500"
+												? "text-black dark:text-dark-text"
+												: "text-gray-500 dark:text-dark-muted"
 										}`}
-										style={{
-											color: isActive ? item.color : undefined,
-										}}
 									>
 										{item.label}
 									</span>
-
-									<div
-										className={`absolute inset-x-2 inset-y-2 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-200 ${
-											!isActive ? "block" : "hidden"
-										}`}
-										style={{ backgroundColor: item.color }}
-									/>
 								</Link>
 							);
 						})}
@@ -206,10 +126,9 @@ export default function Navigation() {
 			{/* More Options Drawer */}
 			{showMoreDrawer && (
 				<>
-					{/* Backdrop */}
 					<button
 						type="button"
-						className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 border-0 p-0 cursor-default"
+						className="fixed inset-0 bg-black/40 z-40"
 						onClick={() => setShowMoreDrawer(false)}
 						onKeyDown={(e) => {
 							if (e.key === "Escape" || e.key === "Enter") {
@@ -219,59 +138,61 @@ export default function Navigation() {
 						aria-label="Close drawer"
 					/>
 					<div className="fixed bottom-20 left-0 right-0 z-50 animate-slide-up">
-						<div className="bg-linear-to-b from-gray-900 to-gray-800 px-4 py-3 border-t border-gray-700 shadow-2xl">
-							{/* Handle Bar */}
-							<div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-2" />
+						<div className="bg-white dark:bg-dark-card border-t-4 border-black dark:border-gray-600 px-4 py-3 shadow-lg">
+							<div className="w-10 h-1 bg-gray-300 dark:bg-gray-500 rounded-full mx-auto mb-3" />
 
 							<div className="space-y-2 max-w-5xl mx-auto">
-								{/* Profile Option */}
-								<Button
+								<button
+									type="button"
 									onClick={() => handleDrawerOptionClick("/profile")}
-									variant="tertiary"
+									className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-black dark:hover:border-dark-accent hover:bg-gray-50 dark:hover:bg-dark-surface transition-all text-left font-montserrat"
 								>
-									<div className="w-9 h-9 bg-blue-500/20 rounded-lg flex items-center justify-center shrink-0">
+									<div className="w-9 h-9 bg-landing-button-primary/20 dark:bg-gray-600 rounded-lg flex items-center justify-center shrink-0">
 										<Icon
 											name="user-circle"
 											size={18}
-											className="text-blue-400"
+											className="text-landing-button-primary dark:text-gray-200"
 										/>
 									</div>
-									<div className="flex-1 text-left">
-										<p className="text-sm font-semibold text-white">Profile</p>
-										<p className="text-xs text-gray-400">View your profile</p>
+									<div className="flex-1">
+										<p className="text-sm font-semibold text-gray-900 dark:text-dark-text">
+											Profile
+										</p>
+										<p className="text-xs text-gray-500 dark:text-dark-muted">
+											View your profile
+										</p>
 									</div>
 									<Icon
 										name="chevron-right"
 										size={16}
-										className="text-gray-500"
+										className="text-gray-400 dark:text-gray-500"
 									/>
-								</Button>
-								{/* Video Call Option */}
-								<Button
+								</button>
+								<button
+									type="button"
 									onClick={() => {
 										setShowMoreDrawer(false);
-										// Add video call functionality here
 										console.log("Video call clicked");
 									}}
-									variant="tertiary"
+									className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-black dark:hover:border-dark-accent hover:bg-gray-50 dark:hover:bg-dark-surface transition-all text-left font-montserrat"
 								>
 									<div className="w-9 h-9 bg-green-500/20 rounded-lg flex items-center justify-center shrink-0">
-										<Icon name="video" size={18} className="text-green-400" />
+										<Icon name="video" size={18} className="text-green-600" />
 									</div>
-									<div className="flex-1 text-left">
-										<p className="text-sm font-semibold text-white">
+									<div className="flex-1">
+										<p className="text-sm font-semibold text-gray-900 dark:text-dark-text">
 											Video Call
 										</p>
-										<p className="text-xs text-gray-400">
+										<p className="text-xs text-gray-500 dark:text-dark-muted">
 											Start a video session
 										</p>
 									</div>
 									<Icon
 										name="chevron-right"
 										size={16}
-										className="text-gray-500"
+										className="text-gray-400 dark:text-gray-500"
 									/>
-								</Button>
+								</button>
 							</div>
 						</div>
 					</div>
