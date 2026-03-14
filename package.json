@@ -50,6 +50,7 @@
 		"sharp": "^0.34.5",
 		"sqlite-vec": "^0.1.7-alpha.2",
 		"viem": "^2.44.4",
+		"web-haptics": "^0.0.6",
 		"zod": "^4.3.6",
 		"zod-to-json-schema": "^3.25.1"
 	}
