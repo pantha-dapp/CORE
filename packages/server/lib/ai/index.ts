@@ -117,11 +117,32 @@ export function createAi(args: {
 		) => {
 			const result = await generateChapterPagesRaw(args);
 
-			for (const page of result.pages) {
+			for (const [i, page] of result.pages.entries()) {
 				const { success: parseSuccess } =
 					generateChapterPageOutputTypedSchema.safeParse(page);
 				if (!parseSuccess) {
-					delete result.pages[result.pages.indexOf(page)];
+					const healAttempt = await tryCatch(
+						aiClient.llm.heal({
+							input: args,
+							prompt: generateChapterPages.prompt,
+							outputSchema: generateChapterPageOutputTypedSchema,
+							failedGeneration: jsonStringify(page),
+						}),
+					);
+					if (healAttempt.error) {
+						delete result.pages[i];
+						continue;
+					}
+
+					const parsedHeal = generateChapterPageOutputTypedSchema.safeParse(
+						healAttempt.data,
+					);
+					if (!parsedHeal.success) {
+						delete result.pages[i];
+						continue;
+					}
+
+					result.pages[i] = parsedHeal.data;
 				}
 			}
 
