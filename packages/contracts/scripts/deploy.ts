@@ -1,11 +1,29 @@
 import { $ } from "bun";
 import hre from "hardhat";
 import { toHex } from "viem";
+import type * as chains from "viem/chains";
 
 const DEFINITIONS_FILE_PREFIX = "export const definitions = ";
 const DEFINITIONS_FILE_SUFFIX = " as const;";
 
-const network = await hre.network.connect("flowEvmTestnet");
+const argv = require("minimist")(process.argv.slice(2));
+
+if (!argv.network) {
+	console.error("Please specify a network using --network");
+	process.exit(1);
+}
+
+type ChainName = keyof typeof chains;
+const supportedChainNames: ChainName[] = ["localhost", "flowTestnet"];
+const networkName = argv.network as ChainName;
+
+if (!supportedChainNames.includes(networkName)) {
+	throw new Error(
+		`Unsupported network: ${argv.network}. Supported networks are: ${supportedChainNames.join(", ")}`,
+	);
+}
+
+const network = await hre.network.connect(networkName);
 const { viem } = network;
 const [deployer] = await viem.getWalletClients();
 
