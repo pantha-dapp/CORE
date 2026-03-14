@@ -65,11 +65,9 @@ export default function (appState: AppState) {
 			if (!chapterPages) return;
 
 			const xpBase = config.xpMintedForChapterCompletion;
+			const ratio = correct != null ? correct / chapterPages.length : 1;
 			const xpGained =
-				Math.floor(xpBase / 2) +
-				Math.floor(
-					(xpBase * (correct ?? chapterPages.length / chapterPages.length)) / 2,
-				);
+				Math.floor(xpBase / 2) + Math.floor((xpBase * ratio) / 2);
 
 			await mintXpForChapter({
 				walletAddress,
@@ -86,11 +84,8 @@ export default function (appState: AppState) {
 		if (!chapterPages) return;
 
 		const xpBase = config.xpMintedForChapterRevision;
-		const xpGained =
-			Math.floor(xpBase / 2) +
-			Math.floor(
-				(xpBase * (correct ?? chapterPages.length / chapterPages.length)) / 2,
-			);
+		const ratio = correct != null ? correct / chapterPages.length : 1;
+		const xpGained = Math.floor(xpBase / 2) + Math.floor((xpBase * ratio) / 2);
 
 		await mintXpForChapter({
 			walletAddress,
