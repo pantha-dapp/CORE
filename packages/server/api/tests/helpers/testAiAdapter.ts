@@ -21,6 +21,11 @@ export const testAiAdapter: AiClient = {
 			await sleep(50);
 			return response;
 		},
+		heal: async (args) => {
+			const response = getMockLlmResponse(args.outputSchema, args.input);
+			await sleep(50);
+			return JSON.stringify(response);
+		},
 	},
 	embedding: {
 		text: async () => {
@@ -35,7 +40,7 @@ export const testAiAdapter: AiClient = {
 	image: {
 		generate: async () => {
 			await sleep(50);
-			return { imageUrl: "MOCK_IMAGE_URL" };
+			return { buffer: Buffer.from("MOCK_IMAGE_DATA"), mimeType: "image/png" };
 		},
 	},
 };
@@ -129,6 +134,9 @@ registerMockResponse(courseSelectionEvaluator, {
 	response: {
 		decision: "ask_more_questions",
 		uncertantiesRemaining: ["MOCK_UNCERTAINTY_1", "MOCK_UNCERTAINTY_2"],
+		chosenCourseId: null,
+		courseGenerationInstructions: null,
+		questionCount: null,
 	},
 });
 registerMockResponse(courseSelectionEvaluator, {
@@ -145,6 +153,9 @@ registerMockResponse(courseSelectionEvaluator, {
 			courseTitle: "MOCK_COURSE_TITLE",
 			targetAudience: "MOCK_TARGET_AUDIENCE",
 		},
+		chosenCourseId: null,
+		questionCount: null,
+		uncertantiesRemaining: [],
 	},
 });
 registerMockResponse(generateNewCourseSkeleton, {
