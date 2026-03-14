@@ -1,3 +1,4 @@
+import { getContracts, type PanthaContracts } from "@pantha/contracts";
 import {
 	createContext,
 	type ReactNode,
@@ -17,12 +18,14 @@ type PanthaContext = {
 	ready: boolean;
 	api: ApiClient;
 	wallet: Wallet;
+	contracts: PanthaContracts;
 };
 
 const PanthaContext = createContext<PanthaContext>({
 	ready: false,
 	api: {} as ApiClient,
 	wallet: undefined,
+	contracts: {} as PanthaContracts,
 });
 
 type PanthaConfig = {
@@ -39,28 +42,36 @@ export function PanthaProvider(props: PanthaConfig) {
 	const flag = useRef(false);
 
 	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
+	const contracts = useMemo(
+		() =>
+			getContracts({
+				//@ts-expect-error ned to fix this
+				client: wallet,
+				chainId: 545,
+			}),
+		[wallet],
+	);
 
 	useEffect(() => {
-		if (!flag.current) {
-			if (api) {
-				flag.current = true;
-				storage.get<string>("jwt").then((token) => {
-					if (token && typeof token === "string") {
-						api.setJwt(token);
-					}
-					setReady(true);
-				});
-			}
+		if (!flag.current && wallet) {
+			flag.current = true;
+			storage.get<string>("jwt").then((token) => {
+				if (token && typeof token === "string") {
+					api.setJwt(token);
+				}
+				setReady(true);
+			});
 		}
-	}, [api]);
+	}, [api, wallet]);
 
 	const value: PanthaContext = useMemo(
 		() => ({
 			ready: ready,
 			wallet: wallet,
 			api: api,
+			contracts: contracts,
 		}),
-		[api, wallet, ready],
+		[api, wallet, ready, contracts],
 	);
 
 	return (
