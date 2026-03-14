@@ -15,7 +15,7 @@ export default defineConfig({
 		port: 31003,
 		strictPort: true,
 		proxy: {
-			"/api": "http://192.168.20.100:31001",
+			"/api": "http://localhost:31001",
 			"/ws": "http://localhost:31001",
 		},
 	},
