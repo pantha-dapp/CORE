@@ -138,7 +138,6 @@ const ChapterDetailRoute = createRoute({
 		return (
 			<ProtectedRoute type="loggedInOnly">
 				<ChapterDetails />
-				<Navigation />
 			</ProtectedRoute>
 		);
 	},
