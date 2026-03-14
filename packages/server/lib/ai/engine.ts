@@ -20,6 +20,7 @@ export const aiAdapter: AiClient = {
 
 			return args.outputSchema.parse(JSON.parse(data));
 		},
+		heal: jsonHeal,
 	},
 	embedding: { text: generateEmbeddings },
 	translation: { generate: generateTranslation },
@@ -309,7 +310,12 @@ export async function generateImage(args: { prompt: string }, maxRetries = 3) {
 		});
 
 		if (!resp.ok) {
-			const error = await resp.json();
+			const errorBody = z
+				.object({
+					error: z.object({ code: z.string(), message: z.string() }).optional(),
+				})
+				.safeParse(await resp.json());
+			const error = errorBody.success ? errorBody.data : undefined;
 
 			if (
 				resp.status === 429 &&
@@ -317,7 +323,7 @@ export async function generateImage(args: { prompt: string }, maxRetries = 3) {
 				error?.error?.code === "rate_limit_exceeded"
 			) {
 				const retryAfterHeader = resp.headers.get("retry-after");
-				const retryMatch = error.error.message?.match(
+				const retryMatch = error.error?.message?.match(
 					/try again in (\d+(?:\.\d+)?)s/,
 				);
 				const waitSeconds = retryAfterHeader
@@ -333,7 +339,9 @@ export async function generateImage(args: { prompt: string }, maxRetries = 3) {
 				continue;
 			}
 
-			throw new Error(`OpenAI API error: ${JSON.stringify(error)}`);
+			throw new Error(
+				`OpenAI API error: ${JSON.stringify(errorBody.success ? errorBody.data : errorBody.error)}`,
+			);
 		}
 
 		const data = (await resp.json()) as { data: [{ b64_json: string }] };
