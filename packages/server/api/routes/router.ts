@@ -13,8 +13,8 @@ export const apiRouter = new Hono<RouterEnv>()
 	.get("/runtime", (ctx) => {
 		const runtime = {
 			uptime: process.uptime(),
+			chain: 545,
 			// serverAddressSynapse: config.serverAddressSynapse,
-			// chain: config.runtimeChain,
 		};
 		return ctx.json(runtime);
 	})
