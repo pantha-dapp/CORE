@@ -182,10 +182,12 @@ export default new Hono<RouterEnv>()
 			const { content, type } = page.content;
 
 			let correct = false;
+			let skipLogging = false;
 			try {
 				switch (type) {
 					case "example_uses":
 						correct = true;
+						skipLogging = true;
 						break;
 					case "fill_in_the_blanks": {
 						const hasPlaceholders = (content.words as string[]).some((w) =>
@@ -226,6 +228,7 @@ export default new Hono<RouterEnv>()
 						break;
 					case "teach_and_explain_content":
 						correct = true;
+						skipLogging = true;
 						break;
 					default:
 						break;
@@ -239,10 +242,13 @@ export default new Hono<RouterEnv>()
 			session.currentPage += 1;
 
 			gameSessions.set(userWallet, session);
-			db.insert(db.schema.userAnswerLogs).values({
-				pageId: page.id,
-				correct: correct,
-			});
+
+			if (!skipLogging) {
+				await db.insert(db.schema.userAnswerLogs).values({
+					pageId: page.id,
+					correct: correct,
+				});
+			}
 
 			if (session.currentPage >= session.pages.length) {
 				// Check if user has previously completed this chapter
