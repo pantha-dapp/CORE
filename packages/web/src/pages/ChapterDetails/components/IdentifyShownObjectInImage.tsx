@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface IdentifyShownObjectInImageProps {
 	options: string[];
 	image: {
 		prompt: string;
 	};
+	imageUrl?: string;
 	onSubmit: (answer: string[]) => Promise<void>;
 	answerResult: { correct: boolean; pageIndex: number } | null;
 	onContinue: () => void;
@@ -15,12 +18,14 @@ interface IdentifyShownObjectInImageProps {
 export function IdentifyShownObjectInImage({
 	options,
 	image: { prompt },
+	imageUrl,
 	onSubmit,
 	answerResult,
 	onContinue,
 	onViewExplanation,
 	isExplanationLoading,
 }: IdentifyShownObjectInImageProps) {
+	const hapticFeedback = useHapticFeedback();
 	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const showResult = answerResult !== null;
@@ -52,12 +57,28 @@ export function IdentifyShownObjectInImage({
 				</p>
 			</div>
 
-			{/* Image Description */}
-			<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
-				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">
-					{prompt}
-				</p>
-			</div>
+			{/* Image */}
+			{imageUrl ? (
+				<div className="rounded-xl overflow-hidden border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+					<img
+						src={imageUrl}
+						alt={prompt}
+						className="w-full object-cover max-h-72"
+					/>
+					<p className="px-4 py-2 text-xs text-gray-500 dark:text-dark-muted font-montserrat text-center">
+						{prompt}
+					</p>
+				</div>
+			) : (
+				<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
+					<MathText
+						block
+						className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat"
+					>
+						{prompt}
+					</MathText>
+				</div>
+			)}
 
 			{/* Options */}
 			<div className="space-y-3">
@@ -73,7 +94,12 @@ export function IdentifyShownObjectInImage({
 						<button
 							type="button"
 							key={`option-${option}-${occurrence}`}
-							onClick={() => !showResult && setSelectedIndex(index)}
+							onClick={() => {
+								if (!showResult) {
+									hapticFeedback.tap();
+									setSelectedIndex(index);
+								}
+							}}
 							disabled={showResult || isSubmitting}
 							className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left font-montserrat ${
 								isSelected
@@ -85,9 +111,12 @@ export function IdentifyShownObjectInImage({
 									: ""
 							}`}
 						>
-							<p className="text-gray-800 dark:text-dark-text font-semibold">
+							<MathText
+								block
+								className="text-gray-800 dark:text-dark-text font-semibold font-montserrat"
+							>
 								{option}
-							</p>
+							</MathText>
 						</button>
 					);
 				})}

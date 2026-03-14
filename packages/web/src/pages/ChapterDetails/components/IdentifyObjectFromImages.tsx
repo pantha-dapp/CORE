@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface IdentifyObjectFromImagesProps {
 	object: string;
 	images: {
 		prompt: string;
 	}[];
+	imageUrls?: string[];
 	onSubmit: (answer: string[]) => Promise<void>;
 	answerResult: { correct: boolean; pageIndex: number } | null;
 	onContinue: () => void;
@@ -15,12 +18,14 @@ interface IdentifyObjectFromImagesProps {
 export function IdentifyObjectFromImages({
 	object,
 	images,
+	imageUrls,
 	onSubmit,
 	answerResult,
 	onContinue,
 	onViewExplanation,
 	isExplanationLoading,
 }: IdentifyObjectFromImagesProps) {
+	const hapticFeedback = useHapticFeedback();
 	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const showResult = answerResult !== null;
@@ -49,16 +54,16 @@ export function IdentifyObjectFromImages({
 				</h3>
 				<p className="text-gray-800 dark:text-dark-text font-montserrat">
 					Select the image that shows:{" "}
-					<span className="font-semibold text-gray-900 dark:text-dark-text">
+					<MathText className="font-semibold text-gray-900 dark:text-dark-text">
 						{object}
-					</span>
+					</MathText>
 				</p>
 			</div>
 
 			{/* Question */}
 			<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
 				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">
-					Which image shows the "{object}"?
+					Which image shows the "<MathText>{object}</MathText>"?
 				</p>
 			</div>
 
@@ -76,7 +81,12 @@ export function IdentifyObjectFromImages({
 						<button
 							type="button"
 							key={`image-${image.prompt}-${occurrence}`}
-							onClick={() => !showResult && setSelectedIndex(index)}
+							onClick={() => {
+								if (!showResult) {
+									hapticFeedback.tap();
+									setSelectedIndex(index);
+								}
+							}}
 							disabled={showResult || isSubmitting}
 							className={`rounded-xl border-2 transition-all duration-200 overflow-hidden ${
 								isSelected
@@ -88,10 +98,23 @@ export function IdentifyObjectFromImages({
 									: ""
 							}`}
 						>
-							<div className="relative bg-gray-50 dark:bg-dark-card">
-								<p className="p-3 text-gray-800 dark:text-dark-text text-sm min-h-20 flex items-center justify-center text-center font-montserrat">
-									{image.prompt}
-								</p>
+							<div className="relative bg-gray-50 dark:bg-dark-card overflow-hidden">
+								{imageUrls?.[index] ? (
+									<>
+										<img
+											src={imageUrls[index]}
+											alt={image.prompt}
+											className="w-full object-cover max-h-48"
+										/>
+										<MathText className="block px-3 py-1.5 text-xs text-gray-500 dark:text-dark-muted font-montserrat text-center">
+											{image.prompt}
+										</MathText>
+									</>
+								) : (
+									<p className="p-3 text-gray-800 dark:text-dark-text text-sm min-h-20 flex items-center justify-center text-center font-montserrat">
+										{image.prompt}
+									</p>
+								)}
 							</div>
 						</button>
 					);

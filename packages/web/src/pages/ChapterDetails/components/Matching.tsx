@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface Props {
 	pairs: Array<{ left: string; right: string }>;
@@ -19,6 +21,7 @@ export function Matching({
 	onViewExplanation,
 	isExplanationLoading,
 }: Props) {
+	const hapticFeedback = useHapticFeedback();
 	const [matches, setMatches] = useState<Record<number, number>>({});
 	const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,6 +50,7 @@ export function Matching({
 
 	function handleLeftClick(index: number) {
 		if (showResult || matches[index] !== undefined) return;
+		hapticFeedback.tap();
 		setSelectedLeft(index);
 	}
 
@@ -56,6 +60,7 @@ export function Matching({
 		const isAlreadyMatched = Object.values(matches).includes(index);
 		if (isAlreadyMatched) return;
 
+		hapticFeedback.tap();
 		setMatches((prev) => ({
 			...prev,
 			[selectedLeft]: index,
@@ -122,9 +127,9 @@ export function Matching({
 								} ${isMatched ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								<div className="flex items-center justify-between gap-2">
-									<span className="text-gray-800 dark:text-dark-text">
+									<MathText className="text-gray-800 dark:text-dark-text">
 										{pair.left}
-									</span>
+									</MathText>
 									{isMatched && (
 										<button
 											type="button"
@@ -160,9 +165,9 @@ export function Matching({
 										: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
 								} ${selectedLeft !== null && !isMatched ? "hover:border-gray-400 dark:hover:border-dark-accent" : ""}`}
 							>
-								<span className="text-gray-800 dark:text-dark-text">
+								<MathText className="text-gray-800 dark:text-dark-text">
 									{item.right}
-								</span>
+								</MathText>
 							</button>
 						);
 					})}

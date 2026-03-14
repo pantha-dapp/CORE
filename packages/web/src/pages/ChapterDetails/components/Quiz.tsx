@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface Props {
 	question: string;
@@ -21,6 +23,7 @@ export function Quiz({
 	onViewExplanation,
 	isExplanationLoading,
 }: Props) {
+	const hapticFeedback = useHapticFeedback();
 	const [selectedOption, setSelectedOption] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,9 +58,12 @@ export function Quiz({
 			{imageUrl && (
 				<img src={imageUrl} alt="Quiz" className="rounded-lg w-full" />
 			)}
-			<p className="text-lg text-gray-800 dark:text-dark-text font-montserrat">
+			<MathText
+				block
+				className="text-lg text-gray-800 dark:text-dark-text font-montserrat"
+			>
 				{question}
-			</p>
+			</MathText>
 
 			<div className="space-y-3">
 				{options.map((option, idx) => {
@@ -69,7 +75,12 @@ export function Quiz({
 						<button
 							key={option}
 							type="button"
-							onClick={() => !showResult && setSelectedOption(idx)}
+							onClick={() => {
+								if (!showResult) {
+									hapticFeedback.tap();
+									setSelectedOption(idx);
+								}
+							}}
 							disabled={showResult}
 							className={`w-full text-left p-4 rounded-xl transition-all font-montserrat ${
 								isSelected && !showResult
@@ -85,9 +96,9 @@ export function Quiz({
 								<span className="text-sm font-semibold text-gray-500 dark:text-dark-muted">
 									{String.fromCharCode(65 + idx)}
 								</span>
-								<span className="flex-1 text-gray-800 dark:text-dark-text">
+								<MathText className="flex-1 text-gray-800 dark:text-dark-text">
 									{option}
-								</span>
+								</MathText>
 								{showCorrect && (
 									<span className="text-green-600 dark:text-green-400">✓</span>
 								)}

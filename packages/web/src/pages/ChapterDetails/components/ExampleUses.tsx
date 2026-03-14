@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
 
 interface Props {
 	topic: string;
@@ -38,9 +39,12 @@ export function ExampleUses({
 			{imageUrl && (
 				<img src={imageUrl} alt={topic} className="rounded-lg w-full" />
 			)}
-			<p className="text-gray-800 dark:text-dark-text font-montserrat">
+			<MathText
+				block
+				className="text-gray-800 dark:text-dark-text font-montserrat"
+			>
 				{text}
-			</p>
+			</MathText>
 			{examples.length > 0 && (
 				<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
 					<p className="font-semibold mb-3 text-gray-700 dark:text-dark-muted font-montserrat">
@@ -52,9 +56,9 @@ export function ExampleUses({
 								<span className="text-gray-600 dark:text-dark-muted mt-1">
 									•
 								</span>
-								<span className="text-gray-800 dark:text-dark-text font-montserrat">
+								<MathText className="text-gray-800 dark:text-dark-text font-montserrat">
 									{example}
-								</span>
+								</MathText>
 							</li>
 						))}
 					</ul>

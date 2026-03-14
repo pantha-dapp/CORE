@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface Props {
 	statement: string;
@@ -19,6 +21,7 @@ export function TrueFalse({
 	onViewExplanation,
 	isExplanationLoading,
 }: Props) {
+	const hapticFeedback = useHapticFeedback();
 	const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,14 +50,22 @@ export function TrueFalse({
 			{imageUrl && (
 				<img src={imageUrl} alt="True/False" className="rounded-lg w-full" />
 			)}
-			<p className="text-lg text-gray-800 dark:text-dark-text bg-gray-100 dark:bg-dark-surface p-4 rounded-xl font-montserrat">
+			<MathText
+				block
+				className="text-lg text-gray-800 dark:text-dark-text bg-gray-100 dark:bg-dark-surface p-4 rounded-xl font-montserrat"
+			>
 				{statement}
-			</p>
+			</MathText>
 
 			<div className="grid grid-cols-2 gap-4">
 				<button
 					type="button"
-					onClick={() => !showResult && setSelectedAnswer(true)}
+					onClick={() => {
+						if (!showResult) {
+							hapticFeedback.tap();
+							setSelectedAnswer(true);
+						}
+					}}
 					disabled={showResult}
 					className={`p-6 rounded-xl border-2 font-bold text-lg transition-all font-montserrat ${
 						selectedAnswer === true && !showResult
@@ -74,7 +85,12 @@ export function TrueFalse({
 
 				<button
 					type="button"
-					onClick={() => !showResult && setSelectedAnswer(false)}
+					onClick={() => {
+						if (!showResult) {
+							hapticFeedback.tap();
+							setSelectedAnswer(false);
+						}
+					}}
 					disabled={showResult}
 					className={`p-6 rounded-xl border-2 font-bold text-lg transition-all font-montserrat ${
 						selectedAnswer === false && !showResult

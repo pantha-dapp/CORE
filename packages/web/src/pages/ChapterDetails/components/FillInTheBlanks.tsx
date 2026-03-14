@@ -1,4 +1,6 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
+import { MathText } from "../../../shared/components/MathText";
+import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface Props {
 	wrongOptions?: string[];
@@ -35,10 +37,21 @@ export function FillInTheBlanks({
 		return nums.length === 0 ? 0 : Math.max(...nums);
 	}, [words]);
 
+	const hapticFeedback = useHapticFeedback();
 	const [userInputs, setUserInputs] = useState<string[]>(
 		Array(blankCount).fill(""),
 	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [flyingChip, setFlyingChip] = useState<{
+		text: string;
+		from: { x: number; y: number; w: number; h: number };
+		to: { x: number; y: number; w: number; h: number };
+		phase: "positioned" | "flying";
+	} | null>(null);
+	const [hiddenOptionId, setHiddenOptionId] = useState<number | null>(null);
+	const [hiddenBlankIndex, setHiddenBlankIndex] = useState<number | null>(null);
+	const wordBankRef = useRef<HTMLDivElement>(null);
+	const ANIMATION_MS = 300;
 	const showResult = answerResult !== null;
 	const isCorrect = answerResult?.correct ?? false;
 
@@ -66,22 +79,112 @@ export function FillInTheBlanks({
 		return remaining;
 	}, [availableOptions, userInputs]);
 
-	// Click a word-bank chip → fill the next empty blank
-	function selectOption(option: string) {
-		if (showResult || isSubmitting) return;
+	// Click a word-bank chip → fly it into the next empty blank
+	function selectOption(option: string, optionId: number, srcRect: DOMRect) {
+		if (showResult || isSubmitting || flyingChip) return;
 		const firstEmpty = userInputs.findIndex((v) => v.trim().length === 0);
 		if (firstEmpty === -1) return;
-		const next = [...userInputs];
-		next[firstEmpty] = option;
-		setUserInputs(next);
+		hapticFeedback.tap();
+
+		const blankEl = document.querySelector(
+			`[data-blank-index="${firstEmpty}"]`,
+		) as HTMLElement | null;
+
+		if (!blankEl) {
+			setUserInputs((prev) => {
+				const next = [...prev];
+				next[firstEmpty] = option;
+				return next;
+			});
+			return;
+		}
+
+		const dstRect = blankEl.getBoundingClientRect();
+		setHiddenOptionId(optionId);
+		setFlyingChip({
+			text: option,
+			from: {
+				x: srcRect.left,
+				y: srcRect.top,
+				w: srcRect.width,
+				h: srcRect.height,
+			},
+			to: {
+				x: dstRect.left + (dstRect.width - srcRect.width) / 2,
+				y: dstRect.top + (dstRect.height - srcRect.height) / 2,
+				w: srcRect.width,
+				h: srcRect.height,
+			},
+			phase: "positioned",
+		});
+
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				setFlyingChip((prev) => (prev ? { ...prev, phase: "flying" } : null));
+			});
+		});
+
+		setTimeout(() => {
+			setUserInputs((prev) => {
+				const next = [...prev];
+				next[firstEmpty] = option;
+				return next;
+			});
+			setFlyingChip(null);
+			setHiddenOptionId(null);
+		}, ANIMATION_MS);
 	}
 
-	// Click a filled blank → return its answer to the word bank
-	function clearBlank(blankIndex: number) {
-		if (showResult || isSubmitting) return;
-		const next = [...userInputs];
-		next[blankIndex] = "";
-		setUserInputs(next);
+	// Click a filled blank → fly the answer back to the word bank
+	function clearBlank(blankIndex: number, srcRect: DOMRect) {
+		if (showResult || isSubmitting || flyingChip) return;
+		hapticFeedback.tap();
+
+		const bankEl = wordBankRef.current;
+		if (!bankEl) {
+			setUserInputs((prev) => {
+				const next = [...prev];
+				next[blankIndex] = "";
+				return next;
+			});
+			return;
+		}
+
+		const dstRect = bankEl.getBoundingClientRect();
+		const text = userInputs[blankIndex];
+		setHiddenBlankIndex(blankIndex);
+		setFlyingChip({
+			text,
+			from: {
+				x: srcRect.left,
+				y: srcRect.top,
+				w: srcRect.width,
+				h: srcRect.height,
+			},
+			to: {
+				x: dstRect.left + dstRect.width / 2 - srcRect.width / 2,
+				y: dstRect.top + dstRect.height / 2 - srcRect.height / 2,
+				w: srcRect.width,
+				h: srcRect.height,
+			},
+			phase: "positioned",
+		});
+
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				setFlyingChip((prev) => (prev ? { ...prev, phase: "flying" } : null));
+			});
+		});
+
+		setTimeout(() => {
+			setUserInputs((prev) => {
+				const next = [...prev];
+				next[blankIndex] = "";
+				return next;
+			});
+			setFlyingChip(null);
+			setHiddenBlankIndex(null);
+		}, ANIMATION_MS);
 	}
 
 	async function handleSubmit() {
@@ -206,17 +309,27 @@ export function FillInTheBlanks({
 							<button
 								key={`blank-${wordIdx}-${match[1]}`}
 								type="button"
-								onClick={() => clearBlank(blankIndex)}
-								disabled={showResult || isSubmitting || !isFilled}
+								data-blank-index={blankIndex}
+								onClick={(e) =>
+									clearBlank(
+										blankIndex,
+										e.currentTarget.getBoundingClientRect(),
+									)
+								}
+								disabled={
+									showResult || isSubmitting || !isFilled || flyingChip !== null
+								}
 								className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold font-montserrat ${
 									isCorrect
 										? "border-green-500 dark:border-green-400 text-green-600 dark:text-green-400"
-										: isFilled
+										: isFilled && hiddenBlankIndex !== blankIndex
 											? "border-gray-800 dark:border-dark-accent text-gray-800 dark:text-dark-text hover:border-red-500 dark:hover:border-red-400 hover:text-red-600 dark:hover:text-red-400"
 											: "border-gray-400 dark:border-dark-border text-gray-400 dark:text-dark-muted"
 								}`}
 							>
-								{isFilled ? userAnswer : "___"}
+								{isFilled && hiddenBlankIndex !== blankIndex
+									? userAnswer
+									: "___"}
 							</button>,
 						);
 						lastIndex = regex.lastIndex;
@@ -229,12 +342,12 @@ export function FillInTheBlanks({
 							.slice(0, wordIdx)
 							.filter((w) => w === word).length;
 						parts.push(
-							<span
+							<MathText
 								key={`w-${wordIdx}-tail-${occ}`}
 								className="text-gray-800 dark:text-dark-text"
 							>
-								{tail}{" "}
-							</span>,
+								{`${tail} `}
+							</MathText>,
 						);
 					} else if (foundAny) {
 						// Token was entirely placeholder(s) — add a trailing space.
@@ -259,14 +372,16 @@ export function FillInTheBlanks({
 					<h4 className="text-xs font-semibold text-gray-600 dark:text-dark-muted uppercase tracking-wide mb-3 font-montserrat">
 						💡 Word Bank
 					</h4>
-					<div className="flex flex-wrap gap-2">
+					<div ref={wordBankRef} className="flex flex-wrap gap-2">
 						{remainingOptions.map(({ id, v }) => (
 							<button
 								key={`hint-${id}`}
 								type="button"
-								onClick={() => selectOption(v)}
-								disabled={showResult || isSubmitting}
-								className="px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-border hover:border-gray-400 dark:hover:border-dark-accent transition-colors font-montserrat"
+								onClick={(e) =>
+									selectOption(v, id, e.currentTarget.getBoundingClientRect())
+								}
+								disabled={showResult || isSubmitting || flyingChip !== null}
+								className={`px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-border hover:border-gray-400 dark:hover:border-dark-accent transition-colors font-montserrat ${hiddenOptionId === id ? "invisible" : ""}`}
 							>
 								{v}
 							</button>
@@ -329,6 +444,31 @@ export function FillInTheBlanks({
 					>
 						Next Question →
 					</button>
+				</div>
+			)}
+
+			{/* Flying chip overlay for word-bank ↔ blank animations */}
+			{flyingChip && (
+				<div
+					className="fixed z-9999 pointer-events-none"
+					style={{
+						left:
+							flyingChip.phase === "flying"
+								? flyingChip.to.x
+								: flyingChip.from.x,
+						top:
+							flyingChip.phase === "flying"
+								? flyingChip.to.y
+								: flyingChip.from.y,
+						transition:
+							flyingChip.phase === "flying"
+								? `left ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1), top ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
+								: "none",
+					}}
+				>
+					<span className="inline-block px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-purple-400 dark:border-dark-accent text-gray-800 dark:text-dark-text font-semibold font-montserrat shadow-lg shadow-purple-500/20 dark:shadow-black/30">
+						{flyingChip.text}
+					</span>
 				</div>
 			)}
 		</div>

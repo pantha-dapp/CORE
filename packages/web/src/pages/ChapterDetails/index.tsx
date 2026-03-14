@@ -11,6 +11,9 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { MathText } from "../../shared/components/MathText";
+import { useParticles } from "../../shared/components/Particles";
+import { useHapticFeedback } from "../../shared/utils/haptics";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { ExampleUses } from "./components/ExampleUses";
 import { FillInTheBlanks } from "./components/FillInTheBlanks";
@@ -23,6 +26,8 @@ import { TrueFalse } from "./components/TrueFalse";
 export default function ChapterDetails() {
 	const { courseId, chapterId } = useParams({ strict: false });
 	const router = useRouter();
+	const hapticFeedback = useHapticFeedback();
+	const particles = useParticles();
 
 	const [completionReport, setCompletionReport] = useState<{
 		correct: number;
@@ -99,6 +104,14 @@ export default function ChapterDetails() {
 			queryClient.invalidateQueries({ queryKey: ["chapterPages", chapterId] });
 		}
 	}, [preparingJobId, jobStatus.data?.state, queryClient, chapterId]);
+
+	useEffect(() => {
+		if (isExplanationOpen) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
+		}
+	}, [isExplanationOpen]);
 
 	const { data: session, isLoading: sessionLoading } = useChapterGameSession({
 		chapterId,
@@ -222,8 +235,14 @@ export default function ChapterDetails() {
 
 	const currentPageIndex = session?.currentPage ?? 0;
 	// pagesData is narrowed to have `pages` after the guard above
-	const pages = (pagesData as Extract<typeof pagesData, { pages: unknown[] }>)
-		.pages;
+	const narrowedData = pagesData as Extract<
+		typeof pagesData,
+		{ pages: unknown[] }
+	>;
+	const pages = narrowedData.pages;
+	const imagesMap = narrowedData.images as
+		| Record<string, { url: string } | { images: { url: string }[] }>
+		| undefined;
 	const totalPages = pages.length;
 	console.log("pages length", totalPages);
 	const displayedPageIndex = answerResult?.pageIndex ?? currentPageIndex;
@@ -274,6 +293,34 @@ export default function ChapterDetails() {
 			setIsExplanationOpen(false);
 			const result = await submitAnswer.mutateAsync({ answer });
 			if (typeof result?.correct === "boolean") {
+				const cx = window.innerWidth / 2;
+				const cy = window.innerHeight / 2;
+				if (result.correct) {
+					hapticFeedback.success();
+					particles.create(
+						cx,
+						cy,
+						[
+							{ emoji: "🎉", canFlip: false },
+							{ emoji: "⭐", canFlip: false },
+							{ emoji: "💪", canFlip: false },
+							{ emoji: "🌟", canFlip: false },
+						],
+						300,
+					);
+				} else {
+					hapticFeedback.error();
+					particles.create(
+						cx,
+						cy,
+						[
+							{ emoji: "💔", canFlip: false },
+							{ emoji: "😵", canFlip: true },
+							{ emoji: "👎", canFlip: false },
+						],
+						250,
+					);
+				}
 				setAnswerResult({
 					correct: result.correct,
 					pageIndex: submittedPageIndex,
@@ -282,6 +329,22 @@ export default function ChapterDetails() {
 			}
 
 			if (result?.complete) {
+				// Only celebrate with particles when the last answer was correct
+				// Otherwise the celebration emojis drown out the error feedback
+				if (result.correct) {
+					hapticFeedback.success();
+					particles.create(
+						window.innerWidth / 2,
+						window.innerHeight / 2,
+						[
+							{ emoji: "🎉", canFlip: false },
+							{ emoji: "🏆", canFlip: false },
+							{ emoji: "🔥", canFlip: false },
+							{ emoji: "⭐", canFlip: false },
+						],
+						800,
+					);
+				}
 				setPendingCompletionReport({
 					correct: result.report?.correct ?? 0,
 					incorrect:
@@ -298,6 +361,7 @@ export default function ChapterDetails() {
 		if (submitAnswer.isPending) {
 			return;
 		}
+		hapticFeedback.tap();
 
 		try {
 			const result = await submitAnswer.mutateAsync({ answer: ["continue"] });
@@ -316,6 +380,7 @@ export default function ChapterDetails() {
 	}
 
 	function handleAnswerContinue() {
+		hapticFeedback.tap();
 		if (pendingCompletionReport) {
 			setCompletionReport(pendingCompletionReport);
 			setPendingCompletionReport(null);
@@ -332,6 +397,7 @@ export default function ChapterDetails() {
 			return;
 		}
 
+		hapticFeedback.tap();
 		setIsExplanationOpen(true);
 
 		if (loadedExplanationPageIndex !== answerResult.pageIndex) {
@@ -340,7 +406,19 @@ export default function ChapterDetails() {
 	}
 
 	function handleBackClick() {
+		hapticFeedback.tap();
 		setShowConfirmDialog(true);
+	}
+
+	async function handleCompletionBack() {
+		hapticFeedback.tap();
+		setIsDeleting(true);
+		try {
+			await deleteSessionMutation.mutateAsync();
+			router.navigate({ to: `/dashboard` });
+		} finally {
+			setIsDeleting(false);
+		}
 	}
 
 	function renderPage(page: NonNullable<typeof currentPage>) {
@@ -422,15 +500,17 @@ export default function ChapterDetails() {
 					/>
 				);
 
-			case "identify_object_from_images":
+			case "identify_object_from_images": {
+				const imgData = imagesMap?.[page.id];
+				const imageUrls =
+					imgData && "images" in imgData
+						? imgData.images.map((i) => i.url)
+						: undefined;
 				return (
-					// <IdentifyObjectFromImages
-					// 	{...content}
-					// 	onSubmit={handleAnswerSubmit}
-					// />
 					<IdentifyObjectFromImages
 						key={displayedPageIndex}
 						{...content}
+						imageUrls={imageUrls}
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
@@ -438,12 +518,16 @@ export default function ChapterDetails() {
 						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
+			}
 
-			case "identify_shown_object_in_image":
+			case "identify_shown_object_in_image": {
+				const imgData = imagesMap?.[page.id];
+				const imageUrl = imgData && "url" in imgData ? imgData.url : undefined;
 				return (
 					<IdentifyShownObjectInImage
 						key={displayedPageIndex}
 						{...content}
+						imageUrl={imageUrl}
 						onSubmit={handleAnswerSubmit}
 						answerResult={answerResult}
 						onContinue={handleAnswerContinue}
@@ -451,6 +535,7 @@ export default function ChapterDetails() {
 						isExplanationLoading={isExplanationLoadingForCurrentAnswer}
 					/>
 				);
+			}
 
 			default:
 				return (
@@ -471,31 +556,33 @@ export default function ChapterDetails() {
 						onClick={() => setIsExplanationOpen(false)}
 						aria-label="Close explanation"
 					/>
-					<div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-xl bg-white dark:bg-dark-card shadow-xl">
-						<div className="p-6 sm:p-8">
-							<div className="mb-6 flex items-start justify-between gap-4">
-								<div>
-									<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
-										Answer explanation
-									</p>
-									<h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker sm:text-3xl">
-										Why this answer was{" "}
-										{answerResult?.correct ? "correct" : "incorrect"}
-									</h2>
-									<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat sm:text-base">
-										Quick review before you move to the next question.
-									</p>
-								</div>
-								<button
-									type="button"
-									onClick={() => setIsExplanationOpen(false)}
-									className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-surface text-xl text-gray-600 dark:text-dark-muted transition hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
-									aria-label="Close explanation"
-								>
-									×
-								</button>
+					<div className="relative z-10 w-full max-w-2xl max-h-[calc(100vh-3rem)] flex flex-col rounded-xl bg-white dark:bg-dark-card shadow-xl overflow-hidden">
+						{/* Header */}
+						<div className="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-dark-border p-6 sm:p-8">
+							<div>
+								<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
+									Answer explanation
+								</p>
+								<h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker sm:text-3xl">
+									Why this answer was{" "}
+									{answerResult?.correct ? "correct" : "incorrect"}
+								</h2>
+								<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat sm:text-base">
+									Quick review before you move to the next question.
+								</p>
 							</div>
+							<button
+								type="button"
+								onClick={() => setIsExplanationOpen(false)}
+								className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-surface text-xl text-gray-600 dark:text-dark-muted transition hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
+								aria-label="Close explanation"
+							>
+								×
+							</button>
+						</div>
 
+						{/* Scrollable Content */}
+						<div className="overflow-y-auto flex-1 p-6 sm:p-8">
 							{isExplanationLoadingForCurrentAnswer ? (
 								<div className="rounded-xl bg-gray-50 dark:bg-dark-surface p-6">
 									<div className="mb-4 flex items-center gap-3">
@@ -517,17 +604,27 @@ export default function ChapterDetails() {
 										<p className="mb-3 inline-flex rounded-lg bg-gray-200 dark:bg-dark-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-dark-muted font-tusker">
 											Breakdown
 										</p>
-										<p className="text-base leading-8 text-gray-800 dark:text-dark-text font-montserrat sm:text-lg">
-											{explanationContent?.explanation}
-										</p>
+										{explanationContent?.explanation && (
+											<MathText
+												block
+												className="text-base leading-8 text-gray-800 dark:text-dark-text font-montserrat sm:text-lg"
+											>
+												{explanationContent.explanation}
+											</MathText>
+										)}
 									</div>
 									<div className="rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-6">
 										<p className="text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-400 font-tusker">
 											Key takeaway
 										</p>
-										<p className="mt-3 text-sm leading-7 text-gray-800 dark:text-dark-text font-montserrat sm:text-base">
-											{explanationContent?.keyTakeaway}
-										</p>
+										{explanationContent?.keyTakeaway && (
+											<MathText
+												block
+												className="mt-3 text-sm leading-7 text-gray-800 dark:text-dark-text font-montserrat sm:text-base"
+											>
+												{explanationContent.keyTakeaway}
+											</MathText>
+										)}
 									</div>
 								</div>
 							) : isExplanationErrorForCurrentAnswer ? (
@@ -548,16 +645,20 @@ export default function ChapterDetails() {
 									</button>
 								</div>
 							) : null}
+						</div>
 
-							<div className="mt-6 flex justify-end">
-								<button
-									type="button"
-									onClick={() => setIsExplanationOpen(false)}
-									className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-5 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
-								>
-									Got it
-								</button>
-							</div>
+						{/* Footer with Button */}
+						<div className="border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card p-6 sm:p-8 flex justify-end">
+							<button
+								type="button"
+								onClick={() => {
+									hapticFeedback.tap();
+									setIsExplanationOpen(false);
+								}}
+								className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-5 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+							>
+								Got it
+							</button>
 						</div>
 					</div>
 				</div>
@@ -679,7 +780,7 @@ export default function ChapterDetails() {
 								incorrectCount={completionReport?.incorrect ?? 0}
 								totalPages={totalPages}
 								xpEarned={completionReport?.xpEarned ?? 0}
-								onBackClick={handleBackClick}
+								onBackClick={handleCompletionBack}
 							/>
 						) : currentPage ? (
 							renderPage(currentPage)
