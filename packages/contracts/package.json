@@ -15,7 +15,8 @@
 	},
 	"scripts": {
 		"compile": "bun scripts/generateInterfaces.ts; hardhat compile",
-		"migrate": "bun compile; bun scripts/deploy.ts"
+		"migrate": "bun compile; bun scripts/deploy.ts",
+		"localnode": "hardhat node"
 	},
 	"devDependencies": {
 		"@nomicfoundation/hardhat-ignition": "^3.0.9",
