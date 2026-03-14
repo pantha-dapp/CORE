@@ -26,6 +26,9 @@
 		"prepare": "husky",
 		"client:dev": "bun run --cwd packages/web dev",
 		"server:dev": "bun run --cwd packages/server dev",
+		"contracts:migrate": "bun run --cwd packages/contracts migrate",
+		"db:migrate": "bun run --cwd packages/server db:migrate",
+		"hardhat:node": "bun run --cwd packages/contracts localnode",
 		"tests": "bun run --cwd packages/server tests"
 	},
 	"lint-staged": {
