@@ -7,7 +7,8 @@ import {
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { Info, Lock, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useHapticFeedback } from "../../shared/utils/haptics";
 
 // Simple course name button for drawer selection
 function CourseNameItem({
@@ -21,7 +22,9 @@ function CourseNameItem({
 }) {
 	const courseDetails = useCourseById({ id: courseId });
 	if (courseDetails.isLoading) {
-		return <div className="h-11 w-full animate-pulse rounded-lg bg-gray-200" />;
+		return (
+			<div className="h-11 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-dark-surface" />
+		);
 	}
 	return (
 		<button
@@ -29,8 +32,8 @@ function CourseNameItem({
 			onClick={onClick}
 			className={`w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors ${
 				isActive
-					? "bg-landing-hero-bg dark:bg-dark-surface text-landing-hero-text dark:text-gray-100"
-					: "bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-surface"
+					? "bg-purple-100 dark:bg-dark-surface text-purple-700 dark:text-dark-accent"
+					: "bg-gray-50 dark:bg-dark-bg text-gray-600 dark:text-dark-muted hover:bg-purple-50 dark:hover:bg-dark-surface"
 			} font-montserrat`}
 		>
 			{courseDetails.data?.title ?? "Course"}
@@ -40,6 +43,13 @@ function CourseNameItem({
 
 export default function Dashboard() {
 	const { wallet } = usePanthaContext();
+	const hapticFeedback = useHapticFeedback();
+
+	const [pressedCardId, setPressedCardId] = useState<string | undefined>();
+	const [releasedCardId, setReleasedCardId] = useState<string | undefined>();
+	const [showCourseCard, setShowCourseCard] = useState(true);
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const lastScrollTop = useRef(0);
 
 	const enrolledCourses = useUserCourses({
 		walletAddress: wallet?.account.address,
@@ -209,6 +219,27 @@ export default function Dashboard() {
 		return `${remainingChapters} chapter${remainingChapters === 1 ? "" : "s"} left to finish this course.`;
 	})();
 
+	const handleScroll = useCallback(() => {
+		const el = scrollRef.current;
+		if (!el) return;
+		const currentScrollTop = el.scrollTop;
+		const delta = currentScrollTop - lastScrollTop.current;
+		// Only toggle after a meaningful scroll (8px threshold)
+		if (delta > 8) {
+			setShowCourseCard(false);
+		} else if (delta < -8) {
+			setShowCourseCard(true);
+		}
+		lastScrollTop.current = currentScrollTop;
+	}, []);
+
+	useEffect(() => {
+		const el = scrollRef.current;
+		if (!el) return;
+		el.addEventListener("scroll", handleScroll, { passive: true });
+		return () => el.removeEventListener("scroll", handleScroll);
+	}, [handleScroll]);
+
 	function handleChapterStart(chapterId?: string) {
 		const chapterToStart =
 			chapters.find((chapter) => chapter.id === chapterId) ?? selectedChapter;
@@ -224,6 +255,8 @@ export default function Dashboard() {
 			return;
 		}
 
+		hapticFeedback.tap();
+
 		router.navigate({
 			to: `/course/${selectedCourseId}/chapter/${chapterToStart.id}`,
 		});
@@ -231,8 +264,8 @@ export default function Dashboard() {
 
 	if (enrolledCourses.isLoading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-landing-hero-bg dark:bg-dark-bg">
-				<p className="text-landing-hero-text dark:text-dark-muted font-montserrat">
+			<div className="bg-purple-300 dark:bg-dark-bg min-h-screen flex items-center justify-center">
+				<p className="text-gray-400 dark:text-dark-muted font-montserrat">
 					Loading your courses…
 				</p>
 			</div>
@@ -240,16 +273,19 @@ export default function Dashboard() {
 	}
 
 	return (
-		<div className="min-h-screen relative overflow-hidden bg-landing-hero-bg dark:bg-dark-bg pb-32">
-			<div className="relative overflow-y-auto px-4">
+		<div className="bg-purple-300 dark:bg-dark-bg min-h-screen relative overflow-hidden">
+			<div
+				ref={scrollRef}
+				className="relative h-screen overflow-y-auto px-4 pb-32"
+			>
 				{/* ───────── HEADER ───────── */}
 				<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
-					<div className="rounded-xl bg-white/95 dark:bg-dark-card/95 shadow-lg p-3 backdrop-blur-sm">
+					<div className="rounded-xl bg-white/90 dark:bg-dark-card backdrop-blur-xl border border-purple-200/50 dark:border-dark-border shadow-lg shadow-purple-900/10 dark:shadow-black/20 p-3">
 						<div className="flex items-center justify-between gap-3">
 							<button
 								type="button"
 								onClick={() => setShowCourseDrawer(!showCourseDrawer)}
-								className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-lg bg-gray-50 dark:bg-dark-surface px-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-dark-surface"
+								className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-lg bg-purple-50 dark:bg-dark-surface px-3 text-left transition-colors hover:bg-purple-100 dark:hover:bg-dark-border"
 								aria-label="Courses"
 							>
 								<span className="text-lg shrink-0">📚</span>
@@ -264,19 +300,19 @@ export default function Dashboard() {
 							<div className="flex items-center">
 								<div className="flex items-center gap-1.5 rounded-full  px-1.5 py-1.5">
 									<span className="text-sm">🔥</span>
-									<span className="text-sm font-semibold text-orange-600 font-montserrat tabular-nums">
+									<span className="text-sm font-semibold text-orange-500 font-montserrat tabular-nums">
 										{currentStreak}
 									</span>
 								</div>
 								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
 									<span className="text-sm">💎</span>
-									<span className="text-sm font-semibold text-amber-600 font-montserrat tabular-nums">
+									<span className="text-sm font-semibold text-purple-600 font-montserrat tabular-nums">
 										{userInfo.data?.user.xpCount ?? 0}
 									</span>
 								</div>
 								<div className="flex items-center gap-1.5 rounded-full px-1.5 py-1.5">
 									<span className="text-sm">⚡</span>
-									<span className="text-sm font-semibold text-blue-600 font-montserrat tabular-nums">
+									<span className="text-sm font-semibold text-blue-500 font-montserrat tabular-nums">
 										{userInfo.data?.user.xp ?? 0}
 									</span>
 								</div>
@@ -291,13 +327,14 @@ export default function Dashboard() {
 									: "max-h-0 opacity-0"
 							}`}
 						>
-							<div className="space-y-1.5 border-t border-gray-200 pt-3">
+							<div className="space-y-1.5 border-t border-purple-200/50 dark:border-dark-border pt-3">
 								{enrolledCourses.data?.courses.map((course) => (
 									<CourseNameItem
 										key={course.courseId}
 										courseId={course.courseId}
 										isActive={selectedCourseId === course.courseId}
 										onClick={() => {
+											hapticFeedback.tap();
 											setSelectedCourseId(course.courseId);
 											setShowCourseDrawer(false);
 										}}
@@ -309,7 +346,7 @@ export default function Dashboard() {
 										router.navigate({ to: "/onboarding" });
 										setShowCourseDrawer(false);
 									}}
-									className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-dark-border bg-gray-50 dark:bg-dark-surface py-3 text-sm font-medium text-gray-600 dark:text-dark-muted transition-colors hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-dark-surface font-montserrat"
+									className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-purple-300 dark:border-dark-border bg-purple-50 dark:bg-dark-surface py-3 text-sm font-medium text-purple-400 dark:text-dark-muted transition-colors hover:border-purple-400 hover:bg-purple-100 dark:hover:bg-dark-border font-montserrat"
 								>
 									<span className="text-lg">+</span>
 									Add course
@@ -320,86 +357,94 @@ export default function Dashboard() {
 				</div>
 
 				{/* ───────── COURSE DETAILS (when selected) ───────── */}
-				{selectedCourseId && (
-					<button
-						type="button"
-						onClick={() => setShowCourseDrawer(true)}
-						className="my-2 w-full flex items-start gap-4 rounded-xl bg-white dark:bg-dark-card p-4 text-left shadow-md transition-colors hover:bg-gray-50 dark:hover:bg-dark-surface active:bg-gray-100 dark:active:bg-dark-surface"
-					>
-						<div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-dark-surface">
-							{selectedCourseDetails.data?.icon ? (
-								<img
-									src={selectedCourseDetails.data.icon}
-									alt={selectedCourseDetails.data?.title ?? "Course"}
-									className="h-12 w-12 object-contain"
-								/>
-							) : courseChapters.data?.chapters?.[0] &&
-								courseChapters.data?.icons?.[
-									courseChapters.data.chapters[0].id
-								] ? (
-								<img
-									src={
-										courseChapters.data.icons[
-											courseChapters.data.chapters[0].id
-										]
-									}
-									alt={selectedCourseDetails.data?.title ?? "Course"}
-									className="h-12 w-12 object-contain"
-								/>
-							) : (
-								<span className="text-2xl">📚</span>
-							)}
-						</div>
-						<div className="min-w-0 flex-1">
-							<h3 className="text-base font-bold text-gray-900 dark:text-dark-text font-tusker line-clamp-1">
-								{selectedCourseDetails.data?.title ?? "Course"}
-							</h3>
-							<p className="mt-0.5 text-sm text-gray-600 dark:text-dark-muted font-montserrat line-clamp-2">
-								{selectedCourseDetails.data?.description ?? heroMessage}
-							</p>
-							{totalChapters > 0 && (
-								<div className="mt-2 flex items-center gap-2">
-									<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-border">
-										<div
-											className="h-full rounded-full bg-gray-800 dark:bg-dark-accent transition-all"
-											style={{ width: `${progressPercent}%` }}
-										/>
-									</div>
-									<span className="text-xs font-semibold tabular-nums text-gray-700 dark:text-dark-muted">
-										{progressPercent}%
-									</span>
-								</div>
-							)}
-							<p className="mt-1 text-sm text-gray-600 dark:text-dark-muted font-montserrat">
-								{totalChapters > 0 ? (
-									<>
-										<span className="font-semibold tabular-nums text-gray-900 dark:text-dark-text">
-											{completedChapters}
-										</span>
-										<span> of {totalChapters} chapters</span>
-										{remainingChapters > 0 && (
-											<span className="text-gray-500 dark:text-dark-muted">
-												{" "}
-												· {remainingChapters} to go
-											</span>
-										)}
-									</>
-								) : (
-									(selectedCourseDetails.data?.title ?? "Select a course")
-								)}
-							</p>
-						</div>
-						<span
-							className="shrink-0 text-gray-400 dark:text-dark-muted"
-							aria-hidden
+				<div
+					className={`transition-all duration-300 ease-in-out overflow-hidden ${
+						showCourseCard
+							? "max-h-60 opacity-100 translate-y-0"
+							: "max-h-0 opacity-0 -translate-y-4"
+					}`}
+				>
+					{selectedCourseId && (
+						<button
+							type="button"
+							onClick={() => setShowCourseDrawer(true)}
+							className="my-2 w-full flex items-start gap-4 rounded-xl bg-white/80 dark:bg-dark-card backdrop-blur-sm border border-purple-200/50 dark:border-dark-border p-4 text-left transition-colors hover:bg-white/90 dark:hover:bg-dark-surface active:bg-white dark:active:bg-dark-border"
 						>
-							<Info />
-						</span>
-					</button>
-				)}
+							<div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-purple-100 dark:bg-dark-surface">
+								{selectedCourseDetails.data?.icon ? (
+									<img
+										src={selectedCourseDetails.data.icon}
+										alt={selectedCourseDetails.data?.title ?? "Course"}
+										className="h-12 w-12 object-contain"
+									/>
+								) : courseChapters.data?.chapters?.[0] &&
+									courseChapters.data?.icons?.[
+										courseChapters.data.chapters[0].id
+									] ? (
+									<img
+										src={
+											courseChapters.data.icons[
+												courseChapters.data.chapters[0].id
+											]
+										}
+										alt={selectedCourseDetails.data?.title ?? "Course"}
+										className="h-12 w-12 object-contain"
+									/>
+								) : (
+									<span className="text-2xl">📚</span>
+								)}
+							</div>
+							<div className="min-w-0 flex-1">
+								<h3 className="text-base font-bold text-gray-900 dark:text-dark-text font-tusker line-clamp-1">
+									{selectedCourseDetails.data?.title ?? "Course"}
+								</h3>
+								<p className="mt-0.5 text-sm text-gray-500 dark:text-dark-muted font-montserrat line-clamp-2">
+									{selectedCourseDetails.data?.description ?? heroMessage}
+								</p>
+								{totalChapters > 0 && (
+									<div className="mt-2 flex items-center gap-2">
+										<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-purple-200 dark:bg-dark-surface">
+											<div
+												className="h-full rounded-full bg-purple-400 dark:bg-dark-accent transition-all"
+												style={{ width: `${progressPercent}%` }}
+											/>
+										</div>
+										<span className="text-xs font-semibold tabular-nums text-gray-500 dark:text-dark-muted">
+											{progressPercent}%
+										</span>
+									</div>
+								)}
+								<p className="mt-1 text-sm text-gray-400 dark:text-dark-muted font-montserrat">
+									{totalChapters > 0 ? (
+										<>
+											<span className="font-semibold tabular-nums text-gray-700 dark:text-dark-text">
+												{completedChapters}
+											</span>
+											<span> of {totalChapters} chapters</span>
+											{remainingChapters > 0 && (
+												<span className="text-gray-400 dark:text-dark-muted">
+													{" "}
+													· {remainingChapters} to go
+												</span>
+											)}
+										</>
+									) : (
+										(selectedCourseDetails.data?.title ?? "Select a course")
+									)}
+								</p>
+							</div>
+							<span
+								className="shrink-0 text-purple-300 dark:text-dark-muted"
+								aria-hidden
+							>
+								<Info />
+							</span>
+						</button>
+					)}
+				</div>
 
 				{/* ───────── LEARNING PATH / ROADMAP ───────── */}
-				<div className="pb-28">
+				<div className="pb-28 px-2">
 					{/* Curvy roadmap with dotted line */}
 					<div className="relative">
 						{courseChapters.isLoading ? (
@@ -407,73 +452,66 @@ export default function Dashboard() {
 								{[1, 2, 3].map((i) => (
 									<div
 										key={i}
-										className="h-24 w-full max-w-xs rounded-xl bg-white/30 animate-pulse"
+										className="h-24 w-full max-w-xs rounded-xl bg-purple-200/50 dark:bg-dark-surface animate-pulse"
 									/>
 								))}
 							</div>
 						) : chapters.length > 0 ? (
 							<>
-								{/* Curved dotted SVG path - behind cards, hidden under card backgrounds */}
-								<svg
-									className="absolute inset-0 w-full h-full pointer-events-none"
-									viewBox={`0 0 100 ${Math.max(100, chapters.length * 100)}`}
-									preserveAspectRatio="xMidYMid meet"
-									aria-hidden="true"
-								>
-									<title>Roadmap</title>
-									<path
-										d={(() => {
-											const cardH = 100;
-											const cardTop = (i: number) => 50 + i * cardH;
-											const cardBottom = (i: number) =>
-												50 + (i + 1) * cardH - 10;
-											if (chapters.length === 0) return "";
-											if (chapters.length === 1) {
-												const left = 0 % 2 === 0;
-												const top = cardTop(0);
-												const bottom = cardBottom(0);
-												const midY = (top + bottom) / 2;
-												return left
-													? `M 8 ${top} C 8 ${midY}, 32 ${midY}, 32 ${bottom}`
-													: `M 92 ${top} C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
-											}
-											let d = "";
-											for (let i = 0; i < chapters.length; i++) {
-												const isLeft = i % 2 === 0;
-												const top = cardTop(i);
-												const bottom = cardBottom(i);
-												const midY = (top + bottom) / 2;
-												if (i === 0) {
-													d += isLeft
-														? `M 8 ${top} C 8 ${midY}, 32 ${midY}, 32 ${bottom}`
-														: `M 92 ${top} C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
-												} else {
-													const prevBottom = cardBottom(i - 1);
-													const prevLeft = (i - 1) % 2 === 0;
-													if (prevLeft && !isLeft) {
-														d += ` C 50 ${prevBottom + 25}, 50 ${top - 25}, 92 ${top}`;
-														d += ` C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
-													} else if (!prevLeft && isLeft) {
-														d += ` C 50 ${prevBottom + 25}, 50 ${top - 25}, 8 ${top}`;
-														d += ` C 8 ${midY}, 32 ${midY}, 32 ${bottom}`;
-													} else if (prevLeft && isLeft) {
-														d += ` C 32 ${prevBottom + 25}, 8 ${top - 25}, 8 ${top}`;
-														d += ` C 8 ${midY}, 32 ${midY}, 32 ${bottom}`;
-													} else {
-														d += ` C 68 ${prevBottom + 25}, 92 ${top - 25}, 92 ${top}`;
-														d += ` C 92 ${midY}, 68 ${midY}, 68 ${bottom}`;
-													}
-												}
-											}
-											return d;
-										})()}
-										fill="none"
-										stroke="rgba(255,255,255,0.6)"
-										strokeWidth="1.5"
-										strokeDasharray="5 6"
-										strokeLinecap="round"
-									/>
-								</svg>
+								{/* Sinusoidal SVG path connecting chapters */}
+								{chapters.length >= 2 &&
+									(() => {
+										const n = chapters.length;
+										const slotH = 100;
+										const viewH = Math.max(100, n * slotH);
+										// Centre-Y of each chapter slot
+										const ny = (i: number) => i * slotH + 50;
+										// Card centre X — left cards ≈ 24%, right cards ≈ 76%
+										// (matches max-w-36 cards inside px-6 container on ~375px)
+										const nx = (i: number) => (i % 2 === 0 ? 24 : 76);
+
+										let d = `M ${nx(0)} ${ny(0)}`;
+										for (let i = 0; i < n - 1; i++) {
+											const x1 = nx(i);
+											const y1 = ny(i);
+											const x2 = nx(i + 1);
+											const y2 = ny(i + 1);
+											// Handle at 65% of vertical distance → rounder sine curve
+											const h = (y2 - y1) * 0.65;
+											d += ` C ${x1} ${y1 + h}, ${x2} ${y2 - h}, ${x2} ${y2}`;
+										}
+
+										return (
+											<svg
+												className="absolute inset-0 w-full h-full pointer-events-none"
+												viewBox={`0 0 100 ${viewH}`}
+												preserveAspectRatio="none"
+												aria-hidden="true"
+											>
+												<title>Roadmap</title>
+												<path
+													d={d}
+													fill="none"
+													stroke="rgba(139,92,246,0.35)"
+													strokeWidth="2"
+													strokeDasharray="7 7"
+													strokeLinecap="round"
+													vectorEffect="non-scaling-stroke"
+												/>
+												{/* Dots at each chapter node */}
+												{Array.from({ length: n }).map((_, i) => (
+													<circle
+														key={`node-${chapters[i].id}`}
+														cx={nx(i)}
+														cy={ny(i)}
+														r="1.8"
+														fill="rgba(139,92,246,0.5)"
+														vectorEffect="non-scaling-stroke"
+													/>
+												))}
+											</svg>
+										);
+									})()}
 
 								{chapters.map((chapter, index) => {
 									const isCompleted = index < completedChapters;
@@ -486,30 +524,47 @@ export default function Dashboard() {
 									return (
 										<div
 											key={chapter.id}
-											className={`relative z-10 flex py-3 ${alignRight ? "justify-end" : "justify-start"}`}
+											className={`relative z-10 flex py-5 ${alignRight ? "justify-end" : "justify-start"}`}
 										>
 											<button
 												type="button"
+												onPointerDown={() => {
+													setPressedCardId(chapter.id);
+													setReleasedCardId(undefined);
+												}}
+												onPointerUp={() => {
+													setPressedCardId(undefined);
+													setReleasedCardId(chapter.id);
+												}}
+												onPointerLeave={() => {
+													setPressedCardId(undefined);
+												}}
 												onClick={() => {
+													hapticFeedback.tap();
 													setSelectedChapterId(chapter.id);
 													setChapterPopupId(chapter.id);
 												}}
-												className={`relative w-full max-w-50 rounded-xl p-3 text-left transition-all shadow-md focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+												onAnimationEnd={() => {
+													if (releasedCardId === chapter.id) {
+														setReleasedCardId(undefined);
+													}
+												}}
+												className={`chapter-card relative w-full max-w-36 rounded-xl p-2.5 text-left focus:outline-none focus-visible:outline-none ${
 													isCompleted
-														? "bg-green-500 text-white shadow-green-500/30"
+														? "bg-green-500 text-white shadow-lg shadow-green-600/30"
 														: isCurrent
-															? "bg-amber-500 text-white shadow-amber-500/30"
-															: "bg-white dark:bg-dark-card text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-												} ${isSelected ? "ring-2 ring-white scale-[1.02]" : ""}`}
+															? "bg-orange-400 text-white shadow-lg shadow-orange-500/40 ring-2 ring-orange-300/60"
+															: "bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-400 dark:text-dark-muted"
+												} ${isSelected ? "ring-2 ring-orange-400" : ""} ${isCurrent ? "chapter-card-current" : ""} ${pressedCardId === chapter.id ? "chapter-card-down" : ""} ${releasedCardId === chapter.id ? "chapter-card-released" : ""}`}
 											>
 												{/* Top: icon, chapter number, lock (if locked) */}
-												<div className="relative flex items-center gap-2">
-													<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 overflow-hidden">
+												<div className="relative flex items-center gap-1.5">
+													<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black/10 dark:bg-white/10 overflow-hidden">
 														{iconUrl ? (
 															<img
 																src={iconUrl}
 																alt={chapter.title ?? `Chapter ${index + 1}`}
-																className="h-9 w-9 object-contain"
+																className="h-7 w-7 object-contain"
 															/>
 														) : (
 															<span className="text-lg font-bold">
@@ -517,12 +572,12 @@ export default function Dashboard() {
 															</span>
 														)}
 													</div>
-													<span className="text-sm font-bold font-tusker">
+													<span className="text-xs font-bold font-tusker">
 														Chapter {index + 1}
 													</span>
 													{isLocked && (
 														<span
-															className="ml-auto flex items-center justify-center rounded p-1 text-gray-600"
+															className="ml-auto flex items-center justify-center rounded p-1 text-gray-400 dark:text-dark-muted"
 															aria-hidden
 														>
 															<Lock className="h-4 w-4" strokeWidth={2.5} />
@@ -530,7 +585,7 @@ export default function Dashboard() {
 													)}
 												</div>
 												{/* Bottom: chapter name */}
-												<p className="mt-2 text-xs font-medium line-clamp-2 font-montserrat opacity-90">
+												<p className="mt-1.5 text-[11px] font-medium line-clamp-2 font-montserrat opacity-90">
 													{chapter.title || "Untitled chapter"}
 												</p>
 											</button>
@@ -539,11 +594,11 @@ export default function Dashboard() {
 								})}
 							</>
 						) : selectedEnrollment ? (
-							<p className="text-landing-hero-text/80 dark:text-gray-400 font-montserrat py-8 text-center">
+							<p className="text-gray-400 dark:text-dark-muted font-montserrat py-8 text-center">
 								No chapters available yet for this course.
 							</p>
 						) : (
-							<p className="text-landing-hero-text/80 dark:text-gray-400 font-montserrat py-8 text-center">
+							<p className="text-gray-400 dark:text-dark-muted font-montserrat py-8 text-center">
 								Select a course to see chapters
 							</p>
 						)}
@@ -552,27 +607,27 @@ export default function Dashboard() {
 			</div>
 
 			{popupChapter && (
-				<div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 px-4 py-6 sm:px-6">
+				<div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-6 sm:px-6">
 					<button
 						type="button"
 						className="absolute inset-0"
 						onClick={() => setChapterPopupId(undefined)}
 						aria-label="Close chapter popup"
 					/>
-					<div className="relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white dark:bg-dark-card p-4 shadow-xl sm:p-5">
+					<div className="relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white dark:bg-dark-card p-4 shadow-2xl shadow-purple-900/20 dark:shadow-black/40 sm:p-5">
 						<div className="mb-4 flex items-start justify-between gap-3">
 							<div className="min-w-0 flex-1">
 								<div className="mb-2 flex flex-wrap items-center gap-2">
-									<span className="rounded-lg bg-gray-100 border border-gray-200 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-600 font-tusker ">
+									<span className="rounded-lg bg-purple-100 dark:bg-dark-surface px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-purple-600 dark:text-dark-accent font-tusker">
 										Chapter {popupChapterIndex + 1}
 									</span>
 									<span
 										className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] font-tusker ${
 											popupChapterCompleted
-												? "bg-green-100 text-green-700 border border-green-200"
+												? "bg-purple-100 dark:bg-green-900/20 text-purple-600 dark:text-green-400"
 												: popupChapterCurrent
-													? "bg-blue-100 text-blue-700 border border-blue-200"
-													: "bg-gray-100 text-gray-500 border border-gray-200"
+													? "bg-fuchsia-100 dark:bg-orange-900/20 text-fuchsia-600 dark:text-orange-400"
+													: "bg-gray-100 dark:bg-dark-surface text-gray-400 dark:text-dark-muted"
 										}`}
 									>
 										{popupChapterCompleted
@@ -582,14 +637,14 @@ export default function Dashboard() {
 												: "Locked"}
 									</span>
 								</div>
-								<h4 className="text-lg mt-6 font-bold leading-tight text-gray-900 dark:text-gray-100 font-tusker">
+								<h4 className="text-lg mt-6 font-bold leading-tight text-gray-900 dark:text-dark-text font-tusker">
 									{popupChapter.title}
 								</h4>
 							</div>
 							<button
 								type="button"
 								onClick={() => setChapterPopupId(undefined)}
-								className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-surface border-2 border-gray-200 dark:border-dark-border text-gray-600 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-surface transition-colors font-montserrat"
+								className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-surface text-gray-400 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border transition-colors font-montserrat"
 								aria-label="Close chapter popup"
 							>
 								<X className="h-5 w-5" />
@@ -597,19 +652,19 @@ export default function Dashboard() {
 						</div>
 
 						{popupChapter.description && (
-							<p className="text-sm leading-relaxed text-gray-800 dark:text-gray-300 font-montserrat">
+							<p className="text-sm leading-relaxed text-gray-500 dark:text-dark-muted font-montserrat">
 								{popupChapter.description}
 							</p>
 						)}
 
 						<div className="mt-4 flex flex-wrap items-center gap-2">
 							{popupChapterCurrent && (
-								<span className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 font-montserrat">
+								<span className="rounded-lg bg-fuchsia-100 dark:bg-orange-900/20 px-3 py-1 text-xs font-semibold text-fuchsia-600 dark:text-orange-400 font-montserrat">
 									Your next lesson
 								</span>
 							)}
 							{popupChapterCompleted && (
-								<span className="rounded-lg bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 font-montserrat">
+								<span className="rounded-lg bg-purple-100 dark:bg-green-900/20 px-3 py-1 text-xs font-semibold text-purple-600 dark:text-green-400 font-montserrat">
 									Ready to review
 								</span>
 							)}
@@ -620,7 +675,7 @@ export default function Dashboard() {
 								type="button"
 								onClick={() => handleChapterStart(popupChapter.id)}
 								disabled={popupChapterLocked}
-								className="min-w-32 rounded-lg px-5 py-3 font-medium font-montserrat bg-landing-button-primary text-white hover:opacity-90 disabled:bg-gray-300 disabled:text-gray-600 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:opacity-70"
+								className="min-w-32 rounded-lg px-5 py-3 font-medium font-montserrat bg-purple-600 dark:bg-dark-accent text-white hover:bg-purple-700 dark:hover:bg-indigo-500 disabled:bg-gray-100 dark:disabled:bg-dark-surface disabled:text-gray-300 dark:disabled:text-dark-muted disabled:cursor-not-allowed"
 							>
 								{popupChapterLocked
 									? "Locked"
@@ -631,7 +686,7 @@ export default function Dashboard() {
 							<button
 								type="button"
 								onClick={() => setChapterPopupId(undefined)}
-								className="rounded-lg border-2 border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-700 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-surface font-montserrat"
+								className="rounded-lg border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-500 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-dark-border font-montserrat"
 							>
 								Later
 							</button>
