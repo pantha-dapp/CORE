@@ -3,6 +3,7 @@ import { AppError } from "../../lib/errors/app";
 import { respond } from "../../lib/utils/respond";
 import auth from "./auth";
 import courses from "./courses";
+import faucet from "./faucet";
 import jobs from "./jobs";
 import type { RouterEnv } from "./types";
 import users from "./users";
@@ -21,6 +22,7 @@ export const apiRouter = new Hono<RouterEnv>()
 	.route("/auth", auth)
 	.route("/courses", courses)
 	.route("/users", users)
+	.route("/faucet", faucet)
 
 	.onError((err, ctx) => {
 		if (err instanceof AppError) {
