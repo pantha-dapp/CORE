@@ -18,6 +18,7 @@ import { createRoot } from "react-dom/client";
 import { Toaster, toast } from "sonner";
 import router from "./pages/router";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
+import { ParticlesProvider } from "./shared/components/Particles";
 import { privyConfig } from "./shared/config/privy";
 import { wagmiConfig } from "./shared/config/wagmi";
 import { PanthaProvider } from "./shared/contexts/AppWrapper";
@@ -81,10 +82,12 @@ const App = () => {
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
 								<ThemeProvider>
-									<AppWrapper>
-										<RouterProvider router={router} />
-										<Toaster position="bottom-right" />
-									</AppWrapper>
+									<ParticlesProvider>
+										<AppWrapper>
+											<RouterProvider router={router} />
+											<Toaster position="bottom-right" />
+										</AppWrapper>
+									</ParticlesProvider>
 								</ThemeProvider>
 							</PanthaProvider>
 						</WagmiProvider>
