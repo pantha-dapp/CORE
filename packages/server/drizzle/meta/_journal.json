@@ -36,6 +36,13 @@
 			"when": 1772150400000,
 			"tag": "0004_fix_daily_activity_pk",
 			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "6",
+			"when": 1773542441194,
+			"tag": "0005_nice_loners",
+			"breakpoints": true
 		}
 	]
 }
