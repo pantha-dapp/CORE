@@ -79,6 +79,10 @@ export default function (appState: AppState) {
 		},
 	);
 
+	event.on("chapter.revised", async ({ walletAddress }) => {
+		registerActivityForStreaks(db, walletAddress);
+	});
+
 	event.on("chapter.revised", async ({ walletAddress, chapterId, correct }) => {
 		const chapterPages = await db.chapterPagesById({ chapterId });
 		if (!chapterPages) return;
