@@ -44,11 +44,13 @@ export function PanthaProvider(props: PanthaConfig) {
 	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
 	const contracts = useMemo(
 		() =>
-			getContracts({
-				//@ts-expect-error ned to fix this
-				client: wallet,
-				chainId: 545,
-			}),
+			wallet
+				? getContracts({
+						//@ts-expect-error ned to fix this
+						client: wallet,
+						chainId: 545,
+					})
+				: undefined,
 		[wallet],
 	);
 
