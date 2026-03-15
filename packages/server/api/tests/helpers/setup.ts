@@ -22,6 +22,7 @@ import { apiRouter } from "../../routes/router";
 import type { AppState, RouterEnv } from "../../routes/types";
 import { createAuthenticatedApi } from "./apiAuth";
 import { testGlobals } from "./globals";
+import { HardhatNode } from "./hardhat";
 import { testAiAdapter } from "./testAiAdapter";
 import { TestObjectStorageService } from "./testObjectStorage";
 
@@ -42,9 +43,13 @@ export const userWallet2 = createWalletClient({
 
 let qdrant: StartedTestContainer;
 let redis: StartedTestContainer;
+let hardhatNode: HardhatNode;
 
 beforeAll(
 	async () => {
+		hardhatNode = new HardhatNode();
+		await hardhatNode.start();
+
 		qdrant = await new GenericContainer("qdrant/qdrant")
 			.withExposedPorts(6333)
 			.withWaitStrategy(Wait.forHttp("/collections", 6333))
@@ -131,6 +136,7 @@ beforeAll(
 );
 
 afterAll(async () => {
+	await hardhatNode.stop();
 	await qdrant.stop();
 	await redis.stop();
 });
