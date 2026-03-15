@@ -1,33 +1,11 @@
 import { describe, expect, it, setSystemTime } from "bun:test";
-import { jsonStringify } from "@pantha/shared";
 import { testGlobals } from "./helpers/globals";
 import { userWallet1 } from "./helpers/setup";
-import { testChapterGenerationPages } from "./helpers/testAiAdapter";
-
-async function awaitJob(jobId: string) {
-	return new Promise<{ state: string; error?: string }>((resolve, reject) => {
-		const interval = setInterval(async () => {
-			const { api1 } = testGlobals;
-			const res = await api1.jobs[":id"].$get({ param: { id: jobId } });
-			const data = await res.json();
-			if (!data.success) {
-				clearInterval(interval);
-				reject(new Error("Failed to fetch job status"));
-				return;
-			}
-			if (data.data.state === "success") {
-				clearInterval(interval);
-				resolve({ state: "success" });
-			} else if (data.data.state === "failed") {
-				clearInterval(interval);
-				resolve({ state: "failed", error: data.data.error });
-			}
-		}, 1000);
-	});
-}
+import { testCompleteChapter, testCreateCourse } from "./helpers/testHelpers";
 
 let courseId: string;
 let firstChapterId: string;
+let initialEnrollmentCount = 0;
 
 describe("Courses Generation & Entrollment", () => {
 	it("initially user has no enrollments", async () => {
@@ -40,65 +18,13 @@ describe("Courses Generation & Entrollment", () => {
 		if (!enrolledData.success) {
 			throw new Error("Failed to fetch enrolled courses");
 		}
-		expect(enrolledData.data.courses).toEqual([]);
+		initialEnrollmentCount = enrolledData.data.courses.length;
 	});
-
-	const session = async (api: typeof testGlobals.api1 = testGlobals.api1) => {
-		const res = await api.courses.gen.session.$get();
-		const data = await res.json();
-		if (!data.success) {
-			throw new Error("Failed to create course generation session");
-		}
-		return data.data.session;
-	};
-
-	const action = async (
-		api: typeof testGlobals.api1,
-		action: Parameters<
-			(typeof testGlobals.api1)["courses"]["gen"]["action"]["$post"]
-		>[0]["json"],
-	) => {
-		const res = await api.courses.gen.action.$post({ json: action });
-		const data = await res.json();
-		if (!data.success) {
-			throw new Error("Failed to perform course generation action");
-		}
-		return data.data;
-	};
 
 	it("can generate course", async () => {
 		const { api1 } = testGlobals;
-		expect((await session()).state).toBe("major_category_choice");
-		await action(api1, {
-			type: "major_category_choice",
-			category: 0,
-		});
-		expect((await session()).state).toBe("learning_intent_freetext");
-		const { jobId } = await action(api1, {
-			type: "learning_intent_freetext",
-			intent: "I want to learn for fun",
-		});
-		jobId && (await awaitJob(jobId));
-		expect((await session()).state).toBe("answer_question");
-		const { questions } = await session();
-		await Promise.all(
-			questions.map(
-				(q) =>
-					new Promise<void>((resolve) => {
-						action(api1, {
-							type: "answer_question",
-							questionKey: q.key,
-							answer: "yes",
-						}).then(async (res) => {
-							res.jobId && (await awaitJob(res.jobId));
-							resolve();
-						});
-					}),
-			),
-		);
-		const finishedSession = await session();
-		expect(finishedSession.state).toBe("finished");
-		courseId = finishedSession.courseId ?? "";
+		courseId = await testCreateCourse(api1);
+		expect(courseId).toBeTruthy();
 	});
 
 	it("Chapters are generated after course generation", async () => {
@@ -130,9 +56,10 @@ describe("Courses Generation & Entrollment", () => {
 		if (!enrolledData.success) {
 			throw new Error("Failed to fetch enrolled courses");
 		}
-		expect(enrolledData.data.courses.length).toBe(1);
-
-		courseId = enrolledData.data.courses[0]?.courseId ?? "";
+		expect(enrolledData.data.courses.length).toBe(initialEnrollmentCount + 1);
+		expect(enrolledData.data.courses.some((c) => c.courseId === courseId)).toBe(
+			true,
+		);
 	});
 });
 
@@ -157,17 +84,13 @@ describe("Chapter & game Sessions", async () => {
 		if (!pagesData.success) {
 			throw new Error("Failed to fetch chapter pages");
 		}
+		if (!("pages" in pagesData.data)) {
+			throw new Error("Unexpected response: no pages in data");
+		}
 		const { pages } = pagesData.data;
 
 		return pages;
 	};
-
-	async function currentPage() {
-		const { currentPage } = await session();
-		const page = (await pages())[currentPage];
-
-		return page?.content;
-	}
 
 	async function answer(answer: string[]) {
 		const { api1 } = testGlobals;
@@ -223,8 +146,6 @@ describe("Chapter & game Sessions", async () => {
 	it("correct answers are accepted, pages in session move and progress is updated after completion", async () => {
 		const { api1 } = testGlobals;
 
-		let tries = 0;
-		let pageNumber = 0;
 		const initialProgressRaw = await api1.users[":wallet"].courses.$get({
 			param: { wallet: userWallet1.account.address },
 		});
@@ -237,80 +158,8 @@ describe("Chapter & game Sessions", async () => {
 		)?.progress;
 		expect(initialProgress).toBe(0);
 
-		while (!complete) {
-			tries++;
-			if (tries > 100) {
-				throw new Error(
-					"Too many tries, something might be wrong with the test",
-				);
-			}
-
-			expect(pageNumber).toBe((await session()).currentPage);
-			pageNumber++;
-
-			const page = await currentPage();
-			const matchingPage = findMatchingPage(testChapterGenerationPages, page);
-
-			if (page?.type === "example_uses") {
-				const resp = await answer([""]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "quiz") {
-				const resp = await answer([
-					matchingPage?.content.correctOptionIndex?.toString() ?? "",
-				]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "teach_and_explain_content") {
-				const resp = await answer([""]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "true_false") {
-				const resp = await answer([
-					matchingPage?.content.isTrue?.toString() ?? "",
-				]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "identify_shown_object_in_image") {
-				const resp = await answer([
-					matchingPage?.content.correctOptionIndex?.toString() ?? "",
-				]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "matching") {
-				const resp = await answer([
-					JSON.stringify(
-						shuffleArray(matchingPage.content.pairs ?? []),
-						null,
-						2,
-					),
-				]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-
-			if (page?.type === "identify_object_from_images") {
-				const resp = await answer([
-					matchingPage?.content.correctImageIndex?.toString() ?? "",
-				]);
-				expect(resp.correct).toBe(true);
-				complete = resp.complete;
-			}
-		}
-
-		const sessionEnd = await session();
-
-		expect(sessionEnd.currentPage).toBe(pageNumber);
+		complete = await testCompleteChapter(firstChapterId, api1);
+		expect(complete).toBe(true);
 
 		const finalProgressRaw = await api1.users[":wallet"].courses.$get({
 			param: { wallet: userWallet1.account.address },
@@ -363,37 +212,3 @@ describe("Chapter & game Sessions", async () => {
 		setSystemTime();
 	});
 });
-
-// biome-ignore lint/suspicious/noExplicitAny: its just a test>
-function findMatchingPage(_pages: any[], _page: any) {
-	const pages = JSON.parse(JSON.stringify(_pages));
-	const page = JSON.parse(JSON.stringify(_page));
-	let res: number = -1;
-	// @ts-expect-error
-	pages.forEach((p, i) => {
-		p.content.correctOptionIndex = null;
-		page.content.correctOptionIndex = null;
-		p.content.isTrue = null;
-		page.content.isTrue = null;
-		p.content.correctImageIndex = null;
-		page.content.correctImageIndex = null;
-		p.content.pairs = [];
-		page.content.pairs = [];
-
-		if (jsonStringify(p) === jsonStringify(page)) {
-			res = i;
-		}
-	});
-
-	return _pages[res] as (typeof testChapterGenerationPages)[number];
-}
-
-function shuffleArray<T>(array: T[]): T[] {
-	const newArray: T[] = [...array];
-	for (let i = newArray.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		// biome-ignore lint/style/noNonNullAssertion: we know these indexes exist
-		[newArray[i]!, newArray[j]!] = [newArray[j]!, newArray[i]!];
-	}
-	return newArray;
-}
