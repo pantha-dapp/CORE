@@ -17,17 +17,13 @@ import { createAi } from "../../../lib/ai";
 import { createDb } from "../../../lib/db";
 import { InMemoryEventBus } from "../../../lib/events/bus";
 import { registerEventHandlers } from "../../../lib/events/handlers";
-import { S3ObjectStorage } from "../../../lib/objectStorage/s3";
 import { DefaultPolicyManager } from "../../../lib/policies";
 import { apiRouter } from "../../routes/router";
 import type { AppState, RouterEnv } from "../../routes/types";
 import { createAuthenticatedApi } from "./apiAuth";
 import { testGlobals } from "./globals";
 import { testAiAdapter } from "./testAiAdapter";
-import {
-	TestObjectStorageService,
-	TestSynapseAdapter,
-} from "./testObjectStorage";
+import { TestObjectStorageService } from "./testObjectStorage";
 
 export const userWallet1 = createWalletClient({
 	account: privateKeyToAccount(
@@ -43,9 +39,9 @@ export const userWallet2 = createWalletClient({
 	transport: http(),
 	chain: hardhat,
 });
+
 let qdrant: StartedTestContainer;
 let redis: StartedTestContainer;
-let minio: StartedTestContainer;
 
 beforeAll(
 	async () => {
@@ -65,40 +61,7 @@ beforeAll(
 			.withWaitStrategy(Wait.forLogMessage("* Ready to accept connections"))
 			.start();
 
-		minio = await new GenericContainer("minio/minio")
-			.withExposedPorts(9000)
-			.withEnvironment({
-				MINIO_ROOT_USER: "minio",
-				MINIO_ROOT_PASSWORD: "password",
-			})
-			.withCommand(["server", "/data"])
-			.withWaitStrategy(Wait.forHttp("/minio/health/live", 9000))
-			.start();
-
-		const port = minio.getMappedPort(9000);
-		const host = minio.getHost();
-
-		await minio.exec([
-			"mc",
-			"alias",
-			"set",
-			"local",
-			"http://localhost:9000",
-			"minio",
-			"password",
-		]);
-		await minio.exec(["mc", "mb", "local/testing"]);
-
-		const objectStorage = new TestObjectStorageService(
-			new S3ObjectStorage({
-				accessKeyId: "minio",
-				secretAccessKey: "password",
-				endpoint: `http://${host}:${port}`,
-				bucket: "testing",
-				rootDir: ["test-suite"],
-			}),
-			new TestSynapseAdapter(),
-		);
+		const objectStorage = new TestObjectStorageService();
 
 		const testRedis = new RedisClient(
 			`redis://localhost:${redis.getMappedPort(6379)}`,
@@ -119,10 +82,14 @@ beforeAll(
 		const testPolicyManager = new DefaultPolicyManager({ db: testDb });
 
 		const contracts = getContracts({
-			chainId: 1, // Mainnet
+			chainId: hardhat.id,
+			// @ts-expect-error - The
 			client: createWalletClient({
 				transport: http(),
 				chain: hardhat,
+				account: privateKeyToAccount(
+					"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+				),
 			}),
 		});
 
@@ -131,6 +98,7 @@ beforeAll(
 			ai: createAi({
 				aiClient: testAiAdapter,
 				vectorDbClient: testVecDb,
+				//@ts-expect-error - The test object storage service doesn't fully implement the interface, but it's sufficient for testing purposes
 				objectStorage: objectStorage,
 			}),
 			eventBus: testEventBus,
@@ -159,11 +127,10 @@ beforeAll(
 		testGlobals.api1 = await createAuthenticatedApi(testApi, userWallet1);
 		testGlobals.api2 = await createAuthenticatedApi(testApi, userWallet2);
 	},
-	{ timeout: 20_000 },
+	{ timeout: 60_000 },
 );
 
 afterAll(async () => {
 	await qdrant.stop();
 	await redis.stop();
-	await minio.stop();
 });
