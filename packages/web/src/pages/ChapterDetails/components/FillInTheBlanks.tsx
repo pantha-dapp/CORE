@@ -1,5 +1,6 @@
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { MathText } from "../../../shared/components/MathText";
+
 import { useHapticFeedback } from "../../../shared/utils/haptics";
 
 interface Props {
@@ -265,7 +266,7 @@ export function FillInTheBlanks({
 
 	return (
 		<div className="space-y-6">
-			<h3 className="text-2xl font-bold text-gray-900 font-tusker">
+			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
 				Fill in the Blanks
 			</h3>
 
@@ -274,7 +275,7 @@ export function FillInTheBlanks({
 			)}
 
 			{/* Sentence with blanks */}
-			<div className="bg-gray-100 p-6 rounded-xl text-lg leading-loose">
+			<div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-xl text-lg leading-loose">
 				{words.flatMap((word, wordIdx) => {
 					// Split each token by any embedded $N patterns so that a single element
 					// like "( $1 , $2 )." is rendered as text + blank + text + blank + text.
@@ -323,7 +324,7 @@ export function FillInTheBlanks({
 									isCorrect
 										? "border-green-500 dark:border-green-400 text-green-600 dark:text-green-400"
 										: isFilled && hiddenBlankIndex !== blankIndex
-											? "border-gray-800 dark:border-dark-accent text-gray-800 dark:text-dark-text hover:border-red-500 dark:hover:border-red-400 hover:text-red-600 dark:hover:text-red-400"
+											? "border-gray-800 dark:border-dark-accent text-gray-800 dark:text-dark-text hover:border-gray-900 dark:hover:border-dark-text hover:text-gray-900 dark:hover:text-dark-text"
 											: "border-gray-400 dark:border-dark-border text-gray-400 dark:text-dark-muted"
 								}`}
 							>
@@ -369,9 +370,6 @@ export function FillInTheBlanks({
 			{/* Word bank – click to place; placed options disappear until the blank is cleared */}
 			{availableOptions.length > 0 && (
 				<div className="bg-gray-100 dark:bg-dark-surface p-5 rounded-xl">
-					<h4 className="text-xs font-semibold text-gray-600 dark:text-dark-muted uppercase tracking-wide mb-3 font-montserrat">
-						💡 Word Bank
-					</h4>
 					<div ref={wordBankRef} className="flex flex-wrap gap-2">
 						{remainingOptions.map(({ id, v }) => (
 							<button
@@ -395,7 +393,11 @@ export function FillInTheBlanks({
 					type="button"
 					onClick={handleSubmit}
 					disabled={!allFilled || isSubmitting}
-					className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 disabled:opacity-50 font-montserrat"
+					className={`w-full rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+						!allFilled
+							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
 				>
 					{isSubmitting ? "Checking..." : "Submit Answer"}
 				</button>

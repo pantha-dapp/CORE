@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import { useState } from "react";
-import { renderMathInHtml } from "../../../shared/utils/math";
+import { renderMathText } from "../../../shared/utils/math";
 import "katex/dist/katex.min.css";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function TeachContent({ topic, markdown, imageUrl, onContinue }: Props) {
-	const htmlContent = renderMathInHtml(String(marked(markdown)));
+	const htmlContent = marked(renderMathText(markdown));
 	const [isContinuing, setIsContinuing] = useState(false);
 
 	async function handleContinue() {

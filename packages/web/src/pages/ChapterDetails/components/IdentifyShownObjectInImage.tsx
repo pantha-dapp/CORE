@@ -171,7 +171,11 @@ export function IdentifyShownObjectInImage({
 					type="button"
 					onClick={handleSubmit}
 					disabled={selectedIndex === null || isSubmitting}
-					className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 disabled:opacity-50 font-montserrat"
+					className={`w-full rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+						selectedIndex === null
+							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
 				>
 					{isSubmitting ? "Submitting..." : "Submit Answer"}
 				</button>

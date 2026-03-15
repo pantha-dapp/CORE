@@ -111,12 +111,16 @@ export function Quiz({
 				})}
 			</div>
 
-			{!showResult && selectedOption !== null && (
+			{!showResult && (
 				<button
 					type="button"
 					onClick={handleSubmit}
-					disabled={isSubmitting}
-					className="w-full mt-6 rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 disabled:opacity-50 font-montserrat"
+					disabled={selectedOption === null || isSubmitting}
+					className={`w-full mt-6 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+						selectedOption === null
+							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
 				>
 					{isSubmitting ? "Checking..." : "Submit Answer"}
 				</button>
