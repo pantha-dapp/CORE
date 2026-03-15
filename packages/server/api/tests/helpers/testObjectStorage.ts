@@ -1,6 +1,6 @@
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { ObjectStorageResourceKey } from "../../../lib/objectStorage";
-import type { S3ObjectStorage } from "../../../lib/objectStorage/s3";
+import { S3ObjectStorage } from "../../../lib/objectStorage/s3";
 import type { IObjectStorageService } from "../../../lib/objectStorage/service";
 import { FilecoinSynapseObjectStorage } from "../../../lib/objectStorage/synapse";
 
@@ -21,13 +21,32 @@ export class TestSynapseAdapter extends FilecoinSynapseObjectStorage {
 	}
 }
 
+export class TestS3Adapter extends S3ObjectStorage {
+	constructor() {
+		super({
+			accessKeyId: "test",
+			bucket: "Test",
+			endpoint: "http://localhost:9000",
+			secretAccessKey: "test",
+			rootDir: ["test-suite"],
+		});
+	}
+
+	override upload(
+		key: ObjectStorageResourceKey,
+		_args: { path: string[]; data: Buffer },
+	): Promise<{ url: string }> {
+		return Promise.resolve({ url: `https://mock-s3/${key}` });
+	}
+}
+
 export class TestObjectStorageService implements IObjectStorageService {
 	private s3: S3ObjectStorage;
 	private synapse: TestSynapseAdapter;
 
-	constructor(s3: S3ObjectStorage, synapse: TestSynapseAdapter) {
-		this.s3 = s3;
-		this.synapse = synapse;
+	constructor() {
+		this.s3 = new TestS3Adapter();
+		this.synapse = new TestSynapseAdapter();
 	}
 
 	upload(args: {
