@@ -122,19 +122,19 @@ async function main() {
 	console.log("Definitions written to definitions.ts");
 	if (chainId === 545) {
 		try {
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${orchestrator.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${orchestrator.address} --force`;
 			await sleep(1000);
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${certificate.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${certificate.address} --force`;
 			await sleep(1500);
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${keyStore.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${keyStore.address} --force`;
 			await sleep(1500);
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${certificationAuthority.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${certificationAuthority.address} --force`;
 			await sleep(1500);
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${pxp.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${pxp.address} --force`;
 			await sleep(1500);
-			await $`bunx --bun hardhat verify --network flowEvmTestnet ${panthaToken.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${panthaToken.address} --force`;
 		} catch (_) {}
-		console.log("Contracts verified on flowEvmTestnet block explorer");
+		console.log("Contracts verified on flowTestnet block explorer");
 	}
 }
 
