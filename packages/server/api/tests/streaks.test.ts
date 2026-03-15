@@ -29,14 +29,14 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 describe("User Streaks", () => {
 	let db: ReturnType<typeof createDb>;
 
-	beforeAll(() => {
+	beforeAll(async () => {
 		db = createDb(":memory:", {
 			vectorDbClient: fakeVecDb,
 			redisClient: fakeRedis,
 		});
 		// Runs all migrations in ./drizzle, including the composite-PK fix for
 		// user_daily_activity so streaks correctly advance day-over-day.
-		migrate(db.$db, { migrationsFolder: "./drizzle" });
+		await migrate(db.$db, { migrationsFolder: "./drizzle" });
 	});
 
 	afterAll(() => {
