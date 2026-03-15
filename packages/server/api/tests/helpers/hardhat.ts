@@ -7,6 +7,7 @@ export class HardhatNode {
 	private workspaceRoot: string;
 	private logFilePath: string;
 	private logStream?: fs.WriteStream;
+	private processKilled = false;
 
 	constructor() {
 		// Calculate the workspace root from the current file location
@@ -65,7 +66,26 @@ export class HardhatNode {
 
 			this.process.on("error", (err) => {
 				this.writeLog("Hardhat Node", `Error: ${err.message}`);
-				reject(err);
+				if (!this.processKilled) {
+					reject(err);
+				}
+			});
+
+			// Monitor for unexpected process exit
+			this.process.on("exit", (code, signal) => {
+				if (!this.processKilled && (code !== 0 || signal)) {
+					const message = `Hardhat node exited unexpectedly with code ${code} and signal ${signal}`;
+					this.writeLog("Hardhat Node", message);
+					console.error(`✗ ${message}`);
+				}
+			});
+
+			this.process.on("close", (code, signal) => {
+				if (!this.processKilled && (code !== 0 || signal)) {
+					const message = `Hardhat node closed unexpectedly with code ${code} and signal ${signal}. Check ${this.logFilePath} for details.`;
+					this.writeLog("Hardhat Node", message);
+					console.error(`✗ ${message}`);
+				}
 			});
 		});
 	}
@@ -150,7 +170,20 @@ export class HardhatNode {
 
 	async stop() {
 		if (!this.process) return;
+		this.processKilled = true;
 		this.logStream?.end();
-		this.process.kill("SIGINT");
+
+		// Try to gracefully kill the process
+		if (!this.process.killed) {
+			this.process.kill("SIGINT");
+
+			// Wait a bit for graceful shutdown
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			// If still running, force kill
+			if (!this.process.killed) {
+				this.process.kill("SIGKILL");
+			}
+		}
 	}
 }
