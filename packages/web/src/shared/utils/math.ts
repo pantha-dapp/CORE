@@ -10,6 +10,34 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * Simple markdown processing for common inline formatting:
+ * - *text* → <em>text</em>
+ * - **text** → <strong>text</strong>
+ * - __text__ → <strong>text</strong>
+ * - _text_ → <em>text</em>
+ *
+ * Note: Only applies to text that doesn't contain $ or \ (to avoid interfering with math)
+ */
+function processMarkdown(text: string): string {
+	// Don't process markdown if text contains math delimiters
+	if (/\$|\\/.test(text)) {
+		return text;
+	}
+
+	// Process **bold** and __bold__
+	text = text
+		.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+		.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+
+	// Process *italic* and _italic_
+	text = text
+		.replace(/\*([^*]+)\*/g, "<em>$1</em>")
+		.replace(/_([^_]+)_/g, "<em>$1</em>");
+
+	return text;
+}
+
+/**
  * Converts a plain-text string that may contain LaTeX math delimiters
  * (`\(...\)` for inline, `\[...\]` for display) into an HTML string
  * with properly rendered KaTeX math.
@@ -24,7 +52,7 @@ function escapeHtml(text: string): string {
  */
 function isBareLatex(text: string): boolean {
 	// Already has explicit delimiters → not "bare"
-	if (/\\\(|\\\[/.test(text)) return false;
+	if (/\$|\\\(|\\\[/.test(text)) return false;
 	// Contains a LaTeX command (\frac, \to, \infty …) or braced super/subscript
 	return /\\[a-zA-Z]+|\^{|_{/.test(text);
 }
@@ -39,23 +67,49 @@ export function renderMathText(text: string): string {
 				output: "html",
 			});
 		} catch {
-			return escapeHtml(text);
+			return processMarkdown(escapeHtml(text));
 		}
 	}
 
-	// Matches \[...\] (display) or \(...\) (inline), both allowing newlines
-	const regex = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
+	// Matches:
+	// - \[...\] (display, LaTeX style)
+	// - \(...\) (inline, LaTeX style)
+	// - $$...$$ (display, Markdown style) - must come before $ to avoid partial matches
+	// - $...$ (inline, Markdown style)
+	// All allow newlines within the delimiters
+	const regex =
+		/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
 	const parts: string[] = [];
 	let lastIndex = 0;
 
 	for (let match = regex.exec(text); match !== null; match = regex.exec(text)) {
-		// Plain text before this math segment — HTML-escape it
+		// Plain text before this math segment — HTML-escape it, then apply markdown
 		if (match.index > lastIndex) {
-			parts.push(escapeHtml(text.slice(lastIndex, match.index)));
+			const plainText = text.slice(lastIndex, match.index);
+			parts.push(processMarkdown(escapeHtml(plainText)));
 		}
 
-		const isDisplay = match[1] !== undefined;
-		const mathContent = isDisplay ? match[1] : match[2];
+		// Determine which delimiter was matched and if it's display mode
+		let isDisplay = false;
+		let mathContent = "";
+
+		if (match[1] !== undefined) {
+			// $$ ... $$ (display, Markdown)
+			isDisplay = true;
+			mathContent = match[1];
+		} else if (match[2] !== undefined) {
+			// $ ... $ (inline, Markdown)
+			isDisplay = false;
+			mathContent = match[2];
+		} else if (match[3] !== undefined) {
+			// \[ ... \] (display, LaTeX)
+			isDisplay = true;
+			mathContent = match[3];
+		} else if (match[4] !== undefined) {
+			// \( ... \) (inline, LaTeX)
+			isDisplay = false;
+			mathContent = match[4];
+		}
 
 		try {
 			parts.push(
@@ -75,7 +129,7 @@ export function renderMathText(text: string): string {
 
 	// Remaining plain text
 	if (lastIndex < text.length) {
-		parts.push(escapeHtml(text.slice(lastIndex)));
+		parts.push(processMarkdown(escapeHtml(text.slice(lastIndex))));
 	}
 
 	return parts.join("");
