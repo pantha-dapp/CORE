@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { $ } from "bun";
 import hre from "hardhat";
 import { toHex } from "viem";
@@ -91,22 +92,11 @@ async function main() {
 
 	const definitionsFile = Bun.file("definitions.gen.ts");
 	try {
-		const existingContent = (await definitionsFile.text()).trim();
-
-		// Validate file format before parsing
-		if (
-			existingContent.startsWith(DEFINITIONS_FILE_PREFIX) &&
-			existingContent.endsWith(DEFINITIONS_FILE_SUFFIX)
-		) {
-			const definitionsJson = existingContent.slice(
-				DEFINITIONS_FILE_PREFIX.length,
-				existingContent.length - DEFINITIONS_FILE_SUFFIX.length,
-			);
-			existingDefinitions = JSON.parse(definitionsJson);
-		}
+		const modulePath = resolve(import.meta.dir, "../definitions.gen.ts");
+		const { definitions: existingDefs } = await import(modulePath);
+		existingDefinitions = { ...existingDefs };
 	} catch (error) {
 		console.error("Error reading definitions.gen.ts:", error);
-		// Reset to empty object if parsing fails
 		existingDefinitions = {};
 	}
 
