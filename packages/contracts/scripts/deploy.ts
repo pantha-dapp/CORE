@@ -91,7 +91,7 @@ async function main() {
 
 	const definitionsFile = Bun.file("definitions.gen.ts");
 	try {
-		const existingContent = await definitionsFile.text();
+		const existingContent = (await definitionsFile.text()).trim();
 
 		// Validate file format before parsing
 		if (
@@ -112,12 +112,6 @@ async function main() {
 
 	// Always add the new definitions, even if parsing failed
 	existingDefinitions[toHex(chainId)] = definitions;
-
-	await definitionsFile.write(
-		DEFINITIONS_FILE_PREFIX +
-			JSON.stringify(existingDefinitions, null, 2) +
-			DEFINITIONS_FILE_SUFFIX,
-	);
 
 	await definitionsFile.write(
 		DEFINITIONS_FILE_PREFIX +
