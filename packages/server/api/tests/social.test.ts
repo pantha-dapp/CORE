@@ -1,9 +1,23 @@
-import { describe, expect, it } from "bun:test";
+import { beforeAll, describe, expect, it } from "bun:test";
 import { zeroAddress } from "viem";
 import { testGlobals } from "./helpers/globals";
 import { userWallet1, userWallet2 } from "./helpers/setup";
+import { testBecomeFriends } from "./helpers/testHelpers";
 
 describe("Following Users", () => {
+	beforeAll(async () => {
+		const { api1, api2 } = testGlobals;
+		// Reset any follow state left by previous test files
+		await api1.users.unfollow.$post({
+			json: { walletToUnfollow: userWallet2.account.address },
+		});
+		await api2.users.unfollow.$post({
+			json: { walletToUnfollow: userWallet1.account.address },
+		});
+		// Reset profile visibility in case it was changed
+		await api2.users.me.$put({ json: { profileVisibility: "public" } });
+	});
+
 	it("can fetch empty followers and following", async () => {
 		const { api1 } = testGlobals;
 		const followersRes = await api1.users[":wallet"].followers.$get({
@@ -162,23 +176,7 @@ describe("Following Users", () => {
 	it("Users can follow both and become friends", async () => {
 		const { api1, api2 } = testGlobals;
 
-		const postRes = await api1.users.follow.$post({
-			json: {
-				walletToFollow: userWallet2.account.address,
-			},
-		});
-		const data = await postRes.json();
-		expect(postRes.status).toBe(200);
-		expect(data.success).toBe(true);
-
-		const postRes2 = await api2.users.follow.$post({
-			json: {
-				walletToFollow: userWallet1.account.address,
-			},
-		});
-		const data2 = await postRes2.json();
-		expect(postRes2.status).toBe(200);
-		expect(data2.success).toBe(true);
+		await testBecomeFriends(api1, api2);
 
 		const res = await api1.users[":wallet"].friends.$get({
 			param: { wallet: userWallet1.account.address },
