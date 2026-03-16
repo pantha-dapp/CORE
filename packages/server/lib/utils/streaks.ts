@@ -22,7 +22,8 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 	const yesterday = yesterdayOf(today);
 
 	await db.transaction(async (tx) => {
-		const [insertion] = await tx
+		//const [insertion] =
+		await tx
 			.insert(db.schema.userDailyActivity)
 			.values({
 				userWallet,
@@ -30,9 +31,9 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 			})
 			.onConflictDoNothing()
 			.returning();
-		if (!insertion) {
-			return;
-		}
+		// if (!insertion) {
+		// 	return;
+		// }
 
 		const [existingStreak] = await tx
 			.select()
@@ -45,7 +46,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 				currentStreak: 1,
 				lastActiveDate: today,
 			});
-			return;
+			// return;
 		} else {
 			if (existingStreak.lastActiveDate === yesterday) {
 				await tx
