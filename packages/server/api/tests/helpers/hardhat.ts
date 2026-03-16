@@ -33,7 +33,7 @@ export class HardhatNode {
 	private writeLog(source: string, message: string) {
 		const timestamp = new Date().toISOString();
 		const logMessage = `[${timestamp}] [${source}] ${message}`;
-		this.logStream?.write(logMessage + "\n");
+		this.logStream?.write(`${logMessage}\n`);
 	}
 
 	async start() {
@@ -101,17 +101,17 @@ export class HardhatNode {
 				},
 			);
 
-			let output = "";
+			let _output = "";
 
 			migration.stdout?.on("data", (data) => {
 				const text = data.toString();
-				output += text;
+				_output += text;
 				this.writeLog("Migration", text.trim());
 			});
 
 			migration.stderr?.on("data", (data) => {
 				const text = data.toString();
-				output += text;
+				_output += text;
 				this.writeLog("Migration Error", text.trim());
 			});
 
