@@ -194,7 +194,6 @@ export async function testCompleteChapter(
 		return data.data;
 	};
 
-	// Helper functions (same as in courses.test.ts)
 	// biome-ignore lint/suspicious/noExplicitAny: its just a test
 	function findMatchingPage(_pages: any[], _page: any) {
 		const pages = JSON.parse(JSON.stringify(_pages));
@@ -211,7 +210,6 @@ export async function testCompleteChapter(
 			p.content.pairs = [];
 			page.content.pairs = [];
 
-			// biome-ignore lint/style/noNonNullAssertion: imported json stringify
 			if (jsonStringify(p) === jsonStringify(page)) {
 				res = i;
 			}

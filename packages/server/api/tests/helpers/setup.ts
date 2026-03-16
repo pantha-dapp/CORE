@@ -18,6 +18,7 @@ import { createDb } from "../../../lib/db";
 import { InMemoryEventBus } from "../../../lib/events/bus";
 import { registerEventHandlers } from "../../../lib/events/handlers";
 import { DefaultPolicyManager } from "../../../lib/policies";
+import { issueJwtToken } from "../../../lib/utils/jwt";
 import { apiRouter } from "../../routes/router";
 import type { AppState, RouterEnv } from "../../routes/types";
 import { createAuthenticatedApi } from "./apiAuth";
@@ -131,6 +132,26 @@ beforeAll(
 
 		testGlobals.api1 = await createAuthenticatedApi(testApi, userWallet1);
 		testGlobals.api2 = await createAuthenticatedApi(testApi, userWallet2);
+		testGlobals.reauthenticate = async () => {
+			// Directly create sessions in the DB and issue JWTs — no SIWE/RPC needed.
+			const makeAuthClient = async (walletAddress: string) => {
+				const [session] = await testDb
+					.insert(testDb.schema.userSessions)
+					.values({ userWallet: walletAddress as `0x${string}` })
+					.returning();
+				if (!session) throw new Error("Failed to create test session");
+				const token = issueJwtToken(session.id);
+				return hc<typeof apiRouter>("http://localhost", {
+					fetch: async (input: string, init: RequestInit | undefined) => {
+						const request = new Request(input, init);
+						return testApi.fetch(request);
+					},
+					headers: { Authorization: `Bearer ${token}` },
+				});
+			};
+			testGlobals.api1 = await makeAuthClient(userWallet1.account.address);
+			testGlobals.api2 = await makeAuthClient(userWallet2.account.address);
+		};
 	},
 	{ timeout: 60_000 },
 );
