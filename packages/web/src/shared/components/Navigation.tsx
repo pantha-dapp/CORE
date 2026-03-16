@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
 		label: "Social",
 		path: "/social",
 	},
+	{ id: "wallet", icon: "wallet", label: "Wallet", path: "/wallet" },
 	{ id: "more", icon: "more-horizontal", label: "More", path: "/profile" },
 ];
 
