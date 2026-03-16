@@ -117,6 +117,8 @@ export function createAi(args: {
 		) => {
 			const result = await generateChapterPagesRaw(args);
 
+			let deleted = 0;
+
 			for (const [i, page] of result.pages.entries()) {
 				const { success: parseSuccess } =
 					generateChapterPageOutputTypedSchema.safeParse(page);
@@ -130,7 +132,9 @@ export function createAi(args: {
 						}),
 					);
 					if (healAttempt.error) {
+						console.log("Error healing page:", page);
 						delete result.pages[i];
+						deleted++;
 						continue;
 					}
 
@@ -138,13 +142,17 @@ export function createAi(args: {
 						healAttempt.data,
 					);
 					if (!parsedHeal.success) {
+						console.log("Error validating healed page:", healAttempt.data);
 						delete result.pages[i];
+						deleted++;
 						continue;
 					}
 
 					result.pages[i] = parsedHeal.data;
 				}
 			}
+
+			console.log("deleted ", deleted);
 
 			const parsed = generateChapterPageOutputTypedSchema
 				.array()
