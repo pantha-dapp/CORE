@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useFaucet() {
+export function usePanthaTokenBalance() {
 	const { contracts, wallet } = usePanthaContext();
 
 	return useMutation({
