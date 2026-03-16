@@ -22,6 +22,7 @@ import Onboarding from "./Onboarding";
 import Profile from "./Profile";
 import Social from "./Social";
 import Test from "./Test";
+import Wallet from "./Wallet";
 
 type ProtectedRouteType = "loggedOutOnly" | "loggedInOnly";
 interface ProtectedRouteProps {
@@ -195,6 +196,19 @@ const testRoute = createRoute({
 	},
 });
 
+const walletRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/wallet",
+	component: function WalletRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Wallet />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	loginRoute,
@@ -205,6 +219,7 @@ const routeTree = rootRoute.addChildren([
 	socialRoute,
 	profileRoute,
 	testRoute,
+	walletRoute,
 ]);
 
 const router = createRouter({
