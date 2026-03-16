@@ -1,15 +1,26 @@
-import { beforeAll, describe, expect, it } from "bun:test";
+import {
+	afterAll,
+	beforeAll,
+	describe,
+	expect,
+	it,
+	setSystemTime,
+} from "bun:test";
+import { parseResponse } from "hono/client";
 import { testGlobals } from "./helpers/globals";
+import { rpc } from "./helpers/rpc";
 import { userWallet1 } from "./helpers/setup";
 import { testCompleteChapter, testCreateCourse } from "./helpers/testHelpers";
 
+const DAY_0 = Date.now();
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 describe("User Streaks", () => {
-	let api1: typeof testGlobals.api1;
 	let courseId: string;
 	let chapterId: string;
 
 	beforeAll(async () => {
-		api1 = testGlobals.api1;
+		const { api1 } = testGlobals;
 		courseId = await testCreateCourse(api1);
 
 		await api1.courses.enroll.$post({
@@ -26,8 +37,14 @@ describe("User Streaks", () => {
 		chapterId = chapter.id;
 	});
 
+	afterAll(() => {
+		setSystemTime();
+	});
+
 	// DAY 0
 	it("streak is 1 after the first day's activity", async () => {
+		const { api1 } = testGlobals;
+
 		const userResBefore = await api1.users[":wallet"].$get({
 			param: { wallet: userWallet1.account.address },
 		});
@@ -53,7 +70,7 @@ describe("User Streaks", () => {
 		expect(user.streak.currentStreak).toBe(1);
 	});
 
-	it("duplicate activity on the same day does NOT increment the streak", async () => {
+	it("more activity on the same day does NOT increse the streak", async () => {
 		const { api1 } = testGlobals;
 		const userResBefore = await api1.users[":wallet"].$get({
 			param: { wallet: userWallet1.account.address },
@@ -77,58 +94,75 @@ describe("User Streaks", () => {
 		}
 		const { user: userAfter } = userDataAfter.data;
 
-		// Streak should still be 1, not incremented by the duplicate activity
 		expect(userAfter.streak.currentStreak).toBe(1);
 	});
 
-	// // Day 1 - consecutive
-	// it("streak increments to 2 on the next consecutive day", async () => {
-	// 	setSystemTime(DAY_0 + ONE_DAY_MS); // 2025-06-16
+	// Day 1 - consecutive
+	it("streak increments to 2 on the next consecutive day", async () => {
+		setSystemTime(DAY_0 + ONE_DAY_MS);
+		await testGlobals.reauthenticate();
+		const { api1 } = testGlobals;
 
-	// 	await registerActivityForStreaks(db, WALLET);
+		const userResBefore = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const userDataBefore = await userResBefore.json();
+		if (!userDataBefore.success) {
+			throw new Error("Failed to fetch user data");
+		}
+		const { user: userBefore } = userDataBefore.data;
 
-	// 	const [streak] = await db
-	// 		.select()
-	// 		.from(db.schema.userStreaks)
-	// 		.where(eq(db.schema.userStreaks.userId, WALLET));
+		expect(userBefore.streak.currentStreak).toBe(1);
 
-	// 	expect(streak?.currentStreak).toBe(2);
-	// 	expect(streak?.lastActiveDate).toBe("2025-06-16");
+		await testCompleteChapter(chapterId, api1);
+		const userResAfter = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const userDataAfter = await userResAfter.json();
+		if (!userDataAfter.success) {
+			throw new Error("Failed to fetch user data");
+		}
+		const { user: userAfter } = userDataAfter.data;
 
-	// 	setSystemTime();
-	// });
+		expect(userAfter.streak.currentStreak).toBe(2);
+	});
 
-	// // Day 3 - skipped day 2, streak should reset
-	// it("streak resets to 1 when a day is skipped", async () => {
-	// 	// Skip 2025-06-17 entirely, jump straight to 2025-06-18
-	// 	setSystemTime(DAY_0 + 3 * ONE_DAY_MS);
+	// Day 2 - miss activity but retain streak
+	it("streak stays the same for an entire day - retained when missing activity", async () => {
+		setSystemTime(DAY_0 + 2 * ONE_DAY_MS);
 
-	// 	await registerActivityForStreaks(db, WALLET);
+		await testGlobals.reauthenticate();
+		const { api1 } = testGlobals;
+		const userResBefore = await api1.users[":wallet"].$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const userDataBefore = await userResBefore.json();
+		if (!userDataBefore.success) {
+			throw new Error("Failed to fetch user data");
+		}
+		const { user: userBefore } = userDataBefore.data;
 
-	// 	const [streak] = await db
-	// 		.select()
-	// 		.from(db.schema.userStreaks)
-	// 		.where(eq(db.schema.userStreaks.userId, WALLET));
+		expect(userBefore.streak.currentStreak).toBe(2);
+	});
 
-	// 	expect(streak?.currentStreak).toBe(1);
-	// 	expect(streak?.lastActiveDate).toBe("2025-06-18");
+	// Day 3 - missed previous day, the streak rests
+	it("streak resets to 1 after missing a day", async () => {
+		setSystemTime(DAY_0 + 3 * ONE_DAY_MS);
 
-	// 	setSystemTime();
-	// });
+		await testGlobals.reauthenticate();
+		const { api1 } = testGlobals;
 
-	// // Day 4 - consecutive again, streak should build back up
-	// it("streak builds back up to 2 after a reset when consecutive again", async () => {
-	// 	setSystemTime(DAY_0 + 4 * ONE_DAY_MS); // 2025-06-19
+		await testCompleteChapter(chapterId, api1);
 
-	// 	await registerActivityForStreaks(db, WALLET);
-
-	// 	const [streak] = await db
-	// 		.select()
-	// 		.from(db.schema.userStreaks)
-	// 		.where(eq(db.schema.userStreaks.userId, WALLET));
-
-	// 	expect(streak?.currentStreak).toBe(2);
-
-	// 	setSystemTime();
-	// });
+		const userRes = await parseResponse(
+			api1.users[":wallet"].$get({
+				param: { wallet: userWallet1.account.address },
+			}),
+		);
+		if (!userRes.success) {
+			throw new Error("Failed to fetch user data");
+		}
+		const { user: userAfter } = userRes.data;
+		expect(userAfter.streak.currentStreak).toBe(1);
+	});
 });
