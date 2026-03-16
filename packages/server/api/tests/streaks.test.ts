@@ -47,6 +47,7 @@ describe("User Streaks", () => {
 
 	afterAll(() => {
 		setSystemTime();
+		testGlobals.reauthenticate();
 	});
 
 	// DAY 0
@@ -178,7 +179,10 @@ describe("Friends Streaks", () => {
 		chapterId = chapter.id;
 	});
 
-	afterAll(() => setSystemTime());
+	afterAll(() => {
+		setSystemTime();
+		testGlobals.reauthenticate();
+	});
 
 	const getFriendStreak = async () => {
 		const { friends } = await unwrap(
