@@ -547,7 +547,7 @@ export default function ChapterDetails() {
 	}
 
 	return (
-		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-4 py-6 sm:px-6 sm:py-8">
+		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg flex flex-col">
 			{isExplanationOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
 					<button
@@ -699,27 +699,29 @@ export default function ChapterDetails() {
 				</div>
 			)}
 
-			<div className="mx-auto max-w-4xl pb-16">
-				{/* Header */}
-				<button
-					type="button"
-					onClick={handleBackClick}
-					className="mb-6 rounded-xl bg-white dark:bg-dark-card px-4 py-3 font-semibold text-gray-800 dark:text-dark-text shadow-md hover:bg-gray-50 dark:hover:bg-dark-surface font-montserrat"
-				>
-					← Back to Chapters
-				</button>
+			{/* Main Content */}
+			<div className="flex-1 overflow-y-auto">
+				<div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+					{/* Header */}
+					<button
+						type="button"
+						onClick={handleBackClick}
+						className="mb-8 inline-flex items-center gap-2 text-gray-700 dark:text-dark-muted hover:text-gray-900 dark:hover:text-dark-text transition-colors font-montserrat"
+					>
+						<span>←</span>
+						<span>Back to Chapters</span>
+					</button>
 
-				{/* Chapter header + progress (collapsible) */}
-				<button
-					type="button"
-					onClick={() => setShowChapterDetails((v) => !v)}
-					className="mb-6 w-full rounded-xl bg-white dark:bg-dark-card px-4 py-3 shadow-md text-left hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors"
-				>
-					{/* Progress bar - always visible when not complete */}
-					{!isComplete ? (
-						<div className="flex items-center gap-3">
-							<div className="flex-1 min-w-0">
-								<div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-dark-border overflow-hidden">
+					{/* Chapter header + progress (collapsible) */}
+					<button
+						type="button"
+						onClick={() => setShowChapterDetails((v) => !v)}
+						className="mb-8 w-full text-left"
+					>
+						{/* Progress bar - always visible when not complete */}
+						{!isComplete ? (
+							<div className="space-y-3">
+								<div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-dark-border overflow-hidden">
 									<div
 										className="h-full rounded-full bg-landing-button-primary dark:bg-dark-accent transition-all duration-500"
 										style={{
@@ -727,75 +729,84 @@ export default function ChapterDetails() {
 										}}
 									/>
 								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-sm font-semibold text-gray-700 dark:text-dark-muted tabular-nums">
+										{displayedPageIndex + 1}/{totalPages}
+									</span>
+									<span
+										className="text-gray-400 dark:text-dark-muted text-sm"
+										aria-hidden
+									>
+										{showChapterDetails ? "▲" : "▼"}
+									</span>
+								</div>
 							</div>
-							<span className="text-sm font-semibold text-gray-700 dark:text-dark-muted tabular-nums shrink-0">
-								{displayedPageIndex + 1}/{totalPages}
-							</span>
-							<span
-								className="text-gray-400 dark:text-dark-muted shrink-0"
-								aria-hidden
-							>
-								{showChapterDetails ? "▲" : "▼"}
-							</span>
-						</div>
-					) : (
-						<div className="flex items-center justify-between">
-							<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
-								Chapter complete
-							</span>
-							<span
-								className="text-gray-400 dark:text-dark-muted shrink-0"
-								aria-hidden
-							>
-								{showChapterDetails ? "▲" : "▼"}
-							</span>
-						</div>
-					)}
-					{/* Chapter details - shown when expanded */}
-					{showChapterDetails && (
-						<div
-							className={`pt-4 border-t border-gray-100 dark:border-dark-border ${!isComplete ? "mt-4" : "mt-3"}`}
-						>
-							<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
-								{course.title}
-							</p>
-							<h1 className="mt-1 text-xl font-bold tracking-tight text-gray-900 dark:text-dark-text font-tusker">
-								{currentChapter.title}
-							</h1>
-							{currentChapter.description && (
-								<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat line-clamp-3">
-									{currentChapter.description}
-								</p>
-							)}
-						</div>
-					)}
-				</button>
-
-				{/* Content */}
-				{session ? (
-					<div className="rounded-xl bg-white dark:bg-dark-card p-5 shadow-md sm:p-6">
-						{isComplete ? (
-							<CompletionScreen
-								correctCount={completionReport?.correct ?? 0}
-								incorrectCount={completionReport?.incorrect ?? 0}
-								totalPages={totalPages}
-								xpEarned={completionReport?.xpEarned ?? 0}
-								onBackClick={handleCompletionBack}
-							/>
-						) : currentPage ? (
-							renderPage(currentPage)
 						) : (
-							<div className="text-center p-8">
-								<p className="text-gray-400 dark:text-dark-muted">
-									No content available
-								</p>
+							<div className="flex items-center justify-between mb-2">
+								<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
+									Chapter complete
+								</span>
+								<span
+									className="text-gray-400 dark:text-dark-muted text-sm"
+									aria-hidden
+								>
+									{showChapterDetails ? "▲" : "▼"}
+								</span>
 							</div>
 						)}
-					</div>
-				) : (
-					"creating session"
-				)}
+						{/* Chapter details - shown when expanded */}
+						{showChapterDetails && (
+							<div className="pt-4 mt-4 border-t border-gray-100 dark:border-dark-border">
+								<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
+									{course.title}
+								</p>
+								<h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-dark-text font-tusker">
+									{currentChapter.title}
+								</h1>
+								{currentChapter.description && (
+									<p className="mt-3 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
+										{currentChapter.description}
+									</p>
+								)}
+							</div>
+						)}
+					</button>
+
+					{/* Content */}
+					{session ? (
+						<div>
+							{isComplete ? (
+								<CompletionScreen
+									correctCount={completionReport?.correct ?? 0}
+									incorrectCount={completionReport?.incorrect ?? 0}
+									totalPages={totalPages}
+									xpEarned={completionReport?.xpEarned ?? 0}
+									onBackClick={handleCompletionBack}
+								/>
+							) : currentPage ? (
+								renderPage(currentPage)
+							) : (
+								<div className="text-center p-8">
+									<p className="text-gray-400 dark:text-dark-muted">
+										No content available
+									</p>
+								</div>
+							)}
+						</div>
+					) : (
+						<div className="text-center p-8">
+							<p className="text-gray-400 dark:text-dark-muted">
+								Creating session...
+							</p>
+						</div>
+					)}
+				</div>
 			</div>
+
+			{/* Fixed Bottom Button Area */}
+			{!isComplete && session && currentPage && (
+				<div className="h-24 sm:h-20"></div>
+			)}
 		</div>
 	);
 }
