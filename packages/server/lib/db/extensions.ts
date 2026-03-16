@@ -1,7 +1,7 @@
 // import type { Address } from "viem";
 
 import { jsonStringify } from "@pantha/shared";
-import { and, desc, eq, like } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or } from "drizzle-orm";
 import { type Address, type Hex, keccak256, toHex, verifyMessage } from "viem";
 import { InvalidStateError } from "../errors";
 import type { DbClient } from "./client";
@@ -186,6 +186,44 @@ export function dbExtensionHelpers(db: DbClient) {
 		return friends.map((f) => f.following);
 	}
 
+	async function userFriendsWithStreaks(args: { userWallet: Address }) {
+		const { userWallet } = args;
+		const friends = await userFriends({ userWallet });
+
+		const streaks = friends.length
+			? await db
+					.select()
+					.from(schema.friendStreaks)
+					.where(
+						or(
+							and(
+								eq(schema.friendStreaks.userWallet1, userWallet),
+								inArray(schema.friendStreaks.userWallet2, friends),
+							),
+							and(
+								inArray(schema.friendStreaks.userWallet1, friends),
+								eq(schema.friendStreaks.userWallet2, userWallet),
+							),
+						),
+					)
+			: [];
+
+		return friends.map((friendWallet) => {
+			const streak = streaks.find(
+				(s) =>
+					(s.userWallet1 === userWallet && s.userWallet2 === friendWallet) ||
+					(s.userWallet1 === friendWallet && s.userWallet2 === userWallet),
+			);
+			return {
+				wallet: friendWallet,
+				streak: {
+					currentStreak: streak?.currentStreak ?? 0,
+					lastActiveDate: streak?.lastActiveDate ?? null,
+				},
+			};
+		});
+	}
+
 	async function isUserFollowing(args: {
 		userWallet: Address;
 		targetWallet: Address;
@@ -307,6 +345,7 @@ export function dbExtensionHelpers(db: DbClient) {
 		userFollowing,
 		userFollowers,
 		userFriends,
+		userFriendsWithStreaks,
 		isUserFollowing,
 		isUserFriend,
 		searchUsersByUsername,
