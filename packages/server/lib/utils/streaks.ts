@@ -21,20 +21,16 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 	const today = dateInTimezone(userTimezone);
 	const yesterday = yesterdayOf(today);
 
-	await db.transaction(async (tx) => {
-		//const [insertion] =
-		await tx
-			.insert(db.schema.userDailyActivity)
-			.values({
-				userWallet,
-				date: today,
-			})
-			.onConflictDoNothing()
-			.returning();
-		// if (!insertion) {
-		// 	return;
-		// }
+	await db
+		.insert(db.schema.userDailyActivity)
+		.values({
+			userWallet,
+			date: today,
+		})
+		.onConflictDoNothing()
+		.returning();
 
+	await db.transaction(async (tx) => {
 		const [existingStreak] = await tx
 			.select()
 			.from(db.schema.userStreaks)
