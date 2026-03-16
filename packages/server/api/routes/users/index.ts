@@ -263,7 +263,7 @@ export default new Hono()
 				userWallet: wallet,
 			});
 
-			const friends = await db.userFriends({ userWallet: wallet });
+			const friends = await db.userFriendsWithStreaks({ userWallet: wallet });
 
 			return respond.ok(
 				ctx,
