@@ -165,6 +165,11 @@ export default new Hono<RouterEnv>()
 					"No active session found. Please start a session.",
 				);
 			}
+			if (session.currentPage >= session.pages.length) {
+				throw new ValidationError(
+					"Session is already complete. No more answers can be submitted.",
+				);
+			}
 			if (answer[0] === undefined) {
 				throw new ValidationError("Answer cannot be empty");
 			}
@@ -246,6 +251,9 @@ export default new Hono<RouterEnv>()
 			}
 
 			if (session.currentPage >= session.pages.length) {
+				// Session is done — remove it so currentPage cannot drift further
+				gameSessions.delete(userWallet);
+
 				// Check if user has previously completed this chapter
 				const { db } = ctx.var.appState;
 				const chapter = await db.chapterById({ chapterId: session.chapterId });
