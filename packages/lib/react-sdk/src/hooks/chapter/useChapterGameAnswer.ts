@@ -7,25 +7,6 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 	const queryClient = useQueryClient();
 	const chapterId = args?.chapterId;
 
-	function refreshSession() {
-		if (chapterId) {
-			queryClient.invalidateQueries({
-				queryKey: ["last-chapter-game-session", chapterId],
-			});
-			queryClient.refetchQueries({
-				queryKey: ["last-chapter-game-session", chapterId],
-			});
-		} else {
-			// Fallback: invalidate all sessions
-			queryClient.invalidateQueries({
-				queryKey: ["last-chapter-game-session"],
-			});
-			queryClient.refetchQueries({
-				queryKey: ["last-chapter-game-session"],
-			});
-		}
-	}
-
 	return useMutation({
 		mutationFn: async (args: { answer: string[] }) => {
 			const { answer } = args;
@@ -49,8 +30,6 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 			const data = actionResponse.data;
 
 			if (data.complete) {
-				refreshSession();
-
 				queryClient.invalidateQueries({
 					queryKey: ["userInfo"],
 				});
