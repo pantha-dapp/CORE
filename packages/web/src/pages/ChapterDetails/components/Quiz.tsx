@@ -111,24 +111,10 @@ export function Quiz({
 				})}
 			</div>
 
-			{!showResult && (
-				<button
-					type="button"
-					onClick={handleSubmit}
-					disabled={selectedOption === null || isSubmitting}
-					className={`w-full mt-6 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
-						selectedOption === null
-							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
-					} ${isSubmitting ? "opacity-50" : ""}`}
-				>
-					{isSubmitting ? "Checking..." : "Submit Answer"}
-				</button>
-			)}
-
+			{/* Result message */}
 			{showResult && (
 				<div
-					className={`overflow-hidden rounded-xl p-5 ${
+					className={`overflow-hidden rounded-xl p-5 mt-8 ${
 						isCorrect
 							? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30"
 							: "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"
@@ -151,11 +137,32 @@ export function Quiz({
 							</p>
 						</div>
 					</div>
+				</div>
+			)}
+
+			{/* Fixed bottom buttons */}
+			{!showResult && (
+				<button
+					type="button"
+					onClick={handleSubmit}
+					disabled={selectedOption === null || isSubmitting}
+					className={`fixed bottom-4 left-4 right-4 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+						selectedOption === null
+							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
+				>
+					{isSubmitting ? "Checking..." : "Submit Answer"}
+				</button>
+			)}
+
+			{showResult && (
+				<div className="fixed bottom-4 left-4 right-4 space-y-3">
 					{onViewExplanation && (
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3.5 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
+							className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat transition-colors"
 						>
 							<span>💡</span>
 							<span>
@@ -168,7 +175,7 @@ export function Quiz({
 					<button
 						type="button"
 						onClick={onContinue}
-						className="mt-3 w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+						className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat transition-opacity"
 					>
 						Next Question →
 					</button>

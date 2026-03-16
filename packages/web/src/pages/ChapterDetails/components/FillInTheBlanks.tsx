@@ -388,13 +388,41 @@ export function FillInTheBlanks({
 				</div>
 			)}
 
+			{/* Result message - shown above the fixed buttons */}
+			{showResult && (
+				<div className="mt-8 space-y-3">
+					<div
+						className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+					>
+						<div className="mb-4 flex items-start gap-3">
+							<div
+								className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
+							>
+								{isCorrect ? "📝" : "🔤"}
+							</div>
+							<div>
+								<p
+									className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+								>
+									{isCorrect ? "Well filled!" : "Almost there"}
+								</p>
+								<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
+									Use the explanation to understand the missing words, then
+									continue.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{!showResult && (
 				<button
 					type="button"
 					onClick={handleSubmit}
 					disabled={!allFilled || isSubmitting}
-					className={`w-full rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
-						!allFilled
+					className={`fixed bottom-4 left-4 right-4 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+						!allFilled || isSubmitting
 							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
 							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
 					} ${isSubmitting ? "opacity-50" : ""}`}
@@ -404,32 +432,12 @@ export function FillInTheBlanks({
 			)}
 
 			{showResult && (
-				<div
-					className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
-				>
-					<div className="mb-4 flex items-start gap-3">
-						<div
-							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
-						>
-							{isCorrect ? "📝" : "🔤"}
-						</div>
-						<div>
-							<p
-								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
-							>
-								{isCorrect ? "Well filled!" : "Almost there"}
-							</p>
-							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
-								Use the explanation to understand the missing words, then
-								continue.
-							</p>
-						</div>
-					</div>
+				<div className="fixed bottom-4 left-4 right-4 space-y-3">
 					{onViewExplanation && (
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3.5 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
+							className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat transition-colors"
 						>
 							<span>💡</span>
 							<span>
@@ -442,7 +450,7 @@ export function FillInTheBlanks({
 					<button
 						type="button"
 						onClick={onContinue}
-						className="mt-3 w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+						className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat transition-opacity"
 					>
 						Next Question →
 					</button>
