@@ -1,5 +1,6 @@
 import * as t from "drizzle-orm/sqlite-core";
 import { tEvmAddress, tHex, timestamps, tUuid } from "../helpers.base";
+import { contractVersions } from "./runtime";
 import { users } from "./user";
 
 export const userDailyActivity = t.sqliteTable(
@@ -39,6 +40,10 @@ export const userXpLog = t.sqliteTable("user_xp_log", {
 	id: tUuid("id").primaryKey(),
 	userWallet: tEvmAddress().notNull(),
 	xpGained: t.real("xp_gained").notNull(),
+	contractVersion: t
+		.int("contract_version")
+		.notNull()
+		.references(() => contractVersions.id),
 	transactionHash: tHex("transaction_hash"),
 	status: t
 		.text("status", { enum: ["pending", "success", "failed"] })
