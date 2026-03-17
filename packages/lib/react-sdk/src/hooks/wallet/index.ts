@@ -1,2 +1,2 @@
-export * from "./useFaucet";
 export * from "./usePanthaTokenBalance";
+export * from "./usePanthaTokenFaucet";
