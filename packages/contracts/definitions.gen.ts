@@ -1,12 +1,12 @@
 export const definitions = {
 	"0x221": {
 		PanthaOrchestrator: {
-			address: "0xedcef1a4c26d91edcabffc6d63db6ca88f42a279",
+			address: "0x85795f2ee849dae8ee050a07a46b321407fad249",
 			abi: [
 				{
 					inputs: [
 						{
-							internalType: "contract IERC20",
+							internalType: "contract IERC20PermitToken",
 							name: "panthaToken_",
 							type: "address",
 						},
@@ -223,7 +223,7 @@ export const definitions = {
 					name: "panthaToken",
 					outputs: [
 						{
-							internalType: "contract IERC20",
+							internalType: "contract IERC20PermitToken",
 							name: "",
 							type: "address",
 						},
@@ -297,12 +297,38 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "shop",
+					outputs: [
+						{
+							internalType: "contract PanthaShop",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
 					name: "totalXp",
 					outputs: [
 						{
 							internalType: "uint256",
 							name: "",
 							type: "uint256",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "treasury",
+					outputs: [
+						{
+							internalType: "contract PanthaTreasury",
+							name: "",
+							type: "address",
 						},
 					],
 					stateMutability: "view",
@@ -330,7 +356,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificate: {
-			address: "0xC476b9d862091Abe5Fd3bdf0D6992e17Be02500B",
+			address: "0x8A61D168662aE921085209E7B46B48474544C767",
 			abi: [
 				{
 					inputs: [],
@@ -854,7 +880,7 @@ export const definitions = {
 			],
 		},
 		PanthaKeyStore: {
-			address: "0x73C6e42e6B30089f1283EDB84a8B1F3615aC9A51",
+			address: "0x61431D4E8188eff5E8a566790da8644f39C39A2F",
 			abi: [
 				{
 					inputs: [],
@@ -1127,7 +1153,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificationAuthority: {
-			address: "0x73459dFF3f058a10110a56d8FBD58055D4d00C65",
+			address: "0xFCAd997071113d3c12c4B376119115374403C41F",
 			abi: [
 				{
 					inputs: [],
@@ -1257,7 +1283,7 @@ export const definitions = {
 			],
 		},
 		PanthaToken: {
-			address: "0x85d89c11f0b979ecf2362173761fa9a35e656935",
+			address: "0xb10fdb1fa4dcf463bfbecd13e6366e5646a8b4a2",
 			abi: [
 				{
 					inputs: [
@@ -1269,6 +1295,33 @@ export const definitions = {
 					],
 					stateMutability: "nonpayable",
 					type: "constructor",
+				},
+				{
+					inputs: [],
+					name: "ECDSAInvalidSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "uint256",
+							name: "length",
+							type: "uint256",
+						},
+					],
+					name: "ECDSAInvalidSignatureLength",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+					],
+					name: "ECDSAInvalidSignatureS",
+					type: "error",
 				},
 				{
 					inputs: [
@@ -1359,6 +1412,54 @@ export const definitions = {
 				{
 					inputs: [
 						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+					],
+					name: "ERC2612ExpiredSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "signer",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "ERC2612InvalidSigner",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "account",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "currentNonce",
+							type: "uint256",
+						},
+					],
+					name: "InvalidAccountNonce",
+					type: "error",
+				},
+				{
+					inputs: [],
+					name: "InvalidShortString",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
 							internalType: "address",
 							name: "owner",
 							type: "address",
@@ -1376,6 +1477,17 @@ export const definitions = {
 						},
 					],
 					name: "OwnableUnauthorizedAccount",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "string",
+							name: "str",
+							type: "string",
+						},
+					],
+					name: "StringTooLong",
 					type: "error",
 				},
 				{
@@ -1401,6 +1513,12 @@ export const definitions = {
 						},
 					],
 					name: "Approval",
+					type: "event",
+				},
+				{
+					anonymous: false,
+					inputs: [],
+					name: "EIP712DomainChanged",
 					type: "event",
 				},
 				{
@@ -1446,6 +1564,19 @@ export const definitions = {
 					],
 					name: "Transfer",
 					type: "event",
+				},
+				{
+					inputs: [],
+					name: "DOMAIN_SEPARATOR",
+					outputs: [
+						{
+							internalType: "bytes32",
+							name: "",
+							type: "bytes32",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
 				},
 				{
 					inputs: [
@@ -1529,12 +1660,74 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "eip712Domain",
+					outputs: [
+						{
+							internalType: "bytes1",
+							name: "fields",
+							type: "bytes1",
+						},
+						{
+							internalType: "string",
+							name: "name",
+							type: "string",
+						},
+						{
+							internalType: "string",
+							name: "version",
+							type: "string",
+						},
+						{
+							internalType: "uint256",
+							name: "chainId",
+							type: "uint256",
+						},
+						{
+							internalType: "address",
+							name: "verifyingContract",
+							type: "address",
+						},
+						{
+							internalType: "bytes32",
+							name: "salt",
+							type: "bytes32",
+						},
+						{
+							internalType: "uint256[]",
+							name: "extensions",
+							type: "uint256[]",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
 					name: "name",
 					outputs: [
 						{
 							internalType: "string",
 							name: "",
 							type: "string",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "nonces",
+					outputs: [
+						{
+							internalType: "uint256",
+							name: "",
+							type: "uint256",
 						},
 					],
 					stateMutability: "view",
@@ -1551,6 +1744,49 @@ export const definitions = {
 						},
 					],
 					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "spender",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "value",
+							type: "uint256",
+						},
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+						{
+							internalType: "uint8",
+							name: "v",
+							type: "uint8",
+						},
+						{
+							internalType: "bytes32",
+							name: "r",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+					],
+					name: "permit",
+					outputs: [],
+					stateMutability: "nonpayable",
 					type: "function",
 				},
 				{
@@ -1655,7 +1891,7 @@ export const definitions = {
 			],
 		},
 		PXP: {
-			address: "0x1081b958dFa0e1671130d775d06E572212Ee594f",
+			address: "0x3Ef9C0158D1De03a40B1507F2bf15bb2C922696C",
 			abi: [
 				{
 					inputs: [],
@@ -2069,6 +2305,218 @@ export const definitions = {
 				},
 			],
 		},
+		PanthaTreasury: {
+			address: "0xca9c9745a72d292fdc19f92dfd70d37b511a3f5a",
+			abi: [
+				{
+					inputs: [
+						{
+							internalType: "contract IERC20",
+							name: "token_",
+							type: "address",
+						},
+					],
+					stateMutability: "nonpayable",
+					type: "constructor",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "OwnableInvalidOwner",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "account",
+							type: "address",
+						},
+					],
+					name: "OwnableUnauthorizedAccount",
+					type: "error",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "previousOwner",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "address",
+							name: "newOwner",
+							type: "address",
+						},
+					],
+					name: "OwnershipTransferred",
+					type: "event",
+				},
+				{
+					inputs: [],
+					name: "owner",
+					outputs: [
+						{
+							internalType: "address",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "renounceOwnership",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "token",
+					outputs: [
+						{
+							internalType: "contract IERC20",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "newOwner",
+							type: "address",
+						},
+					],
+					name: "transferOwnership",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "to",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "amount",
+							type: "uint256",
+						},
+					],
+					name: "withdraw",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+			],
+		},
+		PanthaShop: {
+			address: "0xc1c2ec0e776fabf9f161016849c92f1bea639c2d",
+			abi: [
+				{
+					inputs: [],
+					stateMutability: "nonpayable",
+					type: "constructor",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "buyer",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "bytes8",
+							name: "itemId",
+							type: "bytes8",
+						},
+						{
+							indexed: false,
+							internalType: "uint256",
+							name: "amount",
+							type: "uint256",
+						},
+					],
+					name: "ItemPurchased",
+					type: "event",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "value",
+							type: "uint256",
+						},
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+						{
+							internalType: "uint8",
+							name: "v",
+							type: "uint8",
+						},
+						{
+							internalType: "bytes32",
+							name: "r",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes8",
+							name: "itemId",
+							type: "bytes8",
+						},
+					],
+					name: "buyWithPermit",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "orchestrator",
+					outputs: [
+						{
+							internalType: "contract IPanthaOrchestrator",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+			],
+		},
 	},
 	"0x7a69": {
 		PanthaOrchestrator: {
@@ -2077,7 +2525,7 @@ export const definitions = {
 				{
 					inputs: [
 						{
-							internalType: "contract IERC20",
+							internalType: "contract IERC20PermitToken",
 							name: "panthaToken_",
 							type: "address",
 						},
@@ -2294,7 +2742,7 @@ export const definitions = {
 					name: "panthaToken",
 					outputs: [
 						{
-							internalType: "contract IERC20",
+							internalType: "contract IERC20PermitToken",
 							name: "",
 							type: "address",
 						},
@@ -2368,12 +2816,38 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "shop",
+					outputs: [
+						{
+							internalType: "contract PanthaShop",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
 					name: "totalXp",
 					outputs: [
 						{
 							internalType: "uint256",
 							name: "",
 							type: "uint256",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "treasury",
+					outputs: [
+						{
+							internalType: "contract PanthaTreasury",
+							name: "",
+							type: "address",
 						},
 					],
 					stateMutability: "view",
@@ -3342,6 +3816,33 @@ export const definitions = {
 					type: "constructor",
 				},
 				{
+					inputs: [],
+					name: "ECDSAInvalidSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "uint256",
+							name: "length",
+							type: "uint256",
+						},
+					],
+					name: "ECDSAInvalidSignatureLength",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+					],
+					name: "ECDSAInvalidSignatureS",
+					type: "error",
+				},
+				{
 					inputs: [
 						{
 							internalType: "address",
@@ -3430,6 +3931,54 @@ export const definitions = {
 				{
 					inputs: [
 						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+					],
+					name: "ERC2612ExpiredSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "signer",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "ERC2612InvalidSigner",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "account",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "currentNonce",
+							type: "uint256",
+						},
+					],
+					name: "InvalidAccountNonce",
+					type: "error",
+				},
+				{
+					inputs: [],
+					name: "InvalidShortString",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
 							internalType: "address",
 							name: "owner",
 							type: "address",
@@ -3447,6 +3996,17 @@ export const definitions = {
 						},
 					],
 					name: "OwnableUnauthorizedAccount",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "string",
+							name: "str",
+							type: "string",
+						},
+					],
+					name: "StringTooLong",
 					type: "error",
 				},
 				{
@@ -3472,6 +4032,12 @@ export const definitions = {
 						},
 					],
 					name: "Approval",
+					type: "event",
+				},
+				{
+					anonymous: false,
+					inputs: [],
+					name: "EIP712DomainChanged",
 					type: "event",
 				},
 				{
@@ -3517,6 +4083,19 @@ export const definitions = {
 					],
 					name: "Transfer",
 					type: "event",
+				},
+				{
+					inputs: [],
+					name: "DOMAIN_SEPARATOR",
+					outputs: [
+						{
+							internalType: "bytes32",
+							name: "",
+							type: "bytes32",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
 				},
 				{
 					inputs: [
@@ -3600,12 +4179,74 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "eip712Domain",
+					outputs: [
+						{
+							internalType: "bytes1",
+							name: "fields",
+							type: "bytes1",
+						},
+						{
+							internalType: "string",
+							name: "name",
+							type: "string",
+						},
+						{
+							internalType: "string",
+							name: "version",
+							type: "string",
+						},
+						{
+							internalType: "uint256",
+							name: "chainId",
+							type: "uint256",
+						},
+						{
+							internalType: "address",
+							name: "verifyingContract",
+							type: "address",
+						},
+						{
+							internalType: "bytes32",
+							name: "salt",
+							type: "bytes32",
+						},
+						{
+							internalType: "uint256[]",
+							name: "extensions",
+							type: "uint256[]",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
 					name: "name",
 					outputs: [
 						{
 							internalType: "string",
 							name: "",
 							type: "string",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "nonces",
+					outputs: [
+						{
+							internalType: "uint256",
+							name: "",
+							type: "uint256",
 						},
 					],
 					stateMutability: "view",
@@ -3622,6 +4263,49 @@ export const definitions = {
 						},
 					],
 					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "spender",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "value",
+							type: "uint256",
+						},
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+						{
+							internalType: "uint8",
+							name: "v",
+							type: "uint8",
+						},
+						{
+							internalType: "bytes32",
+							name: "r",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+					],
+					name: "permit",
+					outputs: [],
+					stateMutability: "nonpayable",
 					type: "function",
 				},
 				{
@@ -4136,6 +4820,218 @@ export const definitions = {
 					name: "transferOwnership",
 					outputs: [],
 					stateMutability: "nonpayable",
+					type: "function",
+				},
+			],
+		},
+		PanthaTreasury: {
+			address: "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+			abi: [
+				{
+					inputs: [
+						{
+							internalType: "contract IERC20",
+							name: "token_",
+							type: "address",
+						},
+					],
+					stateMutability: "nonpayable",
+					type: "constructor",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "OwnableInvalidOwner",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "account",
+							type: "address",
+						},
+					],
+					name: "OwnableUnauthorizedAccount",
+					type: "error",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "previousOwner",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "address",
+							name: "newOwner",
+							type: "address",
+						},
+					],
+					name: "OwnershipTransferred",
+					type: "event",
+				},
+				{
+					inputs: [],
+					name: "owner",
+					outputs: [
+						{
+							internalType: "address",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "renounceOwnership",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "token",
+					outputs: [
+						{
+							internalType: "contract IERC20",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "newOwner",
+							type: "address",
+						},
+					],
+					name: "transferOwnership",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "to",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "amount",
+							type: "uint256",
+						},
+					],
+					name: "withdraw",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+			],
+		},
+		PanthaShop: {
+			address: "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+			abi: [
+				{
+					inputs: [],
+					stateMutability: "nonpayable",
+					type: "constructor",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "buyer",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "bytes8",
+							name: "itemId",
+							type: "bytes8",
+						},
+						{
+							indexed: false,
+							internalType: "uint256",
+							name: "amount",
+							type: "uint256",
+						},
+					],
+					name: "ItemPurchased",
+					type: "event",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+						{
+							internalType: "uint256",
+							name: "value",
+							type: "uint256",
+						},
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+						{
+							internalType: "uint8",
+							name: "v",
+							type: "uint8",
+						},
+						{
+							internalType: "bytes32",
+							name: "r",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes32",
+							name: "s",
+							type: "bytes32",
+						},
+						{
+							internalType: "bytes8",
+							name: "itemId",
+							type: "bytes8",
+						},
+					],
+					name: "buyWithPermit",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [],
+					name: "orchestrator",
+					outputs: [
+						{
+							internalType: "contract IPanthaOrchestrator",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
 					type: "function",
 				},
 			],
