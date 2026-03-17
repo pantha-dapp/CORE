@@ -88,7 +88,7 @@ beforeAll(
 		const testPolicyManager = new DefaultPolicyManager({ db: testDb });
 
 		const contracts = getContracts({
-			chainId: hardhat.id,
+			chain: hardhat,
 			// @ts-expect-error - The
 			client: createWalletClient({
 				transport: http(),
