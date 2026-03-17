@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PanthaCertificationAuthority.sol";
 import "./errors/EPanthaOrchestrator.sol";
 import "./PanthaTreasury.sol";
@@ -12,7 +11,7 @@ import "./PanthaShop.sol";
 import "./PXP.sol";
 
 contract PanthaOrchestrator is ReentrancyGuard {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20PermitToken;
 
     IERC20PermitToken public immutable panthaToken;
     PXP public immutable pxp;
@@ -47,7 +46,7 @@ contract PanthaOrchestrator is ReentrancyGuard {
         _;
     }
 
-    constructor(IERC20 panthaToken_) {
+    constructor(IERC20PermitToken panthaToken_) {
         server = msg.sender;
         panthaToken = panthaToken_;
 
