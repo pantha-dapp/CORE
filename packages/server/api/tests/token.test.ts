@@ -1,9 +1,14 @@
-import { describe, expect, it, setSystemTime } from "bun:test";
+import { afterAll, describe, expect, it, setSystemTime } from "bun:test";
 import { testGlobals } from "./helpers/globals";
 // import { unwrap } from "./helpers/rpc";
 import { userWallet1 } from "./helpers/setup";
 
 describe("Pantha Token", async () => {
+	afterAll(async () => {
+		setSystemTime();
+		await testGlobals.reauthenticate();
+	});
+
 	it("should drip $PANTHA from the faucet", async () => {
 		const { api1, contracts } = testGlobals;
 
@@ -59,7 +64,7 @@ describe("Pantha Token", async () => {
 
 	it("should allow claiming again after the cooldown", async () => {
 		setSystemTime(Date.now() + 25 * 60 * 60 * 1000);
-		testGlobals.reauthenticate();
+		await testGlobals.reauthenticate();
 		const { api1 } = testGlobals;
 
 		const response = await api1.faucet.pantha.$post({
@@ -77,7 +82,5 @@ describe("Pantha Token", async () => {
 		}
 		const { hash } = data;
 		expect(hash).toBeTruthy();
-
-		setSystemTime();
 	});
 });

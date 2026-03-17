@@ -16,6 +16,7 @@ describe("Xp minting", async () => {
 	}
 
 	const chapterId = courseData.data.chapters[0].id;
+	let firstXpCount: number = 0;
 	it("should award XP instantly when a chapter is completed", async () => {
 		const { user: userBefore } = await unwrap(
 			api1.users[":wallet"].$get({
@@ -24,9 +25,11 @@ describe("Xp minting", async () => {
 		);
 		const initialXp = userBefore.xpCount;
 
-		expect(initialXp).toBe(0);
+		expect(initialXp).toBeNumber();
+		firstXpCount = initialXp;
 
 		await testCompleteChapter(chapterId, api1);
+		await Bun.sleep(50);
 
 		const { user: userAfter } = await unwrap(
 			api1.users[":wallet"].$get({
@@ -48,6 +51,6 @@ describe("Xp minting", async () => {
 		);
 		const finalXp = user.xpCount;
 
-		expect(finalXp).toBeGreaterThan(0);
+		expect(finalXp).toBeGreaterThan(firstXpCount);
 	});
 });
