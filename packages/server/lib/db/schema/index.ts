@@ -3,6 +3,7 @@
 import { createSelectSchema } from "drizzle-zod";
 import * as course from "./course";
 import * as engagement from "./engagement";
+import * as runtime from "./runtime";
 import * as social from "./social";
 import * as user from "./user";
 
@@ -11,6 +12,7 @@ const schema = {
 	// ...cache,
 	...course,
 	...engagement,
+	...runtime,
 	...social,
 	...user,
 };
