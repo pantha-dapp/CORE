@@ -22,7 +22,7 @@ export default new Hono()
 			z.object({ itemId: z.string(), signature: zHex(), deadline: z.string() }),
 		),
 		async (ctx) => {
-			const { contracts, db } = ctx.var.appState;
+			const { contracts } = ctx.var.appState;
 			const { itemId, signature, deadline } = ctx.req.valid("query");
 			const item = shopItems.find((item) => item.id === itemId);
 			if (!item) {
