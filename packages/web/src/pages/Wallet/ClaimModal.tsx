@@ -1,7 +1,7 @@
 import { usePanthaContext } from "@pantha/react";
 import {
-	usePanthaFaucet,
 	usePanthaTokenBalance,
+	usePanthaTokenFaucet,
 	useUserInfo,
 } from "@pantha/react/hooks";
 import { useEffect, useState } from "react";
@@ -22,7 +22,8 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 	});
 
 	// Faucet hook for claiming tokens
-	const { mutate: claimTokens, isPending: isClaiming } = usePanthaFaucet();
+
+	const { mutate: claimTokens, isPending: isClaiming } = usePanthaTokenFaucet();
 
 	// Token balance hook
 	const { mutateAsync: fetchTokenBalance, isPending: isLoadingBalance } =
