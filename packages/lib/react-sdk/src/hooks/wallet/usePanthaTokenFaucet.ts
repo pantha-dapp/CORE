@@ -9,7 +9,7 @@ export function usePanthaTokenFaucet() {
 	return useMutation({
 		mutationKey: ["panthaTokenFaucet", wallet?.account.address],
 		mutationFn: async () => {
-			if (!wallet) throw new Error("not connected");
+			if (!wallet || !contracts) throw new Error("not connected");
 
 			const address = wallet.account.address as Address;
 
