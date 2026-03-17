@@ -43,6 +43,13 @@
 			"when": 1773542441194,
 			"tag": "0005_nice_loners",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1773724898346,
+			"tag": "0006_wooden_betty_ross",
+			"breakpoints": true
 		}
 	]
 }
