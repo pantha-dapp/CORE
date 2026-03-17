@@ -8,6 +8,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { flowTestnet } from "viem/chains";
 import type { UseWalletClientReturnType } from "wagmi";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
@@ -46,9 +47,9 @@ export function PanthaProvider(props: PanthaConfig) {
 		() =>
 			wallet
 				? getContracts({
-						//@ts-expect-error ned to fix this
+						// @ts-expect-error viem hash collision from transitive dependencies
 						client: wallet,
-						chainId: 545,
+						chain: flowTestnet,
 					})
 				: undefined,
 		[wallet],
