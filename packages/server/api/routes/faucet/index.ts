@@ -63,7 +63,7 @@ export default new Hono().post(
 			ctx,
 			{
 				claimed: true,
-				hash: txn,
+				txHash: txn,
 				balanceBefore: balance.toString(),
 			},
 			"Tokens claimed successfully",
