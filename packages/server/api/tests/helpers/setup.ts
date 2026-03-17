@@ -129,7 +129,6 @@ beforeAll(
 				return testApi.fetch(request);
 			},
 		});
-
 		testGlobals.api1 = await createAuthenticatedApi(testApi, userWallet1);
 		testGlobals.api2 = await createAuthenticatedApi(testApi, userWallet2);
 		testGlobals.reauthenticate = async () => {
