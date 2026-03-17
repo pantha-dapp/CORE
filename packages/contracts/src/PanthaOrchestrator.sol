@@ -6,16 +6,20 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PanthaCertificationAuthority.sol";
 import "./errors/EPanthaOrchestrator.sol";
+import "./PanthaTreasury.sol";
 import "./PanthaKeyStore.sol";
+import "./PanthaShop.sol";
 import "./PXP.sol";
 
 contract PanthaOrchestrator is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable panthaToken;
+    IERC20PermitToken public immutable panthaToken;
     PXP public immutable pxp;
     PanthaCertificationAuthority public immutable certificationAuthority;
+    PanthaTreasury public immutable treasury;
     PanthaKeyStore public immutable keyStore;
+    PanthaShop public immutable shop;
 
     address public server;
 
