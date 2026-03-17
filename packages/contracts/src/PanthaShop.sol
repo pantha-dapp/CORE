@@ -5,21 +5,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPanthaOrchestrator.sol";
-import "./interfaces/IERC20PermitToken.sol";
+
+interface IERC20PermitToken is IERC20, IERC20Permit {}
 
 contract PanthaShop {
-    IERC20PermitToken public immutable token;
     IPanthaOrchestrator public immutable orchestrator;
 
     event ItemPurchased(
         address indexed buyer,
-        bytes32 indexed purchaseId,
+        bytes8 indexed itemId,
         uint256 amount
     );
 
     constructor() {
         orchestrator = IPanthaOrchestrator(msg.sender); // the orchestrator deploys  shop
-        token = IERC20PermitToken(orchestrator.panthaToken());
     }
 
     function buyWithPermit(
@@ -29,11 +28,13 @@ contract PanthaShop {
         uint8 v,
         bytes32 r,
         bytes32 s,
-        bytes32 purchaseId
+        bytes8 itemId
     ) external {
+        IERC20PermitToken token = IERC20PermitToken(orchestrator.panthaToken());
+
         token.permit(owner, address(this), value, deadline, v, r, s);
         token.transferFrom(owner, orchestrator.treasury(), value);
 
-        emit ItemPurchased(owner, purchaseId, value);
+        emit ItemPurchased(owner, itemId, value);
     }
 }
