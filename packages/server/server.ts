@@ -48,8 +48,9 @@ const ai = createAi({ vectorDbClient, aiClient: aiAdapter, objectStorage });
 const eventBus = new InMemoryEventBus();
 const policyManager = new DefaultPolicyManager({ db });
 const contracts = getContracts({
-	chainId: 545,
-	// @ts-expect-error -- bun installs two viem@2.44.4 cache entries (workspace vs root); structurally identical at runtime
+	//@ts-expect-error -- bun installs two viem@2.44.4 cache entries (workspace vs root); structurally identical at runtime
+	chain: flowTestnet,
+	//@ts-expect-error -- bun installs two viem@2.44.4 cache entries (workspace vs root); structurally identical at runtime
 	client: createWalletClient({
 		account: privateKeyToAccount(
 			(env.EVM_PRIVATE_KEY.startsWith("0x")
