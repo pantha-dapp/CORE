@@ -4,7 +4,7 @@ import {
 	usePanthaTokenFaucet,
 	useUserInfo,
 } from "@pantha/react/hooks";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ClaimModalProps {
 	isOpen: boolean;
@@ -14,7 +14,7 @@ interface ClaimModalProps {
 export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 	const { wallet } = usePanthaContext();
 	const walletAddress = wallet?.account.address;
-	const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
+	const [tokenBalance, _setTokenBalance] = useState<bigint | null>(null);
 
 	// Fetch user info (XP data)
 	const { data: userInfo, isLoading: userInfoLoading } = useUserInfo({
@@ -23,20 +23,11 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 
 	// Faucet hook for claiming tokens
 
-	const { mutate: claimTokens, isPending: isClaiming } = usePanthaTokenFaucet();
+	const { mutateAsync: claimTokens, isPending: isClaiming } =
+		usePanthaTokenFaucet();
 
 	// Token balance hook
-	const { mutateAsync: fetchTokenBalance, isPending: isLoadingBalance } =
-		usePanthaTokenBalance();
-
-	// Fetch token balance when modal opens
-	useEffect(() => {
-		if (isOpen && wallet) {
-			fetchTokenBalance().then((balance) => {
-				setTokenBalance(balance);
-			});
-		}
-	}, [isOpen, wallet, fetchTokenBalance]);
+	const { isPending: isLoadingBalance } = usePanthaTokenBalance();
 
 	if (!isOpen) return null;
 
@@ -136,7 +127,11 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 					{/* Claim Button */}
 					<button
 						type="button"
-						onClick={() => claimTokens()}
+						onClick={() =>
+							claimTokens().catch((err) =>
+								console.error("Error claiming tokens:", err),
+							)
+						}
 						disabled={isClaiming}
 						className="w-full rounded-xl bg-landing-button-primary px-6 py-3 font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg dark:bg-dark-accent font-montserrat"
 					>
