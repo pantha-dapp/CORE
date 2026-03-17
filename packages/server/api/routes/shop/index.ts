@@ -17,10 +17,13 @@ export default new Hono()
 	.post(
 		"/buy",
 		authenticated,
-		validator("query", z.object({ itemId: z.string(), signature: zHex() })),
+		validator(
+			"query",
+			z.object({ itemId: z.string(), signature: zHex(), deadline: z.string() }),
+		),
 		async (ctx) => {
-			const { contracts } = ctx.var.appState;
-			const { itemId, signature } = ctx.req.valid("query");
+			const { contracts, db } = ctx.var.appState;
+			const { itemId, signature, deadline } = ctx.req.valid("query");
 			const item = shopItems.find((item) => item.id === itemId);
 			if (!item) {
 				return respond.err(ctx, "Item not found", 404);
@@ -34,12 +37,20 @@ export default new Hono()
 			const txHash = await contracts.PanthaShop.write.buyWithPermit([
 				ctx.var.userWallet,
 				BigInt(item.priceBps),
-				BigInt(Date.now() + 10 * 60),
+				BigInt(deadline),
 				Number(v),
 				r,
 				s,
 				identifierB8(item.id),
 			]);
+
+			contracts.$publicClient
+				.waitForTransactionReceipt({ hash: txHash })
+				.then((receipt) => {
+					if (receipt.status === "success") {
+						// db.purchases
+					}
+				});
 
 			respond.ok(ctx, { txHash, itemId }, "Purchase request created", 201);
 		},
