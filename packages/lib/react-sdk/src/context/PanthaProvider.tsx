@@ -18,14 +18,14 @@ type PanthaContext = {
 	ready: boolean;
 	api: ApiClient;
 	wallet: Wallet;
-	contracts: PanthaContracts;
+	contracts: PanthaContracts | undefined;
 };
 
 const PanthaContext = createContext<PanthaContext>({
 	ready: false,
 	api: {} as ApiClient,
 	wallet: undefined,
-	contracts: {} as PanthaContracts,
+	contracts: undefined,
 });
 
 type PanthaConfig = {
@@ -55,7 +55,7 @@ export function PanthaProvider(props: PanthaConfig) {
 	);
 
 	useEffect(() => {
-		if (!flag.current && wallet) {
+		if (!flag.current) {
 			flag.current = true;
 			storage.get<string>("jwt").then((token) => {
 				if (token && typeof token === "string") {
@@ -64,7 +64,7 @@ export function PanthaProvider(props: PanthaConfig) {
 				setReady(true);
 			});
 		}
-	}, [api, wallet]);
+	}, [api]);
 
 	const value: PanthaContext = useMemo(
 		() => ({
