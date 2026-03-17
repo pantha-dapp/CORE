@@ -3,6 +3,7 @@ import {
 	type Chain,
 	type Client,
 	createPublicClient,
+	createWalletClient,
 	getContract,
 	http,
 	type PublicClient,
@@ -18,7 +19,12 @@ function getKeyedClient<T extends Client | WalletClient>(client: T) {
 		public: createPublicClient({
 			transport: http(client.chain?.rpcUrls.default.http[0]),
 		}),
-		wallet: client,
+		// wallet: client,
+		wallet: createWalletClient({
+			transport: http(client.chain?.rpcUrls.default.http[0]),
+			account: client.account,
+			chain: client.chain,
+		}),
 	} as {
 		public: PublicClient<Transport, Chain>;
 		wallet: WalletClient<Transport, Chain, Account>;
