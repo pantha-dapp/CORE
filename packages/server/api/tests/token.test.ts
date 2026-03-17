@@ -32,7 +32,7 @@ describe("Pantha Token", async () => {
 		if (!data.claimed) {
 			throw new Error(`Expected to claim tokens`);
 		}
-		const { hash } = data;
+		const { txHash: hash } = data;
 		expect(hash).toBeTruthy();
 
 		expect(data.claimed).toBe(true);
@@ -80,7 +80,7 @@ describe("Pantha Token", async () => {
 		if (!data.claimed) {
 			throw new Error(`Expected to claim tokens after cooldown`);
 		}
-		const { hash } = data;
+		const { txHash: hash } = data;
 		expect(hash).toBeTruthy();
 	});
 });
