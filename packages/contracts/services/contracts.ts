@@ -73,6 +73,14 @@ export function getContracts<T extends Wallet>(options: {
 			client: keyedClient,
 			...contractDefinitions.PanthaToken,
 		}),
+		PanthaShop: getContract({
+			client: keyedClient,
+			...contractDefinitions.PanthaShop,
+		}),
+		PanthaTreasury: getContract({
+			client: keyedClient,
+			...contractDefinitions.PanthaTreasury,
+		}),
 		$client: client,
 		$publicClient: keyedClient.public,
 		$$testClient: testClient,
