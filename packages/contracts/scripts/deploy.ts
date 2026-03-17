@@ -58,6 +58,10 @@ async function main() {
 		"PanthaCertificate",
 		await certificationAuthority.read.certificate(),
 	);
+	const treasury = await viem.deployContract("PanthaTreasury", [
+		panthaToken.address,
+	]);
+	const shop = await viem.deployContract("PanthaShop", []);
 
 	console.log("Contracts deployed");
 
@@ -85,6 +89,14 @@ async function main() {
 		PXP: {
 			address: pxp.address,
 			abi: pxp.abi,
+		},
+		PanthaTreasury: {
+			address: treasury.address,
+			abi: treasury.abi,
+		},
+		PanthaShop: {
+			address: shop.address,
+			abi: shop.abi,
 		},
 	} as const;
 
@@ -123,6 +135,10 @@ async function main() {
 			await $`bunx --bun hardhat verify --network flowTestnet ${pxp.address} --force`;
 			await sleep(1500);
 			await $`bunx --bun hardhat verify --network flowTestnet ${panthaToken.address} --force`;
+			await sleep(1500);
+			await $`bunx --bun hardhat verify --network flowTestnet ${treasury.address} "${panthaToken.address}" --force`;
+			await sleep(1500);
+			await $`bunx --bun hardhat verify --network flowTestnet ${shop.address} --force`;
 		} catch (_) {}
 		console.log("Contracts verified on flowTestnet block explorer");
 	}
