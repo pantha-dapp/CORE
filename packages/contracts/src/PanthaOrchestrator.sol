@@ -53,6 +53,8 @@ contract PanthaOrchestrator is ReentrancyGuard {
         pxp = new PXP();
         certificationAuthority = new PanthaCertificationAuthority();
         keyStore = new PanthaKeyStore();
+        treasury = new PanthaTreasury(panthaToken_);
+        shop = new PanthaShop();
     }
 
     function cycleServer(address newServer_) external onlyServer {
