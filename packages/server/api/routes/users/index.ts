@@ -1,5 +1,5 @@
 import { zEvmAddress } from "@pantha/shared/zod";
-import { and, eq, lte, or, sql, sum } from "drizzle-orm";
+import { and, desc, eq, lte, or, sql, sum } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import z from "zod";
@@ -10,6 +10,8 @@ import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
 import social from "./social";
+
+let currentPxpVersion = -1;
 
 export default new Hono()
 
@@ -185,6 +187,17 @@ export default new Hono()
 			const { userWallet } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
 
+			if (currentPxpVersion === -1) {
+				const latestPxpVersion = await db
+					.select({ version: db.schema.contractVersions.id })
+					.from(db.schema.contractVersions)
+					.where(eq(db.schema.contractVersions.type, "pxp"))
+					.orderBy(desc(db.schema.contractVersions.createdAt))
+					.limit(1)
+					.then((rows) => rows[0]?.version ?? -1);
+				currentPxpVersion = latestPxpVersion;
+			}
+
 			await policyManager.assertCan(userWallet, "user.view", {
 				userWallet: wallet,
 			});
@@ -207,6 +220,7 @@ export default new Hono()
 				.where(
 					and(
 						eq(db.schema.userXpLog.userWallet, wallet),
+						eq(db.schema.userXpLog.contractVersion, currentPxpVersion),
 						or(
 							eq(db.schema.userXpLog.status, "success"),
 							eq(db.schema.userXpLog.status, "pending"),
