@@ -34,9 +34,6 @@
 	"lint-staged": {
 		"*.{js,ts,tsx,jsx,json,css}": "biome check --write"
 	},
-	"overrides": {
-		"viem": "2.44.4"
-	},
 	"dependencies": {
 		"@filoz/synapse-sdk": "^0.39.0",
 		"@qdrant/js-client-rest": "^1.16.2",
@@ -49,7 +46,6 @@
 		"marked": "^17.0.3",
 		"sharp": "^0.34.5",
 		"sqlite-vec": "^0.1.7-alpha.2",
-		"viem": "^2.44.4",
 		"web-haptics": "^0.0.6",
 		"zod": "^4.3.6",
 		"zod-to-json-schema": "^3.25.1"
