@@ -7,7 +7,9 @@ interface IPanthaOrchestrator {
     function panthaToken() external view returns (address);
     function pxp() external view returns (address);
     function certificationAuthority() external view returns (address);
+    function treasury() external view returns (address);
     function keyStore() external view returns (address);
+    function shop() external view returns (address);
     function server() external view returns (address);
     function totalXp() external view returns (uint256);
     function accRewardPerXp() external view returns (uint256);
