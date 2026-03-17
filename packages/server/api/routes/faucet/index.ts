@@ -21,7 +21,7 @@ export default new Hono().post(
 		const users = await db.userByWallet({ userWallet: address });
 		if (!users) throw new NotFoundError("User not found");
 
-		const redisKey = `faucet:last-claim:${address.toLowerCase()}`;
+		const redisKey = `faucet:last-claim${contracts.PanthaToken.address}:${address.toLowerCase()}`;
 		const lastClaimStr = await db.redis.get(redisKey);
 
 		if (lastClaimStr !== null) {
@@ -37,7 +37,7 @@ export default new Hono().post(
 				return respond.ok(
 					ctx,
 					{
-						canClaim: false,
+						claimed: false,
 						waitSeconds: remainingSeconds,
 						waitHuman: `${hours}h ${minutes}m ${seconds}s`,
 					},
@@ -51,19 +51,21 @@ export default new Hono().post(
 			decimals = await contracts.PanthaToken.read.decimals();
 		}
 
+		const balance = await contracts.PanthaToken.read.balanceOf([address]);
 		const txn = await contracts.PanthaToken.write.transfer([
 			address,
-			BigInt(100 * 10 ** decimals), // 100 tokens with 18 decimals
+			BigInt(100 * 10 ** decimals),
 		]);
-		await contracts.$publicClient.waitForTransactionReceipt({ hash: txn });
 
 		await db.redis.setex(redisKey, FAUCET_COOLDOWN_SECONDS, String(Date.now()));
 
-		const balance = await contracts.PanthaToken.read.balanceOf([address]);
-
 		return respond.ok(
 			ctx,
-			{ balance, canClaim: true },
+			{
+				claimed: true,
+				hash: txn,
+				balanceBefore: balance.toString(),
+			},
 			"Tokens claimed successfully",
 			200,
 		);
