@@ -1,6 +1,6 @@
 import { bytes8, identifierB8 } from "@pantha/contracts";
 import { tryCatch } from "@pantha/shared";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Address } from "viem";
 import type { AppState } from "../../api/routes/types";
 
@@ -12,6 +12,8 @@ interface MintXpParams {
 	appState: AppState;
 }
 
+let pxpVersion = -1;
+
 export async function mintXpForChapter({
 	walletAddress,
 	chapterId,
@@ -20,6 +22,36 @@ export async function mintXpForChapter({
 	appState,
 }: MintXpParams) {
 	const { db, contracts } = appState;
+
+	if (pxpVersion === -1) {
+		const [version] = await db
+			.select()
+			.from(db.schema.contractVersions)
+			.where(
+				and(
+					eq(db.schema.contractVersions.type, "pxp"),
+					eq(db.schema.contractVersions.contractAddress, contracts.PXP.address),
+				),
+			)
+			.limit(1);
+		if (version) {
+			pxpVersion = version.id;
+		} else {
+			const [newVersion] = await db
+				.insert(db.schema.contractVersions)
+				.values({
+					type: "pxp",
+					contractAddress: contracts.PXP.address,
+				})
+				.returning();
+			if (newVersion) {
+				pxpVersion = newVersion.id;
+			} else {
+				console.error("Failed to insert new PXP version into database");
+				return;
+			}
+		}
+	}
 
 	const user = await db.userByWallet({ userWallet: walletAddress });
 	if (!user) return;
@@ -45,6 +77,7 @@ export async function mintXpForChapter({
 			xpGained: xpAmount,
 			transactionHash: hash,
 			status: "pending",
+			contractVersion: pxpVersion,
 		})
 		.returning();
 	if (!xpLog) return;
