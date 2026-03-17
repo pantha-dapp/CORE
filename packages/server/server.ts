@@ -48,7 +48,9 @@ const ai = createAi({ vectorDbClient, aiClient: aiAdapter, objectStorage });
 const eventBus = new InMemoryEventBus();
 const policyManager = new DefaultPolicyManager({ db });
 const contracts = getContracts({
+	// @ts-expect-error viem hash collision from transitive dependencies
 	chain: flowTestnet,
+	// @ts-expect-error viem hash collision from transitive dependencies
 	client: createWalletClient({
 		account: privateKeyToAccount(
 			(env.EVM_PRIVATE_KEY.startsWith("0x")
