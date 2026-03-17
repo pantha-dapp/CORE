@@ -118,6 +118,7 @@ export class HardhatNode {
 			migration.on("close", (code) => {
 				if (code === 0) {
 					console.log("✓ Contracts deployed");
+
 					// Verify that definitions for chainId 31337 are available
 					const definitionsPath = path.resolve(
 						this.workspaceRoot,
