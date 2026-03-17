@@ -49,6 +49,7 @@ export function PanthaProvider(props: PanthaConfig) {
 				? getContracts({
 						// @ts-expect-error viem hash collision from transitive dependencies
 						client: wallet,
+						// @ts-expect-error viem hash collision from transitive dependencies
 						chain: flowTestnet,
 					})
 				: undefined,
