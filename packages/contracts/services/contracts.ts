@@ -1,7 +1,6 @@
 import {
 	type Account,
 	type Chain,
-	type Client,
 	createPublicClient,
 	createWalletClient,
 	getContract,
@@ -14,28 +13,30 @@ import {
 } from "viem";
 import { definitions } from "../definitions.gen";
 
-function getKeyedClient<T extends Client | WalletClient>(client: T) {
-	return {
-		public: createPublicClient({
-			transport: http(client.chain?.rpcUrls.default.http[0]),
-		}),
-		// wallet: client,
-		wallet: createWalletClient({
-			transport: http(client.chain?.rpcUrls.default.http[0]),
-			account: client.account,
-			chain: client.chain,
-		}),
-	} as {
-		public: PublicClient<Transport, Chain>;
-		wallet: WalletClient<Transport, Chain, Account>;
-	};
-}
-
 export function getContracts<T extends Wallet>(options: {
 	client: T;
-	chainId: number;
+	chain: Chain;
 }) {
-	const { client, chainId } = options;
+	const { client } = options;
+
+	const chain = client.chain ? client.chain : options.chain;
+
+	function getKeyedClient() {
+		return {
+			public: createPublicClient({
+				transport: http(client.chain?.rpcUrls.default.http[0]),
+				chain: chain,
+			}),
+			wallet: createWalletClient({
+				transport: http(client.chain?.rpcUrls.default.http[0]),
+				account: client.account,
+				chain: chain,
+			}),
+		} as {
+			public: PublicClient<Transport, Chain>;
+			wallet: WalletClient<Transport, Chain, Account>;
+		};
+	}
 
 	if (!client.transport || !client.chain || !client.account) {
 		console.log(
@@ -43,14 +44,14 @@ export function getContracts<T extends Wallet>(options: {
 		);
 	}
 
-	const key = toHex(chainId);
+	const key = toHex(chain.id);
 	if (!Object.keys(definitions).includes(key)) {
-		console.error(`No contract definitions found for chainId ${chainId}`);
-		throw new Error(`Unsupported chainId: ${chainId}`);
+		console.error(`No contract definitions found for chainId ${chain.id}`);
+		throw new Error(`Unsupported chain: ${chain.name}`);
 	}
 
 	const contractDefinitions = definitions[key as keyof typeof definitions];
-	const keyedClient = getKeyedClient(client);
+	const keyedClient = getKeyedClient();
 
 	const testClient = client.extend(testActions({ mode: "hardhat" }));
 
