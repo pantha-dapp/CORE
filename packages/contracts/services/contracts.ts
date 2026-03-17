@@ -7,6 +7,7 @@ import {
 	http,
 	type PublicClient,
 	type Transport,
+	testActions,
 	toHex,
 	type WalletClient,
 } from "viem";
@@ -45,6 +46,8 @@ export function getContracts<T extends Wallet>(options: {
 	const contractDefinitions = definitions[key as keyof typeof definitions];
 	const keyedClient = getKeyedClient(client);
 
+	const testClient = client.extend(testActions({ mode: "hardhat" }));
+
 	return {
 		PanthaOrchestrator: getContract({
 			client: keyedClient,
@@ -72,6 +75,7 @@ export function getContracts<T extends Wallet>(options: {
 		}),
 		$client: client,
 		$publicClient: keyedClient.public,
+		$$testClient: testClient,
 	};
 }
 
