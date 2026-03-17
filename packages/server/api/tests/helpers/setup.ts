@@ -152,6 +152,7 @@ beforeAll(
 			testGlobals.api1 = await makeAuthClient(userWallet1.account.address);
 			testGlobals.api2 = await makeAuthClient(userWallet2.account.address);
 		};
+		testGlobals.contracts = contracts;
 	},
 	{ timeout: 60_000 },
 );

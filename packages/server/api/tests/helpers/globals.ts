@@ -1,3 +1,4 @@
+import type { PanthaContracts } from "@pantha/contracts";
 import type { hc } from "hono/client";
 import type { apiRouter } from "../../routes/router";
 
@@ -7,4 +8,5 @@ export const testGlobals: {
 	api1: ReturnType<typeof hc<typeof apiRouter>>;
 	api2: ReturnType<typeof hc<typeof apiRouter>>;
 	reauthenticate: () => Promise<void>;
+	contracts: PanthaContracts;
 } = {};
