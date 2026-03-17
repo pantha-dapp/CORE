@@ -1,5 +1,5 @@
 import type { PrivyClientConfig } from "@privy-io/react-auth";
-import { optimism } from "viem/chains";
+import { flowTestnet } from "viem/chains";
 
 export const privyConfig: PrivyClientConfig = {
 	appearance: {
@@ -13,5 +13,5 @@ export const privyConfig: PrivyClientConfig = {
 		showWalletUIs: false,
 	},
 	loginMethods: ["email", "google", "apple", "farcaster"],
-	supportedChains: [optimism],
+	supportedChains: [flowTestnet],
 };
