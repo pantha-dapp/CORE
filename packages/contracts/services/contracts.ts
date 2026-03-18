@@ -19,16 +19,16 @@ export function getContracts<T extends Wallet>(options: {
 }) {
 	const { client } = options;
 
-	const chain = client.chain ? client.chain : options.chain;
+	const chain = options.chain ? options.chain : client.chain;
 
 	function getKeyedClient() {
 		return {
 			public: createPublicClient({
-				transport: http(client.chain?.rpcUrls.default.http[0]),
+				transport: http(chain?.rpcUrls.default.http[0]),
 				chain: chain,
 			}),
 			wallet: createWalletClient({
-				transport: http(client.chain?.rpcUrls.default.http[0]),
+				transport: http(chain?.rpcUrls.default.http[0]),
 				account: client.account,
 				chain: chain,
 			}),
@@ -45,6 +45,7 @@ export function getContracts<T extends Wallet>(options: {
 	}
 
 	const key = toHex(chain.id);
+
 	if (!Object.keys(definitions).includes(key)) {
 		console.error(`No contract definitions found for chainId ${chain.id}`);
 		throw new Error(`Unsupported chain: ${chain.name}`);
