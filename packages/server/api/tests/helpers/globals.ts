@@ -1,3 +1,4 @@
+import type { PanthaContracts } from "@pantha/contracts";
 import type { hc } from "hono/client";
 import type { apiRouter } from "../../routes/router";
 import type { AppState } from "../../routes/types";
@@ -6,6 +7,7 @@ import type { AppState } from "../../routes/types";
 export const testGlobals: {
 	api0: ReturnType<typeof hc<typeof apiRouter>>;
 	api1: ReturnType<typeof hc<typeof apiRouter>>;
+	contracts1: PanthaContracts;
 	api2: ReturnType<typeof hc<typeof apiRouter>>;
 	reauthenticate: () => Promise<void>;
 	appState: AppState;
