@@ -7,6 +7,9 @@ export async function unwrap<T>(
 ): Promise<T> {
 	const res = await req;
 	const data = await res.json();
-	if (!data.success) throw new Error("Request failed");
+	if (!data.success) {
+		console.error(data);
+		throw new Error("Request failed");
+	}
 	return data.data;
 }
