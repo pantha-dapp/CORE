@@ -23,15 +23,11 @@ const enforcers: Enforcers<"shop"> = {
 					throw new ConflictError("You have already purchased this item.");
 				}
 
-				break;
+				return true;
 			}
 			default:
 				throw new NotFoundError("Shop item not found");
 		}
-
-		throw new UnauthorizedError(
-			"You do not have permission to view this user's profile.",
-		);
 	},
 };
 
