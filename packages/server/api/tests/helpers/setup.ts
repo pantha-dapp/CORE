@@ -132,6 +132,14 @@ beforeAll(
 		});
 		testGlobals.api1 = await createAuthenticatedApi(testApi, userWallet1);
 		testGlobals.api2 = await createAuthenticatedApi(testApi, userWallet2);
+
+		testGlobals.contracts1 = getContracts({
+			// @ts-expect-error - alksdmalsd
+			chain: hardhat,
+			// @ts-expect-error - The
+			client: userWallet1,
+		});
+
 		testGlobals.reauthenticate = async () => {
 			// Directly create sessions in the DB and issue JWTs — no SIWE/RPC needed.
 			const makeAuthClient = async (walletAddress: string) => {
