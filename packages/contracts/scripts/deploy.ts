@@ -58,10 +58,14 @@ async function main() {
 		"PanthaCertificate",
 		await certificationAuthority.read.certificate(),
 	);
-	const treasury = await viem.deployContract("PanthaTreasury", [
-		panthaToken.address,
-	]);
-	const shop = await viem.deployContract("PanthaShop", []);
+	const treasury = await viem.getContractAt(
+		"PanthaTreasury",
+		await orchestrator.read.treasury(),
+	);
+	const shop = await viem.getContractAt(
+		"PanthaShop",
+		await orchestrator.read.shop(),
+	);
 
 	console.log("Contracts deployed");
 
