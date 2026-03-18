@@ -9,8 +9,9 @@ import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
+import type { RouterEnv } from "../types";
 
-export default new Hono()
+export default new Hono<RouterEnv>()
 
 	.get("/", authenticated, async (ctx) => {
 		return respond.ok(ctx, { items: shopItems }, "Shop Items ", 200);
@@ -105,5 +106,5 @@ export default new Hono()
 				),
 			);
 
-		respond.ok(ctx, { history: purchases }, "Inventory Items ", 200);
+		return respond.ok(ctx, { history: purchases }, "Inventory Items ", 200);
 	});
