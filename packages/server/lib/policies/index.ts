@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/complexity/noBannedTypes: {} **/
 import type { Address } from "viem";
+import type { ShopItemId } from "../../data/shop";
 import type { Db } from "../db";
 import { ForbiddenError, NotImplementedError } from "../errors";
 import chapterEnforcers from "./chapter";
@@ -53,6 +54,8 @@ export interface PolicyResourceDefs {
 	"user.follow": PolicyResource<"user">;
 	"user.unfollow": PolicyResource<"user">;
 	"user.viewFriendProfile": PolicyResource<"user">;
+
+	"shop.purchase": { itemId: ShopItemId };
 }
 type Domain = keyof PolicyResourceDefs extends infer K
 	? K extends `${infer Prefix}.${string}`
