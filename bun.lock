@@ -81,6 +81,7 @@
       "version": "0.1.0",
       "dependencies": {
         "fast-json-stable-stringify": "^2.1.0",
+        "viem": "^2.47.4",
       },
       "peerDependencies": {
         "zod": "*",
