@@ -4825,7 +4825,7 @@ export const definitions = {
 			],
 		},
 		PanthaTreasury: {
-			address: "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+			address: "0x93b6BDa6a0813D808d75aA42e900664Ceb868bcF",
 			abi: [
 				{
 					inputs: [
@@ -4946,7 +4946,7 @@ export const definitions = {
 			],
 		},
 		PanthaShop: {
-			address: "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+			address: "0xA22D78bc37cE77FeE1c44F0C2C0d2524318570c3",
 			abi: [
 				{
 					inputs: [],
