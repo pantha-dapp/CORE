@@ -88,6 +88,7 @@ beforeAll(
 		const testPolicyManager = new DefaultPolicyManager({ db: testDb });
 
 		const contracts = getContracts({
+			// @ts-expect-error - alksdmalsd
 			chain: hardhat,
 			// @ts-expect-error - The
 			client: createWalletClient({
@@ -151,7 +152,7 @@ beforeAll(
 			testGlobals.api1 = await makeAuthClient(userWallet1.account.address);
 			testGlobals.api2 = await makeAuthClient(userWallet2.account.address);
 		};
-		testGlobals.contracts = contracts;
+		testGlobals.appState = appState;
 	},
 	{ timeout: 60_000 },
 );
