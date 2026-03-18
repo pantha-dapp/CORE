@@ -1,9 +1,11 @@
 import { identifierB8 } from "@pantha/contracts";
 import { zHex } from "@pantha/shared/zod";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { parseSignature } from "viem";
 import z from "zod";
 import { shopItems } from "../../../data/shop";
+import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -22,8 +24,19 @@ export default new Hono()
 			z.object({ itemId: z.string(), signature: zHex(), deadline: z.string() }),
 		),
 		async (ctx) => {
-			const { contracts } = ctx.var.appState;
+			const { contracts, db, policyManager } = ctx.var.appState;
 			const { itemId, signature, deadline } = ctx.req.valid("query");
+
+			await policyManager.assertCan(ctx.var.userWallet, "shop.purchase", {
+				itemId,
+			});
+
+			const shopVersion = await getContractVersionId({
+				db,
+				type: "shop",
+				contractAddress: contracts.PanthaShop.address,
+			});
+
 			const item = shopItems.find((item) => item.id === itemId);
 			if (!item) {
 				return respond.err(ctx, "Item not found", 404);
@@ -48,10 +61,45 @@ export default new Hono()
 				.waitForTransactionReceipt({ hash: txHash })
 				.then((receipt) => {
 					if (receipt.status === "success") {
-						// db.purchases
+						db.insert(db.schema.userPurchases).values({
+							itemId,
+							txHash,
+							userWallet: ctx.var.userWallet,
+							contractVersion: shopVersion,
+							consumed: 0,
+						});
 					}
 				});
 
 			respond.ok(ctx, { txHash, itemId }, "Purchase request created", 201);
 		},
-	);
+	)
+
+	.get("/inventory", authenticated, async (ctx) => {
+		const { db, contracts } = ctx.var.appState;
+
+		const shopVersion = await getContractVersionId({
+			db,
+			type: "shop",
+			contractAddress: contracts.PanthaShop.address,
+		});
+
+		const purchases = await ctx.var.appState.db
+			.select()
+			.from(ctx.var.appState.db.schema.userPurchases)
+			.where(
+				and(
+					eq(
+						ctx.var.appState.db.schema.userPurchases.userWallet,
+						ctx.var.userWallet,
+					),
+					eq(
+						ctx.var.appState.db.schema.userPurchases.contractVersion,
+						shopVersion,
+					),
+					eq(ctx.var.appState.db.schema.userPurchases.consumed, 0),
+				),
+			);
+
+		respond.ok(ctx, { items: purchases }, "Inventory Items ", 200);
+	});
