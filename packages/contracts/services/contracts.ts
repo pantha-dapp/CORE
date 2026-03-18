@@ -1,3 +1,4 @@
+import { eip712signature } from "exports";
 import {
 	type Account,
 	type Chain,
