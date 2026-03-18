@@ -80,7 +80,7 @@ export default new Hono()
 		},
 	)
 
-	.get("/inventory", authenticated, async (ctx) => {
+	.get("/purchases", authenticated, async (ctx) => {
 		const { db, contracts } = ctx.var.appState;
 
 		const shopVersion = await getContractVersionId({
@@ -102,9 +102,8 @@ export default new Hono()
 						ctx.var.appState.db.schema.userPurchases.contractVersion,
 						shopVersion,
 					),
-					eq(ctx.var.appState.db.schema.userPurchases.consumed, 0),
 				),
 			);
 
-		respond.ok(ctx, { items: purchases }, "Inventory Items ", 200);
+		respond.ok(ctx, { history: purchases }, "Inventory Items ", 200);
 	});
