@@ -1,8 +1,9 @@
 import { bytes8, identifierB8 } from "@pantha/contracts";
 import { tryCatch } from "@pantha/shared";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Address } from "viem";
 import type { AppState } from "../../api/routes/types";
+import { getContractVersionId } from "./contractVersion";
 
 interface MintXpParams {
 	walletAddress: Address;
@@ -11,8 +12,6 @@ interface MintXpParams {
 	contractsEventName: string;
 	appState: AppState;
 }
-
-let pxpVersion = -1;
 
 export async function mintXpForChapter({
 	walletAddress,
@@ -23,35 +22,11 @@ export async function mintXpForChapter({
 }: MintXpParams) {
 	const { db, contracts } = appState;
 
-	if (pxpVersion === -1) {
-		const [version] = await db
-			.select()
-			.from(db.schema.contractVersions)
-			.where(
-				and(
-					eq(db.schema.contractVersions.type, "pxp"),
-					eq(db.schema.contractVersions.contractAddress, contracts.PXP.address),
-				),
-			)
-			.limit(1);
-		if (version) {
-			pxpVersion = version.id;
-		} else {
-			const [newVersion] = await db
-				.insert(db.schema.contractVersions)
-				.values({
-					type: "pxp",
-					contractAddress: contracts.PXP.address,
-				})
-				.returning();
-			if (newVersion) {
-				pxpVersion = newVersion.id;
-			} else {
-				console.error("Failed to insert new PXP version into database");
-				return;
-			}
-		}
-	}
+	const pxpVersion = await getContractVersionId({
+		db,
+		type: "pxp",
+		contractAddress: contracts.PanthaOrchestrator.address,
+	});
 
 	const user = await db.userByWallet({ userWallet: walletAddress });
 	if (!user) return;
