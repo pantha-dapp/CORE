@@ -3,8 +3,11 @@ import type { PanthaContracts } from "../contracts";
 
 export async function eip712signature(
 	contracts: PanthaContracts,
-	contractName: keyof Pick<PanthaContracts, "PanthaKeyStore">,
-	args: Omit<SignTypedDataParameters, "domain" | "privateKey">,
+	contractName: keyof Pick<
+		PanthaContracts,
+		"PanthaKeyStore" | "PanthaShop" | "PanthaToken"
+	>,
+	args: Omit<SignTypedDataParameters, "domain" | "privateKey" | "account">,
 ) {
 	// const domain = {
 	// 	name: contractName,
@@ -22,6 +25,7 @@ export async function eip712signature(
 
 	return contracts.$client.signTypedData({
 		domain,
+		account: contracts.$client.account,
 		...args,
 	});
 }
