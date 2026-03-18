@@ -4,6 +4,7 @@ import type { ShopItemId } from "../../data/shop";
 import type { Db } from "../db";
 import { ForbiddenError, NotImplementedError } from "../errors";
 import chapterEnforcers from "./chapter";
+import shopEnforcers from "./shop";
 import userEnforcers from "./user";
 
 type PolicyManagerConfig = {
@@ -80,6 +81,7 @@ export class DefaultPolicyManager implements PolicyManager {
 		this._enforcers = {
 			...userEnforcers,
 			...chapterEnforcers,
+			...shopEnforcers,
 		};
 	}
 
