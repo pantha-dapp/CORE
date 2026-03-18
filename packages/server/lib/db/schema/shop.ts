@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/sqlite-core";
-import { tEvmAddress, timestamps, tUuid } from "../helpers.base";
+import { tEvmAddress, tHex, timestamps, tUuid } from "../helpers.base";
 import { contractVersions } from "./runtime";
 import { users } from "./user";
 
@@ -11,6 +11,7 @@ export const userPurchases = t.sqliteTable("user_purchases", {
 			onDelete: "cascade",
 		}),
 	itemId: t.text("item_id").notNull(),
+	txHash: tHex("tx_hash").notNull(),
 	contractVersion: t
 		.int("contract_version")
 		.notNull()
