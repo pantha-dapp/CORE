@@ -4,7 +4,6 @@ import {
 	usePanthaTokenFaucet,
 	useUserInfo,
 } from "@pantha/react/hooks";
-import { useState } from "react";
 
 interface ClaimModalProps {
 	isOpen: boolean;
@@ -14,7 +13,6 @@ interface ClaimModalProps {
 export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 	const { wallet } = usePanthaContext();
 	const walletAddress = wallet?.account.address;
-	const [tokenBalance, _setTokenBalance] = useState<bigint | null>(null);
 
 	// Fetch user info (XP data)
 	const { data: userInfo, isLoading: userInfoLoading } = useUserInfo({
@@ -27,7 +25,8 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 		usePanthaTokenFaucet();
 
 	// Token balance hook
-	const { isPending: isLoadingBalance } = usePanthaTokenBalance();
+	const { data: tokenBalance, isPending: isLoadingBalance } =
+		usePanthaTokenBalance();
 
 	if (!isOpen) return null;
 
@@ -86,7 +85,7 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 							{isLoadingBalance
 								? "Loading..."
 								: tokenBalance
-									? String(tokenBalance)
+									? String(tokenBalance.balanceHuman)
 									: "0"}
 						</p>
 						<p className="mt-1 text-xs text-gray-500 dark:text-dark-muted font-montserrat">
