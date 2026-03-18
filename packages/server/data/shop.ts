@@ -1,4 +1,4 @@
-export const shopItems: ShopItem[] = [
+export const shopItems = [
 	{
 		id: "STRKFRZ0",
 		name: "Streak Freeze",
@@ -7,7 +7,7 @@ export const shopItems: ShopItem[] = [
 		warning: "Must own before use • Won't restore lost streaks",
 		priceBps: 50,
 	},
-];
+] as const satisfies ShopItem[];
 
 type ShopItem = {
 	id: string;
@@ -16,3 +16,5 @@ type ShopItem = {
 	warning?: string;
 	priceBps: number;
 };
+
+export type ShopItemId = (typeof shopItems)[number]["id"];
