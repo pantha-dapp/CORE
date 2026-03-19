@@ -6,12 +6,11 @@ import z from "zod";
 import { ianaTimeZones } from "../../../data/timezones";
 import schema from "../../../lib/db/schema";
 import { NotFoundError } from "../../../lib/errors";
+import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
 import social from "./social";
-
-let currentPxpVersion = -1;
 
 export default new Hono()
 
@@ -183,20 +182,15 @@ export default new Hono()
 		authenticated,
 		validator("param", z.object({ wallet: zEvmAddress() })),
 		async (ctx) => {
-			const { db, policyManager } = ctx.var.appState;
+			const { db, policyManager, contracts } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { wallet } = ctx.req.valid("param");
 
-			if (currentPxpVersion === -1) {
-				const latestPxpVersion = await db
-					.select({ version: db.schema.contractVersions.id })
-					.from(db.schema.contractVersions)
-					.where(eq(db.schema.contractVersions.type, "pxp"))
-					.orderBy(desc(db.schema.contractVersions.createdAt))
-					.limit(1)
-					.then((rows) => rows[0]?.version ?? -1);
-				currentPxpVersion = latestPxpVersion;
-			}
+			const currentPxpVersion = await getContractVersionId({
+				db: db,
+				contractAddress: contracts.PXP.address,
+				type: "pxp",
+			});
 
 			await policyManager.assertCan(userWallet, "user.view", {
 				userWallet: wallet,
