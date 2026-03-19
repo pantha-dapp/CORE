@@ -66,6 +66,12 @@ export function usePurchaseShopItem() {
 			});
 
 			if (receipt.status === "success") {
+				await queryClient.invalidateQueries({
+					queryKey: ["userPurchases"],
+				});
+				await queryClient.refetchQueries({
+					queryKey: ["userPurchases"],
+				});
 				return true;
 			} else {
 				return false;
