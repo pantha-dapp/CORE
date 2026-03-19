@@ -67,4 +67,20 @@ describe("Shop behavir", async () => {
 
 		expect(res.txHash).toBeTruthy();
 	});
+
+	it("Cannot buy items with invalid signature", async () => {
+		const { api1 } = testGlobals;
+		const items = await getItems();
+		const item = items[0];
+
+		const res = await api1.shop.buy.$post({
+			query: {
+				itemId: item.id,
+				deadline: (Math.floor(Date.now() / 1000) + 3600).toString(),
+				signature: "0x" + "00".repeat(65), // Invalid signature
+			},
+		});
+
+		expect(res.status).toBe(400);
+	});
 });
