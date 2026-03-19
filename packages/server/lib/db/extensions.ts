@@ -79,7 +79,7 @@ export function dbExtensionHelpers(db: DbClient) {
 
 		return {
 			...course,
-			topics,
+			topics: topics.map((t) => t.topic),
 		};
 	}
 
