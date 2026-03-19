@@ -16,30 +16,21 @@ Example progressions:
 
 CRITICAL RULES:
 - EVERY COURSE MUST HAVE ALL REQUIRED FIELDS:
-  1. "title" (string): Clear, specific course name that shows progression/alternative
-  2. "description" (string): Explain what this course covers and why it's a good next step (minimum 25 words)
-  3. "topics" (array): 5-10 key topic areas covered (must have at least 5 items, do not duplicate original course topics)
-  4. "chapters" (array): MUST include AT LEAST 50 chapters
+  1. "title" (string): Clear, specific course name that shows progression/alternative path
+  2. "description" (string): Compelling explanation of what this course covers and why it's a natural next step for someone who completed the target course (minimum 30 words). Be specific about how this builds on their learning.
+  3. "icon" (string): Generic keyword for visual representation that captures the course essence (e.g., "code", "data", "network", "security", "design", "book", "tool", "rocket", "brain", "puzzle")
 
-- EVERY CHAPTER MUST HAVE:
-  1. "title" (string): Specific, concept-focused chapter title
-  2. "description" (string): Detailed explanation of what learner will understand (minimum 15 words)
-  3. "topics" (array): 3-5 concrete sub-concepts (minimum 2 items)
-  4. "intent" (string): EXACTLY one of: "introduce", "recall", "apply", "reinforce", "check_confidence"
-  5. "icon" (string): Generic keyword for visual representation (reuse common icons like: "code", "data", "network", "security", "design", "book", "tool", "test", "rocket", "brain")
+CONTENT RULES:
+- Each similar course should feel like a genuine next step, not just a random related topic
+- Descriptions should explain the progression clearly: why someone who learned the target course would want to learn this
+- Course titles should be specific and searchable, showing the domain or specialization
+- Icons should be generic and descriptive, reusable across multiple courses
 
-GENERATION RULES:
-- Chapters must progress from foundational to advanced
-- Do not bundle multiple unrelated concepts into one chapter
-- No vague titles like "Advanced Topics"
-- Icons should be generic and reused across chapters
-- Difficulty should match the original course (if original has 50 chapters, similar courses should also have 50+)
-
-Validation requirements:
-- Missing ANY field in ANY chapter causes complete failure
-- No empty arrays or empty strings
-- "intent" must be exact case-sensitive match
-- Descriptions must be substantive enough for automated content generation
+Avoid:
+- Duplicating any topics from the original course
+- Generic titles without specificity (e.g., "Advanced Topics", "More Learning")
+- Suggesting courses that are too similar or redundant with each other
+- Vague descriptions that don't explain the learning value
 
 Output ONLY valid JSON matching the schema. Do NOT include commentary, explanations, or markdown formatting.`;
 
@@ -58,23 +49,7 @@ const generateSimilarCourseOutputSchema = z.object({
 		z.object({
 			title: z.string(),
 			description: z.string(),
-			topics: z.array(z.string()),
 			icon: z.string(),
-			chapters: z.array(
-				z.object({
-					title: z.string(),
-					description: z.string(),
-					topics: z.array(z.string()),
-					icon: z.string(),
-					intent: z.enum([
-						"introduce",
-						"recall",
-						"apply",
-						"reinforce",
-						"check_confidence",
-					]),
-				}),
-			),
 		}),
 	),
 });
