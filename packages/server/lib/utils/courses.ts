@@ -1,5 +1,7 @@
 import type { Ai } from "../ai";
+import { generateCanonicalCourseDescriptor } from "../ai/tasks/utils";
 import type { Db } from "../db";
+import { createVectorDb } from "../db/vec/client";
 import { NotFoundError } from "../errors";
 
 const preparingIcon = new Set<string>();
@@ -32,6 +34,30 @@ export async function prepareCourseIcons(
 				.generateIconImage({ prompt: chapter.icon.prompt })
 				.catch(console.error);
 	}
+}
+
+export async function insertCourseIntoVectorDb(
+	courseId: string,
+	options: {
+		title: string;
+		description: string;
+		topics: string[];
+	},
+	config: { db: Db; ai: Ai },
+) {
+	const { db, ai } = config;
+	const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
+
+	const canonicalDescriptor = generateCanonicalCourseDescriptor({
+		name: options.title,
+		description: options.description,
+		topics: options.topics,
+	});
+	const embedding = await ai.embedding.text(canonicalDescriptor);
+	await coursesVectorDb.writeEntry(courseId, {
+		vector: embedding,
+		payload: { courseId },
+	});
 }
 
 const preparingChapters = new Set<string>();
