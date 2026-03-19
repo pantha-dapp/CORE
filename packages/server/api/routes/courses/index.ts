@@ -2,7 +2,10 @@ import { tryCatch } from "@pantha/shared";
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import { prepareCourseIcons } from "../../../lib/utils/courses";
+import {
+	prepareCourseChapters,
+	prepareCourseIcons,
+} from "../../../lib/utils/courses";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
@@ -110,6 +113,15 @@ export default new Hono()
 
 		const courseId = ctx.req.param("id");
 		const chapters = await db.courseChaptersById({ courseId });
+
+		if (courseId && chapters.length === 0) {
+			prepareCourseChapters(ctx.req.param("id"), { db, ai });
+			return respond.err(
+				ctx,
+				"Course chapters are being prepared. Please check back later.",
+				503,
+			);
+		}
 
 		const icons: Record<string, string> = {};
 		await Promise.race([
