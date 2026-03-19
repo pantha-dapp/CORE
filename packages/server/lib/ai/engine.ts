@@ -1,8 +1,10 @@
 import { toJSONSchema, z } from "zod";
 import { type LanguageCode, languageCodesAndNames } from "../../data/languages";
 import env from "../../env";
+import { PromptGuardError } from "../errors";
 import { pngBufferToCompressedWebpBuffer } from "../utils/image";
 import type { AiClient } from "./client";
+import { promptGuard, safePrompt } from "./guard";
 
 export const aiAdapter: AiClient = {
 	llm: {
@@ -30,6 +32,11 @@ export const aiAdapter: AiClient = {
 };
 
 async function llmText(args: { prompt: string; systemPrompts?: string[] }) {
+	const guard = await promptGuard(args.prompt);
+	if (!guard.ok) {
+		throw new PromptGuardError(guard.reason, guard.code);
+	}
+
 	const resp = await callOpenaiCompat({
 		body: JSON.stringify({
 			model: env.AI_LLM_TEXT_MODEL,
@@ -42,7 +49,7 @@ async function llmText(args: { prompt: string; systemPrompts?: string[] }) {
 					: []),
 				{
 					role: "user",
-					content: args.prompt,
+					content: safePrompt(args.prompt),
 				},
 			],
 		}),
@@ -101,7 +108,7 @@ async function llmJson<T, R>(args: {
 				},
 				{
 					role: "user",
-					content: `input:\n${JSON.stringify(args.input)}`,
+					content: safePrompt(`input:\n${JSON.stringify(args.input)}`),
 				},
 			],
 			response_format: {
@@ -163,11 +170,11 @@ async function jsonHeal(
 				},
 				{
 					role: "user",
-					content: `initial input:\n${JSON.stringify(args.input)}`,
+					content: `initial input:\n${safePrompt(JSON.stringify(args.input))}`,
 				},
 				{
 					role: "user",
-					content: `failed generation:\n${args.failedGeneration}`,
+					content: `failed generation:\n${safePrompt(args.failedGeneration)}`,
 				},
 			],
 			response_format: {
