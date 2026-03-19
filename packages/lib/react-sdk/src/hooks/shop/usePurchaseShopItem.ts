@@ -2,11 +2,14 @@ import { eip712signature } from "@pantha/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseResponse } from "hono/client";
 import { usePanthaContext } from "../../context/PanthaProvider";
+import { usePanthaTokenDecimals } from "../wallet";
 import { useShopItems } from "./useShopItems";
 
 export function usePurchaseShopItem() {
 	const { wallet, api, contracts } = usePanthaContext();
 	const queryClient = useQueryClient();
+	const { data: decimals, isLoading: decimalsLoading } =
+		usePanthaTokenDecimals();
 	const { data: shopItems, isLoading: shopItemsLoading } = useShopItems();
 
 	return useMutation({
@@ -15,7 +18,7 @@ export function usePurchaseShopItem() {
 			const { itemId } = args;
 			if (!wallet || !contracts) throw new Error("not connected");
 
-			while (shopItemsLoading) {
+			while (shopItemsLoading || decimalsLoading) {
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}
 
@@ -25,6 +28,7 @@ export function usePurchaseShopItem() {
 
 			const item = shopItems?.items.find((i) => i.id === itemId);
 			if (!item) throw new Error("Item not found");
+			if (decimals === undefined) throw new Error("Token decimals not loaded");
 
 			const deadline = Math.floor(Date.now() / 1000) + 600;
 
@@ -42,7 +46,7 @@ export function usePurchaseShopItem() {
 				message: {
 					owner: contracts.$client.account.address,
 					spender: contracts.PanthaShop.address,
-					value: item.priceBps,
+					value: item.priceHuman * 10 ** decimals,
 					nonce: Number(currentNonce),
 					deadline: deadline,
 				},
