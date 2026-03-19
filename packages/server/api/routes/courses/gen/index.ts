@@ -9,8 +9,12 @@ import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/util
 import { createVectorDb } from "../../../../lib/db/vec/client";
 import { RateLimitExceededError } from "../../../../lib/errors";
 import { prepareChapter } from "../../../../lib/utils/chapters";
-import { prepareCourseIcons } from "../../../../lib/utils/courses";
+import {
+	insertCourseIntoVectorDb,
+	prepareCourseIcons,
+} from "../../../../lib/utils/courses";
 import { respond } from "../../../../lib/utils/respond";
+import { prepareSimilarCourses } from "../../../../lib/utils/similarCourses";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import { createJob } from "../../jobs";
@@ -457,9 +461,11 @@ export default new Hono<RouterEnv>()
 										icon: { prompt: newCourse.overview.icon, url: null },
 									});
 
-									const canonicalDescriptor = generateCanonicalCourseDescriptor(
+									await insertCourseIntoVectorDb(
+										courseId,
 										{
-											name: evaluation.courseGenerationInstructions.courseTitle,
+											title:
+												evaluation.courseGenerationInstructions.courseTitle,
 											description:
 												evaluation.courseGenerationInstructions
 													.courseDescription,
@@ -467,13 +473,8 @@ export default new Hono<RouterEnv>()
 												evaluation.courseGenerationInstructions
 													.assumedPrerequisites,
 										},
+										{ db, ai },
 									);
-									const embedding =
-										await ai.embedding.text(canonicalDescriptor);
-									coursesVectorDb.writeEntry(courseId, {
-										vector: embedding,
-										payload: { courseId },
-									});
 									generatedCourseId = courseId;
 
 									for (const topic of newCourse.overview.topics) {
@@ -523,13 +524,16 @@ export default new Hono<RouterEnv>()
 									}
 									throw err;
 								});
-							await db.enrollUserInCourse({
-								userWallet: userWallet,
-								courseId: generatedCourseId,
-							});
 
-							await prepareCourseIcons(generatedCourseId, { db, ai });
-							await prepareChapter(firstChapterId, { db, ai });
+							await Promise.all([
+								db.enrollUserInCourse({
+									userWallet: userWallet,
+									courseId: generatedCourseId,
+								}),
+								prepareCourseIcons(generatedCourseId, { db, ai }),
+								prepareChapter(firstChapterId, { db, ai }),
+								prepareSimilarCourses(generatedCourseId, { db, ai }),
+							]);
 
 							ongoingSession.state = "finished";
 							ongoingSession.courseId = generatedCourseId;
