@@ -53,10 +53,11 @@ export default function Onboarding() {
 
 	return (
 		<div className="min-h-screen relative overflow-hidden bg-landing-hero-bg dark:bg-dark-bg">
-			<div className="absolute  pointer-events-auto flex flex-col items-center px-4 py-8 pb-24">
-				<div className="w-full max-w-xl space-y-6 shrink-0">
+			{/* Sticky Header with Progress */}
+			<div className="sticky top-0 z-50 bg-landing-hero-bg/95 dark:bg-dark-bg/95 backdrop-blur-sm border-b border-white/10 dark:border-dark-border/50 px-4 py-6">
+				<div className="max-w-4xl mx-auto space-y-4">
 					<div className="text-center space-y-1">
-						<h1 className="text-4xl font-bold tracking-tight text-landing-hero-text dark:text-dark-text">
+						<h1 className="text-3xl font-bold tracking-tight text-landing-hero-text dark:text-dark-text">
 							Onboarding
 						</h1>
 						<p className="text-white/90 dark:text-dark-muted text-sm font-montserrat">
@@ -106,17 +107,24 @@ export default function Onboarding() {
 							</div>
 						))}
 					</div>
+				</div>
+			</div>
 
-					{/* Main card */}
-					<div className="bg-white dark:bg-dark-card rounded-lg p-6 shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden">
-						{!session.data || jobState?.data?.state === "pending" ? (
+			{/* Main Content */}
+			<div className="relative px-4 py-8">
+				<div className="max-w-4xl mx-auto">
+					{/* Loading State - Centered */}
+					{!session.data || jobState?.data?.state === "pending" ? (
+						<div className="flex items-center justify-center min-h-[400px]">
 							<div className="flex flex-col items-center gap-3 py-8 text-gray-500 dark:text-dark-muted font-montserrat">
 								<div className="w-10 h-10 rounded-full border-4 border-landing-button-primary dark:border-dark-accent border-t-transparent animate-spin" />
 								<p className="text-sm">Preparing your experience…</p>
 							</div>
-						) : (
-							<>
-								{session.data.session.state === "major_category_choice" && (
+						</div>
+					) : (
+						<>
+							{session.data.session.state === "major_category_choice" && (
+								<div className="bg-white dark:bg-dark-card rounded-lg p-6 shadow-sm border border-gray-200 dark:border-dark-border">
 									<div className="space-y-4">
 										<div>
 											<h2 className="text-xl font-bold text-gray-900/90 dark:text-dark-text">
@@ -148,9 +156,11 @@ export default function Onboarding() {
 											))}
 										</div>
 									</div>
-								)}
+								</div>
+							)}
 
-								{session.data.session.state === "learning_intent_freetext" && (
+							{session.data.session.state === "learning_intent_freetext" && (
+								<div className="bg-white dark:bg-dark-card rounded-lg p-6 shadow-sm border border-gray-200 dark:border-dark-border">
 									<div className="space-y-4">
 										<div>
 											<h2 className="text-xl font-bold text-gray-900/90 dark:text-dark-text">
@@ -193,9 +203,11 @@ export default function Onboarding() {
 											Start Over
 										</button>
 									</div>
-								)}
+								</div>
+							)}
 
-								{session.data.session.state === "answer_question" && (
+							{session.data.session.state === "answer_question" && (
+								<div className="bg-white dark:bg-dark-card rounded-lg p-6 shadow-sm border border-gray-200 dark:border-dark-border">
 									<div className="space-y-5">
 										<div>
 											<p className="text-xs font-semibold text-landing-button-primary dark:text-dark-accent uppercase tracking-wide mb-1 font-montserrat">
@@ -207,7 +219,7 @@ export default function Onboarding() {
 										</div>
 
 										{currentQuestion?.type === "mcq" && (
-											<div className="space-y-2  max-h-[40vh] overflow-y-auto overflow-x-hidden pr-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 dark:bg-dark-surface [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-dark-border [&::-webkit-scrollbar-thumb]:rounded-full">
+											<div className="space-y-2 max-h-[40vh] overflow-y-auto overflow-x-hidden pr-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 dark:bg-dark-surface [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-dark-border [&::-webkit-scrollbar-thumb]:rounded-full">
 												{currentQuestion.options.map((option) => (
 													<button
 														key={option}
@@ -278,10 +290,10 @@ export default function Onboarding() {
 											Start Over
 										</button>
 									</div>
-								)}
-							</>
-						)}
-					</div>
+								</div>
+							)}
+						</>
+					)}
 				</div>
 			</div>
 		</div>
