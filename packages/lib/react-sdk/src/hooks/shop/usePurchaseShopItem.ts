@@ -40,7 +40,7 @@ export function usePurchaseShopItem() {
 				},
 				primaryType: "Permit",
 				message: {
-					owner: wallet.account.address,
+					owner: contracts.$client.account.address,
 					spender: contracts.PanthaShop.address,
 					value: item.priceBps,
 					nonce: Number(currentNonce),
