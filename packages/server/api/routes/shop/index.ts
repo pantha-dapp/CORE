@@ -13,6 +13,7 @@ import { validator } from "../../middleware/validator";
 import type { RouterEnv } from "../types";
 
 const processingPurchases: Record<Address, boolean> = {};
+let panthaTokenDecimals = -1;
 
 export default new Hono<RouterEnv>()
 
@@ -28,6 +29,9 @@ export default new Hono<RouterEnv>()
 			z.object({ itemId: z.string(), signature: zHex(), deadline: z.string() }),
 		),
 		async (ctx) => {
+			const { contracts, db, policyManager } = ctx.var.appState;
+			const { itemId, signature, deadline } = ctx.req.valid("query");
+
 			if (processingPurchases[ctx.var.userWallet]) {
 				return respond.err(
 					ctx,
@@ -35,9 +39,13 @@ export default new Hono<RouterEnv>()
 					429,
 				);
 			}
-
-			const { contracts, db, policyManager } = ctx.var.appState;
-			const { itemId, signature, deadline } = ctx.req.valid("query");
+			if (panthaTokenDecimals === -1) {
+				const decimals = await tryCatch(contracts.PanthaToken.read.decimals());
+				if (decimals.error) {
+					return respond.err(ctx, "Failed to fetch token decimals", 500);
+				}
+				panthaTokenDecimals = decimals.data;
+			}
 
 			await policyManager.assertCan(ctx.var.userWallet, "shop.purchase", {
 				itemId,
@@ -66,7 +74,7 @@ export default new Hono<RouterEnv>()
 			processingPurchases[ctx.var.userWallet] = true;
 			const txHash = await contracts.PanthaShop.write.buyWithPermit([
 				ctx.var.userWallet,
-				BigInt(item.priceBps),
+				BigInt(item.priceHuman * 10 ** panthaTokenDecimals),
 				BigInt(deadline),
 				Number(v),
 				r,
