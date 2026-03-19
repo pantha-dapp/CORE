@@ -13,7 +13,7 @@ import { validator } from "../../middleware/validator";
 export default new Hono()
 
 	.get("/", authenticated, async (ctx) => {
-		respond.ok(ctx, { items: shopItems }, "Shop Items ", 200);
+		return respond.ok(ctx, { items: shopItems }, "Shop Items ", 200);
 	})
 
 	.post(
@@ -71,7 +71,12 @@ export default new Hono()
 					}
 				});
 
-			respond.ok(ctx, { txHash, itemId }, "Purchase request created", 201);
+			return respond.ok(
+				ctx,
+				{ txHash, itemId },
+				"Purchase request created",
+				201,
+			);
 		},
 	)
 

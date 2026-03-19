@@ -99,7 +99,6 @@ const onboardingRoute = createRoute({
 		return (
 			<ProtectedRoute type="loggedInOnly">
 				<Onboarding />
-				<Navigation />
 			</ProtectedRoute>
 		);
 	},
