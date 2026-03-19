@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { parseSignature } from "viem";
 import z from "zod";
-import tryCatchSync from "../../../../lib/shared/utils/tryCatch";
+import tryCatchSync, { tryCatch } from "../../../../lib/shared/utils/tryCatch";
 import { shopItems } from "../../../data/shop";
 import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
@@ -65,15 +65,20 @@ export default new Hono<RouterEnv>()
 
 			contracts.$publicClient
 				.waitForTransactionReceipt({ hash: txHash })
-				.then((receipt) => {
+				.then(async (receipt) => {
 					if (receipt.status === "success") {
-						db.insert(db.schema.userPurchases).values({
-							itemId,
-							txHash,
-							userWallet: ctx.var.userWallet,
-							contractVersion: shopVersion,
-							consumed: 0,
-						});
+						const insertion = await tryCatch(
+							db.insert(db.schema.userPurchases).values({
+								itemId,
+								txHash,
+								userWallet: ctx.var.userWallet,
+								contractVersion: shopVersion,
+								consumed: 0,
+							}),
+						);
+						if (insertion.error) {
+							console.error("Failed to record purchase:", insertion.error);
+						}
 					}
 				});
 

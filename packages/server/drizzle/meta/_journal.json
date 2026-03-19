@@ -57,6 +57,13 @@
 			"when": 1773769901606,
 			"tag": "0007_motionless_doorman",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1773949518455,
+			"tag": "0008_melted_roughhouse",
+			"breakpoints": true
 		}
 	]
 }
