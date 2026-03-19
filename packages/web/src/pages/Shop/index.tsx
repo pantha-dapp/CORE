@@ -1,5 +1,9 @@
 import { usePanthaContext } from "@pantha/react";
-import { useBuyShopItems, useShopItems } from "@pantha/react/hooks";
+import {
+	useBuyShopItems,
+	useShopInventory,
+	useShopItems,
+} from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { AlertCircle, Gift, Zap } from "lucide-react";
 import { useState } from "react";
@@ -14,6 +18,7 @@ export default function Shop() {
 	// Fetch shop items
 	const shopItemsQuery = useShopItems();
 	const buyMutation = useBuyShopItems();
+	const inventoryQuery = useShopInventory();
 	const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
 	if (!wallet) {
@@ -41,13 +46,23 @@ export default function Shop() {
 		<div className="min-h-screen bg-linear-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-dark-bg dark:via-dark-surface dark:to-dark-bg py-8 px-4 sm:px-6 lg:px-8">
 			<div className="mx-auto max-w-6xl">
 				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
-						Shop
-					</h1>
-					<p className="text-lg text-gray-600 dark:text-dark-muted">
-						Boost your learning with special items
-					</p>
+				<div className="mb-8 flex items-center justify-between">
+					<div>
+						<h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
+							Shop
+						</h1>
+						<p className="text-lg text-gray-600 dark:text-dark-muted">
+							Boost your learning with special items
+						</p>
+					</div>
+					<div className="text-right">
+						<div className="text-sm text-gray-600 dark:text-dark-muted mb-1">
+							Owned Items
+						</div>
+						<div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+							{inventoryQuery.data?.items?.length || 0}
+						</div>
+					</div>
 				</div>
 
 				{/* Loading State */}
@@ -78,68 +93,67 @@ export default function Shop() {
 				)}
 
 				{/* Shop Items Grid */}
-				{shopItemsQuery.data &&
-					(shopItemsQuery.data.items.length === 0 ? (
-						<div className="text-center py-12 rounded-2xl bg-white dark:bg-dark-surface">
-							<Gift
-								className="mx-auto mb-4 text-gray-400 dark:text-dark-muted"
-								size={48}
-							/>
-							<p className="text-lg text-gray-600 dark:text-dark-muted">
-								No items available right now
-							</p>
-						</div>
-					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{shopItemsQuery.data.items.map((item) => (
-								<div
-									key={item.id}
-									className="rounded-2xl p-6 bg-white dark:bg-dark-surface backdrop-blur-xl border border-gray-200 dark:border-gray-700"
-								>
-									{/* Item Icon */}
-									<div className="mb-4 text-5xl">
-										{item.id === "STRKFRZ0" ? "❄️" : "🎁"}
-									</div>
-
-									{/* Item Name */}
-									<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2 font-tusker">
-										{item.name}
-									</h3>
-
-									{/* Item Description */}
-									<p className="text-gray-600 dark:text-dark-muted mb-4 text-sm leading-relaxed">
-										{item.description}
-									</p>
-
-									{/* Item Warning */}
-									{item.warning && (
-										<div className="mb-4 p-3 rounded-lg text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-											{item.warning}
-										</div>
-									)}
-
-									{/* Price and Buy Button */}
-									<div className="flex items-center justify-between mt-6">
-										<div className="flex items-center gap-2">
-											<Zap className="text-yellow-500" size={20} />
-											<span className="text-xl font-bold text-gray-900 dark:text-dark-text">
-												{(item.priceBps / 100).toFixed(0)}
-											</span>
-										</div>
-
-										<Button
-											onClick={() => setSelectedItem(item.id)}
-											className="px-6 py-2 rounded-full font-semibold transition-all bg-purple-500 hover:bg-purple-600 text-white"
-										>
-											{buyMutation.isPending && selectedItem === item.id
-												? "Buying..."
-												: "Buy"}
-										</Button>
-									</div>
+				{shopItemsQuery.data && shopItemsQuery.data.items.length > 0 ? (
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{shopItemsQuery.data.items.map((item) => (
+							<div
+								key={item.id}
+								className="rounded-2xl p-6 bg-white dark:bg-dark-surface backdrop-blur-xl border border-gray-200 dark:border-gray-700"
+							>
+								{/* Item Icon */}
+								<div className="mb-4 text-5xl">
+									{item.id === "STRKFRZ0" ? "❄️" : "🎁"}
 								</div>
-							))}
-						</div>
-					))}
+
+								{/* Item Name */}
+								<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2 font-tusker">
+									{item.name}
+								</h3>
+
+								{/* Item Description */}
+								<p className="text-gray-600 dark:text-dark-muted mb-4 text-sm leading-relaxed">
+									{item.description}
+								</p>
+
+								{/* Item Warning */}
+								{item.warning && (
+									<div className="mb-4 p-3 rounded-lg text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+										{item.warning}
+									</div>
+								)}
+
+								{/* Price and Buy Button */}
+								<div className="flex items-center justify-between mt-6">
+									<div className="flex items-center gap-2">
+										<Zap className="text-yellow-500" size={20} />
+										<span className="text-xl font-bold text-gray-900 dark:text-dark-text">
+											{(item.priceBps / 100).toFixed(0)}
+										</span>
+									</div>
+
+									<Button
+										onClick={() => setSelectedItem(item.id)}
+										className="px-6 py-2 rounded-full font-semibold transition-all bg-purple-500 hover:bg-purple-600 text-white"
+									>
+										{buyMutation.isPending && selectedItem === item.id
+											? "Buying..."
+											: "Buy"}
+									</Button>
+								</div>
+							</div>
+						))}
+					</div>
+				) : (
+					<div className="text-center py-12 rounded-2xl bg-white dark:bg-dark-surface">
+						<Gift
+							className="mx-auto mb-4 text-gray-400 dark:text-dark-muted"
+							size={48}
+						/>
+						<p className="text-lg text-gray-600 dark:text-dark-muted">
+							No items available right now
+						</p>
+					</div>
+				)}
 
 				{/* Purchase Modal */}
 				{selectedItem && shopItemsQuery.data && (
@@ -152,14 +166,15 @@ export default function Shop() {
 							<div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
 								<p className="text-gray-600 dark:text-dark-muted">
 									{
-										shopItemsQuery.data.items.find((i) => i.id === selectedItem)
-											?.name
+										shopItemsQuery.data?.items.find(
+											(i) => i.id === selectedItem,
+										)?.name
 									}
 								</p>
 								<p className="text-2xl font-bold text-gray-900 dark:text-dark-text mt-2 flex items-center gap-2">
 									<Zap className="text-yellow-500" size={20} />
 									{(
-										(shopItemsQuery.data.items.find(
+										(shopItemsQuery.data?.items.find(
 											(i) => i.id === selectedItem,
 										)?.priceBps || 0) / 100
 									).toFixed(0)}
@@ -185,7 +200,14 @@ export default function Shop() {
 									onClick={async () => {
 										hapticFeedback.tap();
 										try {
+											if (!selectedItem) return;
+											await buyMutation.mutateAsync({
+												itemId: selectedItem,
+												signature: "", // TODO: Get from wallet
+												deadline: "", // TODO: Get from wallet
+											});
 											setSelectedItem(null);
+											inventoryQuery.refetch();
 										} catch (error) {
 											console.error("Purchase failed:", error);
 										}
