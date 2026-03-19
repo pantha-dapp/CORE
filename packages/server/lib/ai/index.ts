@@ -14,6 +14,7 @@ import generateIconImage from "./tasks/generateIconImage";
 import generateIdealCourseDescriptor from "./tasks/generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "./tasks/generateNewCourseSkeleton";
 import generatePageImage from "./tasks/generatePageImage";
+import generateSimilarCourses from "./tasks/generateSimilarCourses";
 import intentClarification from "./tasks/intentClarification";
 import learningIntentSummarizer from "./tasks/learningIntentSummarizer";
 
@@ -204,6 +205,13 @@ export function createAi(args: {
 				output: generateAnswerExplanation.outputSchema,
 			},
 			generateAnswerExplanation.prompt,
+		),
+		generateSimilarCourses: createLlmGenerateFunction(
+			{
+				input: generateSimilarCourses.inputSchema,
+				output: generateSimilarCourses.outputSchema,
+			},
+			generateSimilarCourses.prompt,
 		),
 	};
 
