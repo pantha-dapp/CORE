@@ -13,13 +13,13 @@ import { useEffect, useState } from "react";
 import Navigation from "../shared/components/Navigation";
 import { withPageErrorBoundary } from "../shared/components/PageErrorBoundary";
 import ChapterDetails from "./ChapterDetails";
-// import Chapters from "./Chapters";
 import Dashboard from "./Dashboard";
-import Events from "./Events";
+import ExplorePage from "./Explore";
 import IndexPage from "./IndexPage";
 import LoginPage from "./LoginPage";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
+import Shop from "./Shop";
 import Social from "./Social";
 import Test from "./Test";
 import Wallet from "./Wallet";
@@ -118,19 +118,31 @@ const dashboardRoute = createRoute({
 	},
 });
 
-// const ChaptersRoute = createRoute({
-// 	getParentRoute: () => rootRoute,
-// 	path: "/chapters/$courseId",
-// 	component: function ChaptersRoute() {
-// 		return (
-// 			<ProtectedRoute type="loggedInOnly">
-// 				{/* Add your Courses component here */}
-// 				{/* <Chapters /> */}
-// 				<Navigation />
-// 			</ProtectedRoute>
-// 		);
-// 	},
-// });
+const exploreRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/explore",
+	component: function ExploreRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<ExplorePage />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
+
+const shopRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/shop",
+	component: function ShopRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Shop />
+				<Navigation />
+			</ProtectedRoute>
+		);
+	},
+});
 
 const ChapterDetailRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -151,19 +163,6 @@ const profileRoute = createRoute({
 		return (
 			<ProtectedRoute type="loggedInOnly">
 				<Profile />
-				<Navigation />
-			</ProtectedRoute>
-		);
-	},
-});
-
-const eventsRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/events",
-	component: function EventsRoute() {
-		return (
-			<ProtectedRoute type="loggedInOnly">
-				<Events />
 				<Navigation />
 			</ProtectedRoute>
 		);
@@ -215,10 +214,11 @@ const routeTree = rootRoute.addChildren([
 	onboardingRoute,
 	dashboardRoute,
 	ChapterDetailRoute,
-	eventsRoute,
 	socialRoute,
 	profileRoute,
 	testRoute,
+	exploreRoute,
+	shopRoute,
 	walletRoute,
 ]);
 
