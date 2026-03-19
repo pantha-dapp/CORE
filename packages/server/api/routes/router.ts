@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { PromptGuardError } from "../../lib/errors";
 import { AppError } from "../../lib/errors/app";
 import { respond } from "../../lib/utils/respond";
 import auth from "./auth";
@@ -27,6 +28,15 @@ export const apiRouter = new Hono<RouterEnv>()
 	.route("/shop", shop)
 
 	.onError((err, ctx) => {
+		if (err instanceof PromptGuardError) {
+			return respond.ok(
+				ctx,
+				{ error: err.message, code: err.code },
+				"Prompt Guard Error",
+				200,
+			);
+		}
+
 		if (err instanceof AppError) {
 			return respond.err(ctx, err.message ?? err.code, err.status);
 		}
