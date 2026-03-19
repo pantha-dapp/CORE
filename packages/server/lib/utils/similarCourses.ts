@@ -2,10 +2,11 @@ import { eq } from "drizzle-orm";
 import type { Ai } from "../ai";
 import type { Db } from "../db";
 import { NotFoundError } from "../errors";
+import { insertCourseIntoVectorDb, prepareCourseIcons } from "./courses";
 
 const preparing = new Set<string>();
 
-export async function prepareCourseIcons(
+export async function prepareSimilarCourses(
 	id: string,
 	config: { db: Db; ai: Ai },
 ) {
@@ -58,6 +59,15 @@ export async function prepareCourseIcons(
 					topic,
 				});
 			}
+			await insertCourseIntoVectorDb(
+				createdCourse.id,
+				{
+					title: createdCourse.title,
+					description: createdCourse.description,
+					topics: generatedCourse.topics,
+				},
+				{ db, ai },
+			);
 			await prepareCourseIcons(createdCourse.id, { db, ai });
 		});
 	}
