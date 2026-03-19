@@ -11,3 +11,13 @@ export class InvalidStateError extends AppError {
 		super(message, "INVALID_STATE", 400);
 	}
 }
+
+export class PromptGuardError extends AppError {
+	constructor(reason: string, code: string) {
+		super(
+			`Prompt validation failed: ${reason}`,
+			`PROMPT_GUARD_${code.toUpperCase()}`,
+			400,
+		);
+	}
+}
