@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { parseSignature } from "viem";
 import z from "zod";
+import tryCatchSync from "../../../../lib/shared/utils/tryCatch";
 import { shopItems } from "../../../data/shop";
 import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
@@ -43,7 +44,11 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Item not found", 404);
 			}
 
-			const { v, r, s } = parseSignature(signature);
+			const parsedSignature = tryCatchSync(() => parseSignature(signature));
+			if (parsedSignature.error) {
+				return respond.err(ctx, "Invalid signature format", 400);
+			}
+			const { v, r, s } = parsedSignature.data;
 			if (!v) {
 				return respond.err(ctx, "Invalid signature", 400);
 			}
