@@ -1,0 +1,1 @@
+ALTER TABLE `user_purchases` ADD `tx_hash` text NOT NULL;

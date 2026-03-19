@@ -1,8 +1,8 @@
 import { usePanthaContext } from "@pantha/react";
 import {
-	useBuyShopItems,
-	useShopInventory,
+	usePurchaseShopItem,
 	useShopItems,
+	useUserPurchases,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { AlertCircle, Gift, Zap } from "lucide-react";
@@ -17,8 +17,8 @@ export default function Shop() {
 
 	// Fetch shop items
 	const shopItemsQuery = useShopItems();
-	const buyMutation = useBuyShopItems();
-	const inventoryQuery = useShopInventory();
+	const purchaseMutation = usePurchaseShopItem();
+	const inventoryQuery = useUserPurchases();
 	const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
 	if (!wallet) {
@@ -60,7 +60,7 @@ export default function Shop() {
 							Owned Items
 						</div>
 						<div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-							{inventoryQuery.data?.items?.length || 0}
+							{inventoryQuery.data?.history?.length || 0}
 						</div>
 					</div>
 				</div>
@@ -135,7 +135,7 @@ export default function Shop() {
 										onClick={() => setSelectedItem(item.id)}
 										className="px-6 py-2 rounded-full font-semibold transition-all bg-purple-500 hover:bg-purple-600 text-white"
 									>
-										{buyMutation.isPending && selectedItem === item.id
+										{purchaseMutation.isPending && selectedItem === item.id
 											? "Buying..."
 											: "Buy"}
 									</Button>
@@ -173,11 +173,11 @@ export default function Shop() {
 								</p>
 								<p className="text-2xl font-bold text-gray-900 dark:text-dark-text mt-2 flex items-center gap-2">
 									<Zap className="text-yellow-500" size={20} />
-									{(
-										(shopItemsQuery.data?.items.find(
+									{
+										shopItemsQuery.data?.items.find(
 											(i) => i.id === selectedItem,
-										)?.priceBps || 0) / 100
-									).toFixed(0)}
+										)?.priceBps
+									}
 								</p>
 							</div>
 
@@ -189,7 +189,7 @@ export default function Shop() {
 								<Button
 									type="button"
 									onClick={() => setSelectedItem(null)}
-									disabled={buyMutation.isPending}
+									disabled={purchaseMutation.isPending}
 									className="flex-1 px-4 py-3 rounded-full font-semibold transition-colors bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-dark-text hover:bg-gray-300 dark:hover:bg-gray-700"
 								>
 									Cancel
@@ -201,10 +201,8 @@ export default function Shop() {
 										hapticFeedback.tap();
 										try {
 											if (!selectedItem) return;
-											await buyMutation.mutateAsync({
+											await purchaseMutation.mutateAsync({
 												itemId: selectedItem,
-												signature: "", // TODO: Get from wallet
-												deadline: "", // TODO: Get from wallet
 											});
 											setSelectedItem(null);
 											inventoryQuery.refetch();
@@ -212,14 +210,14 @@ export default function Shop() {
 											console.error("Purchase failed:", error);
 										}
 									}}
-									disabled={buyMutation.isPending}
+									disabled={purchaseMutation.isPending}
 									className={`flex-1 px-4 py-3 rounded-full font-semibold text-white transition-colors ${
-										buyMutation.isPending
+										purchaseMutation.isPending
 											? "bg-purple-400 cursor-not-allowed"
 											: "bg-purple-500 hover:bg-purple-600"
 									}`}
 								>
-									{buyMutation.isPending ? "Processing..." : "Confirm"}
+									{purchaseMutation.isPending ? "Processing..." : "Confirm"}
 								</Button>
 							</div>
 						</div>
