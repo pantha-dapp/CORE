@@ -2,7 +2,7 @@ import { identifierB8 } from "@pantha/contracts";
 import { zHex } from "@pantha/shared/zod";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { parseSignature } from "viem";
+import { type Address, parseSignature } from "viem";
 import z from "zod";
 import tryCatchSync, { tryCatch } from "../../../../lib/shared/utils/tryCatch";
 import { shopItems } from "../../../data/shop";
@@ -11,6 +11,8 @@ import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
 import type { RouterEnv } from "../types";
+
+const processingPurchases: Record<Address, boolean> = {};
 
 export default new Hono<RouterEnv>()
 
@@ -26,6 +28,14 @@ export default new Hono<RouterEnv>()
 			z.object({ itemId: z.string(), signature: zHex(), deadline: z.string() }),
 		),
 		async (ctx) => {
+			if (processingPurchases[ctx.var.userWallet]) {
+				return respond.err(
+					ctx,
+					"A purchase is already being processed for this wallet. Please wait.",
+					429,
+				);
+			}
+
 			const { contracts, db, policyManager } = ctx.var.appState;
 			const { itemId, signature, deadline } = ctx.req.valid("query");
 
@@ -53,6 +63,7 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Invalid signature", 400);
 			}
 
+			processingPurchases[ctx.var.userWallet] = true;
 			const txHash = await contracts.PanthaShop.write.buyWithPermit([
 				ctx.var.userWallet,
 				BigInt(item.priceBps),
@@ -80,6 +91,9 @@ export default new Hono<RouterEnv>()
 							console.error("Failed to record purchase:", insertion.error);
 						}
 					}
+				})
+				.finally(() => {
+					processingPurchases[ctx.var.userWallet] = false;
 				});
 
 			return respond.ok(
