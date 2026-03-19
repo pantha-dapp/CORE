@@ -2,6 +2,8 @@ import { tryCatch } from "@pantha/shared";
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
+import { generateCanonicalCourseDescriptor } from "../../../lib/ai/tasks/utils";
+import { createVectorDb } from "../../../lib/db/vec/client";
 import {
 	prepareCourseChapters,
 	prepareCourseIcons,
@@ -17,6 +19,68 @@ export default new Hono()
 	.route("/chapters", chapters)
 
 	.route("/gen", gen)
+
+	.get("/explore", authenticated, async (ctx) => {
+		const N = 5;
+		const MAX = 50;
+
+		const { db, ai } = ctx.var.appState;
+		const { userWallet } = ctx.var;
+
+		const enrolledCourses = await db.userEnrollments({ userWallet });
+
+		if (!enrolledCourses || enrolledCourses.length === 0) {
+			return respond.err(ctx, "User is not enrolled in any courses.", 404);
+		}
+
+		const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
+
+		const courses: { id: string; vector: number[] }[] = [];
+
+		for (const enrollment of enrolledCourses) {
+			if (courses.length >= MAX) break;
+
+			const course = await db.courseById({
+				courseId: enrollment.courseId,
+			});
+			if (!course) continue;
+
+			const canonicalDescriptor = generateCanonicalCourseDescriptor({
+				name: course.title,
+				description: course.description,
+				topics: course.topics,
+			});
+			const courseEmbedding = await ai.embedding.text(canonicalDescriptor);
+			courses.push({ id: enrollment.courseId, vector: courseEmbedding });
+
+			if (courses.length >= MAX) break;
+
+			const similarCourses = await coursesVectorDb.querySimilar(
+				courseEmbedding,
+				N,
+			);
+			for (const c of similarCourses) {
+				if (courses.length >= MAX) break;
+				courses.push({ id: c.payload.courseId, vector: c.vector ?? [] });
+			}
+		}
+
+		const suggestions = db
+			.select()
+			.from(db.schema.courses)
+			.orderBy(sql`RANDOM()`)
+			.limit(N);
+
+		return respond.ok(
+			ctx,
+			{
+				courses,
+				suggestions,
+			},
+			"Similar courses fetched successfully.",
+			200,
+		);
+	})
 
 	.get(
 		"/",
