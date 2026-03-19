@@ -91,7 +91,11 @@ export default new Hono<RouterEnv>()
 		});
 
 		const purchases = await ctx.var.appState.db
-			.select()
+			.select({
+				itemId: ctx.var.appState.db.schema.userPurchases.itemId,
+				consumed: ctx.var.appState.db.schema.userPurchases.consumed,
+				purchasedAt: ctx.var.appState.db.schema.userPurchases.purchasedAt,
+			})
 			.from(ctx.var.appState.db.schema.userPurchases)
 			.where(
 				and(
@@ -105,6 +109,5 @@ export default new Hono<RouterEnv>()
 					),
 				),
 			);
-
 		return respond.ok(ctx, { history: purchases }, "Inventory Items ", 200);
 	});
