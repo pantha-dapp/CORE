@@ -10,7 +10,8 @@ describe("Pantha Token", async () => {
 	});
 
 	it("should drip $PANTHA from the faucet", async () => {
-		const { api1, contracts } = testGlobals;
+		const { api1, appState } = testGlobals;
+		const { contracts } = appState;
 
 		const balanceBefore = await contracts.PanthaToken.read.balanceOf([
 			userWallet1.account.address,

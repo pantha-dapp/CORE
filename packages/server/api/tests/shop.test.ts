@@ -50,7 +50,7 @@ describe("Shop behavir", async () => {
 			message: {
 				owner: userWallet1.account.address,
 				spender: contracts1.PanthaShop.address,
-				value: item.priceBps,
+				value: item.priceHuman * 10 ** 18,
 				nonce: Number(currentNonce),
 				deadline: Math.floor(Date.now() / 1000) + 3600,
 			},
