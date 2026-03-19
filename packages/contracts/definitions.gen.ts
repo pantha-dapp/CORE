@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x221": {
 		PanthaOrchestrator: {
-			address: "0xaac6cad747d024e4106d7b811b198d6979cf9d05",
+			address: "0x0a5d1fe58774028fd5f3c287ee5b88b37bcb37be",
 			abi: [
 				{
 					inputs: [
@@ -356,7 +356,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificate: {
-			address: "0x68d99627F2876f780a96152936e5daB656A59F47",
+			address: "0xd561bD64B4133B36220c42E5a824c21BCb4E2a3d",
 			abi: [
 				{
 					inputs: [],
@@ -880,7 +880,7 @@ export const definitions = {
 			],
 		},
 		PanthaKeyStore: {
-			address: "0xF813a71978E8A467Dc0396f8756F353D06c8EF3c",
+			address: "0x4fa9daEB7b1A240C0F7cE70dBC30dD37abF1fBe8",
 			abi: [
 				{
 					inputs: [],
@@ -1153,7 +1153,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificationAuthority: {
-			address: "0x14eA5Fb785FF35E4cC299486930618e89841E727",
+			address: "0xb215b1a3e5CeAdC39cC29f102966F6cF47B9Aee8",
 			abi: [
 				{
 					inputs: [],
@@ -1283,7 +1283,7 @@ export const definitions = {
 			],
 		},
 		PanthaToken: {
-			address: "0xca649d66527bdf84898aa4445864dcd15e5eafe9",
+			address: "0x2619a79bdfb115e18648dbd600b9cfb1dcd9b180",
 			abi: [
 				{
 					inputs: [
@@ -1891,7 +1891,7 @@ export const definitions = {
 			],
 		},
 		PXP: {
-			address: "0x1B6C5eA46273Cf8aA280191adFC6db01C318069e",
+			address: "0x7DF2a764DC4cF8CFe8A771e6FCAD4A9aF0eBD067",
 			abi: [
 				{
 					inputs: [],
@@ -2306,7 +2306,7 @@ export const definitions = {
 			],
 		},
 		PanthaTreasury: {
-			address: "0x040569fa3ae3aeaaf0587c3c303196e8c36a7105",
+			address: "0x56d76Da3b462ef87Aa836CB4A41Cc194421f0d3f",
 			abi: [
 				{
 					inputs: [
@@ -2427,12 +2427,39 @@ export const definitions = {
 			],
 		},
 		PanthaShop: {
-			address: "0x878722556fa60f49f2da1c522137e2f11bb7bdb1",
+			address: "0xE3C12D2F3daFF234651e90685362e4661c29638d",
 			abi: [
 				{
 					inputs: [],
 					stateMutability: "nonpayable",
 					type: "constructor",
+				},
+				{
+					inputs: [
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+					],
+					name: "ERC2612ExpiredSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "signer",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "ERC2612InvalidSigner",
+					type: "error",
 				},
 				{
 					anonymous: false,
@@ -4952,6 +4979,33 @@ export const definitions = {
 					inputs: [],
 					stateMutability: "nonpayable",
 					type: "constructor",
+				},
+				{
+					inputs: [
+						{
+							internalType: "uint256",
+							name: "deadline",
+							type: "uint256",
+						},
+					],
+					name: "ERC2612ExpiredSignature",
+					type: "error",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "signer",
+							type: "address",
+						},
+						{
+							internalType: "address",
+							name: "owner",
+							type: "address",
+						},
+					],
+					name: "ERC2612InvalidSigner",
+					type: "error",
 				},
 				{
 					anonymous: false,

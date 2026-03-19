@@ -19,7 +19,7 @@ export async function eip712signature(
 	const domain = {
 		name: contractName,
 		version: "1",
-		chainId: contracts.$client.chain.id,
+		chainId: contracts.$publicClient.chain.id,
 		verifyingContract: contracts[contractName].address,
 	};
 
