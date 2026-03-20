@@ -6,6 +6,7 @@ import courseSelectionEvaluator from "../../../lib/ai/tasks/courseSelectionEvalu
 import generateChapterPagesLegacy from "../../../lib/ai/tasks/generateChapterPages.legacy";
 import generateIdealCourseDescriptor from "../../../lib/ai/tasks/generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "../../../lib/ai/tasks/generateNewCourseSkeleton";
+import generateSimilarCourses from "../../../lib/ai/tasks/generateSimilarCourses";
 import intentClarification from "../../../lib/ai/tasks/intentClarification";
 import learningIntentSummarizer from "../../../lib/ai/tasks/learningIntentSummarizer";
 
@@ -175,6 +176,24 @@ registerMockResponse(generateNewCourseSkeleton, {
 				},
 			],
 		},
+	},
+});
+registerMockResponse(generateSimilarCourses, {
+	response: {
+		similarCourses: [
+			{
+				title: "MOCK_SIMILAR_COURSE_TITLE",
+				description: "MOCK_SIMILAR_COURSE_DESCRIPTION",
+				topics: ["MOCK_TOPIC_1", "MOCK_TOPIC_2"],
+				icon: "MOCK_ICON",
+			},
+			{
+				title: "MOCK_SIMILAR_COURSE_TITLE_2",
+				description: "MOCK_SIMILAR_COURSE_DESCRIPTION_2",
+				topics: ["MOCK_TOPIC_3", "MOCK_TOPIC_4"],
+				icon: "MOCK_ICON_2",
+			},
+		],
 	},
 });
 export const testChapterGenerationPages = [
