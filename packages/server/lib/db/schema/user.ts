@@ -32,6 +32,12 @@ export const users = t.sqliteTable("users", {
 		})
 		.notNull()
 		.default("anyone"),
+	messagePolicy: t
+		.text("message_policy", {
+			enum: ["anyone", "friends", "noone"],
+		})
+		.notNull()
+		.default("friends"),
 
 	...timestamps,
 });
