@@ -77,7 +77,7 @@ describe("Shop behavir", async () => {
 			query: {
 				itemId: item.id,
 				deadline: (Math.floor(Date.now() / 1000) + 3600).toString(),
-				signature: "0x" + "00".repeat(65), // Invalid signature
+				signature: `0x${"00".repeat(65)}`, // Invalid signature
 			},
 		});
 
