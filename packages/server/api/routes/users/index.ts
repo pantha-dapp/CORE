@@ -1,5 +1,5 @@
 import { zEvmAddress } from "@pantha/shared/zod";
-import { and, desc, eq, lte, or, sql, sum } from "drizzle-orm";
+import { and, eq, lte, or, sql, sum } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import z from "zod";
