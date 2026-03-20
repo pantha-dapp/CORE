@@ -49,7 +49,7 @@ export function useEncryptionService() {
 	}
 
 	async function encrypt(args: {
-		recipientPublicKey: Address;
+		recipientAddress: Address;
 		plaintext: string;
 	}) {
 		if (!wallet || !contracts) {
@@ -62,7 +62,7 @@ export function useEncryptionService() {
 			throw new Error("stored keygen data not found");
 		}
 
-		const publicKey = await getPublicKey(args.recipientPublicKey);
+		const publicKey = await getPublicKey(args.recipientAddress);
 		const { sharedSecret } = encapsulate({
 			publicKeyOther: hexToBytes(publicKey),
 			privateKeySelf: storedKeygenData.data.keygen.account.privateKey,
@@ -74,7 +74,7 @@ export function useEncryptionService() {
 	}
 
 	async function decrypt(args: {
-		senderPublicKey: Address;
+		senderAddress: Address;
 		ciphertext: Uint8Array;
 	}) {
 		if (!wallet || !contracts) {
@@ -84,7 +84,7 @@ export function useEncryptionService() {
 			throw new Error("keygen data not found");
 		}
 
-		const publicKey = await getPublicKey(args.senderPublicKey);
+		const publicKey = await getPublicKey(args.senderAddress);
 		const { sharedSecret } = encapsulate({
 			publicKeyOther: hexToBytes(publicKey),
 			privateKeySelf: storedKeygenData.data.keygen.account.privateKey,
