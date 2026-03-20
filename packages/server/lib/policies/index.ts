@@ -4,6 +4,7 @@ import type { ShopItemId } from "../../data/shop";
 import type { Db } from "../db";
 import { ForbiddenError, NotImplementedError } from "../errors";
 import chapterEnforcers from "./chapter";
+import chatEnforcers from "./chat";
 import shopEnforcers from "./shop";
 import userEnforcers from "./user";
 
@@ -42,6 +43,9 @@ type PolicyBaseDefs = {
 	user: {
 		userWallet: Address;
 	};
+	chat: {
+		chatId: string;
+	};
 };
 type PolicyResource<
 	T extends keyof PolicyBaseDefs,
@@ -49,12 +53,14 @@ type PolicyResource<
 > = PolicyBaseDefs[T] & R;
 export interface PolicyResourceDefs {
 	"chapter.view": PolicyResource<"chapter">;
+
 	"course.generate": {};
 
 	"user.view": PolicyResource<"user">;
 	"user.follow": PolicyResource<"user">;
 	"user.unfollow": PolicyResource<"user">;
-	"user.viewFriendProfile": PolicyResource<"user">;
+
+	"chat.dm": { userWallet: Address };
 
 	"shop.purchase": { itemId: ShopItemId };
 }
@@ -81,6 +87,7 @@ export class DefaultPolicyManager implements PolicyManager {
 		this._enforcers = {
 			...userEnforcers,
 			...chapterEnforcers,
+			...chatEnforcers,
 			...shopEnforcers,
 		};
 	}
