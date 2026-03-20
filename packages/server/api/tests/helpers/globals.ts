@@ -9,6 +9,7 @@ export const testGlobals: {
 	api1: ReturnType<typeof hc<typeof apiRouter>>;
 	contracts1: PanthaContracts;
 	api2: ReturnType<typeof hc<typeof apiRouter>>;
+	contracts2: PanthaContracts;
 	reauthenticate: () => Promise<void>;
 	appState: AppState;
 } = {};
