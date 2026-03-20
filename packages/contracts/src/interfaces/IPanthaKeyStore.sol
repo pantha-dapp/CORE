@@ -14,6 +14,6 @@ interface IPanthaKeyStore {
     function isRegistered(address key) external view returns (bool);
     function keygenData(address key) external view returns (KeygenData memory);
     event KeygenDataRegistered();
-    function registerKeygenData(bytes32 seedSalt_, bytes20 challengeSalt_, bytes32 publicKey_, bytes calldata signature_) external;
+    function registerKeygenData(address user_, bytes32 seedSalt_, bytes20 challengeSalt_, bytes32 publicKey_, bytes calldata signature_) external;
     function validateKeygenDataRegistrationSignature(bytes32 seedSalt_, bytes20 challengeSalt_, bytes32 publicKey_, bytes calldata signature_, address walletAddress_) external view returns (bool);
 }
