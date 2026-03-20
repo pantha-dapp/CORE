@@ -64,6 +64,13 @@
 			"when": 1773949518455,
 			"tag": "0008_melted_roughhouse",
 			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "6",
+			"when": 1774049515478,
+			"tag": "0009_shiny_jack_power",
+			"breakpoints": true
 		}
 	]
 }
