@@ -35,7 +35,7 @@ contract PanthaKeyStore is EIP712 {
 
     bytes32 private constant REGISTER_KEYGEN_DATA_TYPEHASH =
         keccak256(
-            "RegisterKeygenData(bytes32 seedSalt,bytes20 challengeSalt,bytes32 publicKey,bytes calldata signature,address walletAddress)"
+            "RegisterKeygenData(bytes32 seedSalt,bytes20 challengeSalt,bytes32 publicKey)"
         );
 
     function registerKeygenData(
