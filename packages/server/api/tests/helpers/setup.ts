@@ -139,6 +139,12 @@ beforeAll(
 			// @ts-expect-error - The
 			client: userWallet1,
 		});
+		testGlobals.contracts2 = getContracts({
+			// @ts-expect-error - alksdmalsd
+			chain: hardhat,
+			// @ts-expect-error - The
+			client: userWallet2,
+		});
 
 		testGlobals.reauthenticate = async () => {
 			// Directly create sessions in the DB and issue JWTs — no SIWE/RPC needed.
