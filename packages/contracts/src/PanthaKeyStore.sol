@@ -29,7 +29,7 @@ contract PanthaKeyStore is EIP712 {
         _;
     }
 
-    constructor() EIP712("FSKeyRegistry", "1") {
+    constructor() EIP712("PanthaKeyStore", "1") {
         orchestrator = IPanthaOrchestrator(msg.sender); // expect orcestaror to be the deployer
     }
 
@@ -39,6 +39,7 @@ contract PanthaKeyStore is EIP712 {
         );
 
     function registerKeygenData(
+        address user_,
         bytes32 seedSalt_,
         bytes20 challengeSalt_,
         bytes32 publicKey_,
@@ -47,7 +48,7 @@ contract PanthaKeyStore is EIP712 {
         if (seedSalt_ == bytes32(0)) revert InvalidSeedSalt();
         if (challengeSalt_ == bytes20(0)) revert InvalidChallengeSalt();
         if (publicKey_ == bytes32(0)) revert InvalidPublicKey();
-        if (isRegistered[msg.sender]) revert DataAlreadyRegistered();
+        if (isRegistered[user_]) revert DataAlreadyRegistered();
 
         if (
             !validateKeygenDataRegistrationSignature(
@@ -55,17 +56,18 @@ contract PanthaKeyStore is EIP712 {
                 challengeSalt_,
                 publicKey_,
                 signature_,
-                msg.sender
+                user_
             )
         ) revert InvalidSignature();
 
-        keygenData[msg.sender] = KeygenData({
+        isRegistered[user_] = true;
+        keygenData[user_] = KeygenData({
             seedSalt: seedSalt_,
             challengeSalt: challengeSalt_,
             publicKey: publicKey_
         });
 
-        emit KeygenDataRegistered(msg.sender);
+        emit KeygenDataRegistered(user_);
     }
 
     function validateKeygenDataRegistrationSignature(
