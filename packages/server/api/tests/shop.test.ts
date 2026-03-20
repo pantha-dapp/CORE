@@ -81,6 +81,6 @@ describe("Shop behavir", async () => {
 			},
 		});
 
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(409);
 	});
 });
