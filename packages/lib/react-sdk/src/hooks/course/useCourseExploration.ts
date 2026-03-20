@@ -3,7 +3,7 @@ import { parseResponse } from "hono/client";
 import { UMAP } from "umap-js";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
-export function useCourseById(args: { id?: string }) {
+export function useCourseExploration(args: { id?: string }) {
 	const { id } = args;
 	const { wallet, api } = usePanthaContext();
 
