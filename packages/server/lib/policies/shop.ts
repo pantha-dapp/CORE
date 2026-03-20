@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { ConflictError, NotFoundError, UnauthorizedError } from "../errors";
+import { ConflictError, NotFoundError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"shop"> = {
