@@ -4981,33 +4981,6 @@ export const definitions = {
 					type: "constructor",
 				},
 				{
-					inputs: [
-						{
-							internalType: "uint256",
-							name: "deadline",
-							type: "uint256",
-						},
-					],
-					name: "ERC2612ExpiredSignature",
-					type: "error",
-				},
-				{
-					inputs: [
-						{
-							internalType: "address",
-							name: "signer",
-							type: "address",
-						},
-						{
-							internalType: "address",
-							name: "owner",
-							type: "address",
-						},
-					],
-					name: "ERC2612InvalidSigner",
-					type: "error",
-				},
-				{
 					anonymous: false,
 					inputs: [
 						{
