@@ -197,6 +197,7 @@ export function createVectorDb<T extends VectorDbClientKey>(
 					: string,
 				score: z.number().parse(entry.score),
 				payload,
+				vector: z.array(z.number()).optional().nullable().parse(entry.vector),
 			};
 		});
 	}
