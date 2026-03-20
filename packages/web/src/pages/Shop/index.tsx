@@ -127,7 +127,7 @@ export default function Shop() {
 									<div className="flex items-center gap-2">
 										<Zap className="text-yellow-500" size={20} />
 										<span className="text-xl font-bold text-gray-900 dark:text-dark-text">
-											{(item.priceBps / 100).toFixed(0)}
+											{(item.priceHuman / 100).toFixed(0)}
 										</span>
 									</div>
 
@@ -173,11 +173,9 @@ export default function Shop() {
 								</p>
 								<p className="text-2xl font-bold text-gray-900 dark:text-dark-text mt-2 flex items-center gap-2">
 									<Zap className="text-yellow-500" size={20} />
-									{
-										shopItemsQuery.data?.items.find(
-											(i) => i.id === selectedItem,
-										)?.priceBps
-									}
+									{shopItemsQuery.data?.items
+										.find((i) => i.id === selectedItem)
+										?.priceHuman.toFixed(2)}
 								</p>
 							</div>
 
