@@ -1,6 +1,7 @@
 // import * as cache from "./cache";
 
 import { createSelectSchema } from "drizzle-zod";
+import * as chat from "./chat";
 import * as course from "./course";
 import * as engagement from "./engagement";
 import * as runtime from "./runtime";
@@ -10,7 +11,7 @@ import * as user from "./user";
 
 // Combine all schema parts
 const schema = {
-	// ...cache,
+	...chat,
 	...course,
 	...engagement,
 	...runtime,
