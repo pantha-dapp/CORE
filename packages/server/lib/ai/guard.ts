@@ -56,12 +56,13 @@ function checkBannedPatternsOnPrompt(input: string): PromptValidationResult {
 }
 
 async function moderatePrompt(input: string): Promise<PromptValidationResult> {
-	const payload = await fetch(`${env.OLLAMA_HOST}/v1/chat`, {
+	const payload = await fetch(`${env.OLLAMA_HOST}/api/chat`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({
+			stream: false,
 			model: env.AI_PROMPT_GUARD_MODEL,
 			messages: [
 				{
