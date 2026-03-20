@@ -334,6 +334,36 @@ export function dbExtensionHelpers(db: DbClient) {
 		return action;
 	}
 
+	const LIMIT_PER_PAGE_MESSAGES_BY_PARTICIPANTS = 30;
+	async function messagesByParticipants(args: {
+		userWallet1: Address;
+		userWallet2: Address;
+		offset?: number;
+	}) {
+		const { userWallet1, userWallet2, offset = 0 } = args;
+
+		const messages = await db
+			.select()
+			.from(schema.personalMessages)
+			.where(
+				or(
+					and(
+						eq(schema.personalMessages.senderWallet, userWallet1),
+						eq(schema.personalMessages.recipientWallet, userWallet2),
+					),
+					and(
+						eq(schema.personalMessages.senderWallet, userWallet2),
+						eq(schema.personalMessages.recipientWallet, userWallet1),
+					),
+				),
+			)
+			.orderBy(desc(schema.personalMessages.id))
+			.offset(offset)
+			.limit(LIMIT_PER_PAGE_MESSAGES_BY_PARTICIPANTS);
+
+		return messages;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -351,5 +381,6 @@ export function dbExtensionHelpers(db: DbClient) {
 		searchUsersByUsername,
 		userActionPreviousHash,
 		registerAction,
+		messagesByParticipants,
 	};
 }
