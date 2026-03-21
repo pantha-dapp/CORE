@@ -20,21 +20,10 @@
 	font-display: swap;
 }
 
-@font-face {
-	font-family: "Tusker Grotesk";
-	src:
-		url("/fonts/TuskerGrotesk-7700Bold.woff2") format("woff2"),
-		url("/fonts/TuskerGrotesk-7700Bold.woff") format("woff"),
-		url("/fonts/TuskerGrotesk-7700Bold.ttf") format("truetype");
-	font-weight: 700;
-	font-style: normal;
-	font-display: swap;
-}
-
 @theme {
-	--font-tusker: "Tusker Grotesk", system-ui, sans-serif;
 	--font-haymer: "Haymer Small Capitals W01 Bold", system-ui, sans-serif;
 	--font-montserrat: "Montserrat", system-ui, sans-serif;
+	--font-titillium: "Titillium Web", system-ui, sans-serif;
 	--color-primary: #3b82f6;
 	--color-secondary: #8b5cf6;
 	--color-background: #1f2937;
@@ -62,14 +51,17 @@
 	--color-landing-magenta: #ac4f98;
 	--color-landing-slate: #61609a;
 	--color-landing-mint: #9dadc5;
-	/* Dark theme palette - deep indigo to match brand */
-	--color-dark-bg: #1a1b2e;
-	--color-dark-card: #25273c;
-	--color-dark-surface: #2d2f4a;
-	--color-dark-border: #3d3f5c;
-	--color-dark-text: #e2e8f0;
-	--color-dark-muted: #94a3b8;
+	/* Pantha Slate dark theme - educational high-focus */
+	--color-dark-bg: #080e1c;
+	--color-dark-card: #0a1325;
+	--color-dark-surface: #1e2c48;
+	--color-dark-border: #3b4766;
+	--color-dark-text: #dde5ff;
+	--color-dark-muted: #bdc2ff;
+	--color-dark-muted-subtle: rgba(221, 229, 255, 0.5);
 	--color-dark-accent: #818cf8;
+	--color-dark-accent-muted: rgba(129, 140, 248, 0.1);
+	--color-dark-success: #4ade80;
 }
 
 body {
@@ -95,7 +87,7 @@ h3,
 h4,
 h5,
 h6 {
-	@apply font-tusker;
+	@apply font-titillium;
 }
 
 /* Scroll lock: prevents all scroll when section is locked */
@@ -166,6 +158,68 @@ body.scroll-lock {
 	animation: slideDown 0.3s ease-out;
 }
 
+/* Learning path: chapters slide in from sides */
+@keyframes chapterFromLeft {
+	from {
+		transform: translateX(-100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes chapterFromRight {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+.animate-chapter-from-left {
+	animation: chapterFromLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-chapter-from-right {
+	animation: chapterFromRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Chapters animate out when scrolling up (leave viewport) */
+@keyframes chapterOutLeft {
+	from {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateX(-100%);
+		opacity: 0;
+	}
+}
+
+@keyframes chapterOutRight {
+	from {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+}
+
+.animate-chapter-out-left {
+	animation: chapterOutLeft 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-chapter-out-right {
+	animation: chapterOutRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 /* Landing hero: slide up from invisible line, rotating from slanted to straight */
 /* Text starts fully below the line (hidden), emerges into view - no opacity change */
 @keyframes slideUpAnglePositive {
@@ -223,6 +277,196 @@ body.scroll-lock {
 }
 .animate-slide-up-line[data-angle="4"] {
 	--word-rotate: -12deg;
+}
+
+/* Dashboard: animated gradient background - more evident pulse */
+@keyframes gradientPulse {
+	0%,
+	100% {
+		opacity: 1;
+		filter: brightness(1);
+	}
+	50% {
+		opacity: 0.5;
+		filter: brightness(1.15);
+	}
+}
+
+.animate-gradient-bg {
+	animation: gradientPulse 4s ease-in-out infinite;
+}
+
+/* Chapter popup: zoom in/out animations */
+@keyframes popupBackdropIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes popupBackdropOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes popupContentIn {
+	from {
+		transform: scale(0.6);
+	}
+	to {
+		transform: scale(1);
+	}
+}
+
+@keyframes popupContentOut {
+	from {
+		transform: scale(1);
+	}
+	to {
+		transform: scale(0.6);
+	}
+}
+
+.animate-popup-backdrop-in {
+	animation: popupBackdropIn 0.2s ease-out forwards;
+}
+
+.animate-popup-backdrop-out {
+	animation: popupBackdropOut 0.15s ease-in forwards;
+}
+
+.animate-popup-content-in {
+	animation: popupContentIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-popup-content-out {
+	animation: popupContentOut 0.2s ease-in forwards;
+}
+
+.animate-popup-content-in-left {
+	animation: popupContentIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	transform-origin: left center;
+}
+
+.animate-popup-content-out-left {
+	animation: popupContentOut 0.2s ease-in forwards;
+	transform-origin: left center;
+}
+
+.animate-popup-content-in-right {
+	animation: popupContentIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	transform-origin: right center;
+}
+
+.animate-popup-content-out-right {
+	animation: popupContentOut 0.2s ease-in forwards;
+	transform-origin: right center;
+}
+
+/* Progress: Show button and card animations */
+@keyframes progressButtonIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes progressCardIn {
+	from {
+		opacity: 0;
+		transform: translateY(24px) scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes progressCardOut {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(20px) scale(0.96);
+	}
+}
+
+.animate-progress-button-in {
+	animation: progressButtonIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-progress-card-in {
+	animation: progressCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-progress-card-out {
+	animation: progressCardOut 0.15s ease-in forwards;
+}
+
+/* ChapterDetails: page content and modals */
+@keyframes chapterResultIn {
+	from {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes chapterOptionPulse {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.02);
+	}
+}
+
+.animate-chapter-result-in {
+	animation: chapterResultIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-chapter-modal-in {
+	animation: popupContentIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Back button: animate from top-left */
+@keyframes backButtonIn {
+	from {
+		opacity: 0;
+		transform: translate(-12px, -12px) scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: translate(0, 0) scale(1);
+	}
+}
+
+.animate-back-from-topleft {
+	animation: backButtonIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Button press: zoom in/out on click */
+.btn-press-zoom {
+	transition: transform 0.15s ease;
+}
+.btn-press-zoom:active {
+	transform: scale(0.96);
 }
 
 /* HowItWorksStep1: cat fades up from below */
