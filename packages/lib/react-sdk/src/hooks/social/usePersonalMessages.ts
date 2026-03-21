@@ -1,6 +1,6 @@
 import { zEvmAddress } from "@pantha/shared/zod";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useRef } from "react";
 import type { Address } from "viem";
 import { hexToBytes } from "viem";
 import z from "zod";
@@ -13,6 +13,8 @@ const PAGE_SIZE = 30;
 export function usePersonalMessages(participantWallet?: Address) {
 	const { wallet, api } = usePanthaContext();
 	const { decrypt } = useEncryptionService();
+	const queryClient = useQueryClient();
+	const latestMessageIdRef = useRef<number | null>(null);
 
 	const enabled = !!wallet && !!participantWallet;
 
@@ -27,8 +29,12 @@ export function usePersonalMessages(participantWallet?: Address) {
 
 			const response = await api.rpc.users.social.dm.$get({
 				query: {
-					participantWallet: participantWallet,
+					participantWallet,
 					offset,
+					...(offset === 0 &&
+						latestMessageIdRef.current !== null && {
+							after: latestMessageIdRef.current,
+						}),
 				},
 			});
 			const result = await response.json();
@@ -46,6 +52,14 @@ export function usePersonalMessages(participantWallet?: Address) {
 					return { ...msg, plaintext };
 				}),
 			);
+
+			// Track the latest message ID from first page for next refetch
+			if (offset === 0 && messages.length > 0) {
+				const firstMsg = messages[0] as { id?: number };
+				if (firstMsg.id) {
+					latestMessageIdRef.current = firstMsg.id;
+				}
+			}
 
 			return { messages, offset };
 		},
@@ -69,10 +83,14 @@ export function usePersonalMessages(participantWallet?: Address) {
 				if (
 					result.data.from.toLowerCase() === participantWallet.toLowerCase()
 				) {
-					query.refetch();
+					// Refetch only the first page with 'after' param to get only new messages
+					queryClient.invalidateQueries({
+						queryKey: ["personal-messages", participantWallet],
+						refetchType: "active",
+					});
 				}
 			},
-			[participantWallet, query.refetch],
+			[participantWallet, queryClient],
 		),
 	);
 
