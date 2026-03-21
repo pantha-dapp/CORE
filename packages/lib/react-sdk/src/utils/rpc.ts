@@ -50,6 +50,10 @@ export default class ApiClient {
 		return this._client.api;
 	}
 
+	get authHeaders() {
+		return { Authorization: this._authHeader.Authorization };
+	}
+
 	setJwt(authToken: string | null) {
 		this._authHeader = { Authorization: `Bearer ${authToken}` };
 		this._client = this.createClient();
