@@ -6,15 +6,21 @@ import { useEncryptionService } from "../crypto";
 
 const PAGE_SIZE = 30;
 
-export function usePersonalMessages(participantWallet: Address | undefined) {
+export function usePersonalMessages(participantWallet?: Address) {
 	const { wallet, api } = usePanthaContext();
 	const { decrypt } = useEncryptionService();
 
+	const enabled = !!wallet && !!participantWallet;
+
 	return useInfiniteQuery({
 		queryKey: ["personal-messages", participantWallet],
-		enabled: !!wallet && !!participantWallet,
 		initialPageParam: 0,
+		enabled,
 		queryFn: async ({ pageParam: offset }) => {
+			if (!enabled) {
+				throw new Error(" not connected.");
+			}
+
 			const response = await api.rpc.users.social.dm.$get({
 				query: {
 					participantWallet: participantWallet,
@@ -30,10 +36,8 @@ export function usePersonalMessages(participantWallet: Address | undefined) {
 			const messages = await Promise.all(
 				result.data.messages.map(async (msg) => {
 					const plaintext = await decrypt({
-						// ECDH shared secret is symmetric — the other party's address
-						// works for both sent and received messages in this conversation.
-						senderAddress: participantWallet!,
-						ciphertext: hexToBytes(msg.ciphertext as `0x${string}`),
+						senderAddress: participantWallet,
+						ciphertext: hexToBytes(msg.ciphertext),
 					});
 					return { ...msg, plaintext };
 				}),
