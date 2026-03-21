@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x221": {
 		PanthaOrchestrator: {
-			address: "0x0a5d1fe58774028fd5f3c287ee5b88b37bcb37be",
+			address: "0xa80b731e8b3ba357df7a97248b3630e8f66f6aea",
 			abi: [
 				{
 					inputs: [
@@ -356,7 +356,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificate: {
-			address: "0xd561bD64B4133B36220c42E5a824c21BCb4E2a3d",
+			address: "0x6b240129eD1212Bdfd3E1BF6e7E5e7B6114e36db",
 			abi: [
 				{
 					inputs: [],
@@ -880,7 +880,7 @@ export const definitions = {
 			],
 		},
 		PanthaKeyStore: {
-			address: "0x4fa9daEB7b1A240C0F7cE70dBC30dD37abF1fBe8",
+			address: "0xF10c7057CdFC538051A3934D3c604DFA71F7a8f0",
 			abi: [
 				{
 					inputs: [],
@@ -1086,6 +1086,11 @@ export const definitions = {
 				{
 					inputs: [
 						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
+						{
 							internalType: "bytes32",
 							name: "seedSalt_",
 							type: "bytes32",
@@ -1153,7 +1158,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificationAuthority: {
-			address: "0xb215b1a3e5CeAdC39cC29f102966F6cF47B9Aee8",
+			address: "0xb6B58Ba59218DCaDC00e861d796C92829E326387",
 			abi: [
 				{
 					inputs: [],
@@ -1283,7 +1288,7 @@ export const definitions = {
 			],
 		},
 		PanthaToken: {
-			address: "0x2619a79bdfb115e18648dbd600b9cfb1dcd9b180",
+			address: "0xf8e6934459845be5ea42e3f51265be4642729474",
 			abi: [
 				{
 					inputs: [
@@ -1891,7 +1896,7 @@ export const definitions = {
 			],
 		},
 		PXP: {
-			address: "0x7DF2a764DC4cF8CFe8A771e6FCAD4A9aF0eBD067",
+			address: "0x6F1D8a780F65a03B908D5b8Ec39c46Ea6cf4d4D4",
 			abi: [
 				{
 					inputs: [],
@@ -2306,7 +2311,7 @@ export const definitions = {
 			],
 		},
 		PanthaTreasury: {
-			address: "0x56d76Da3b462ef87Aa836CB4A41Cc194421f0d3f",
+			address: "0xe3373c9B1E91b6cF2c0f08390B982f21779aB5bC",
 			abi: [
 				{
 					inputs: [
@@ -2427,39 +2432,12 @@ export const definitions = {
 			],
 		},
 		PanthaShop: {
-			address: "0xE3C12D2F3daFF234651e90685362e4661c29638d",
+			address: "0x757c69543CEAa70F2d3985f6f9ebe8089Cf3d0d7",
 			abi: [
 				{
 					inputs: [],
 					stateMutability: "nonpayable",
 					type: "constructor",
-				},
-				{
-					inputs: [
-						{
-							internalType: "uint256",
-							name: "deadline",
-							type: "uint256",
-						},
-					],
-					name: "ERC2612ExpiredSignature",
-					type: "error",
-				},
-				{
-					inputs: [
-						{
-							internalType: "address",
-							name: "signer",
-							type: "address",
-						},
-						{
-							internalType: "address",
-							name: "owner",
-							type: "address",
-						},
-					],
-					name: "ERC2612InvalidSigner",
-					type: "error",
 				},
 				{
 					anonymous: false,
@@ -3631,6 +3609,11 @@ export const definitions = {
 				},
 				{
 					inputs: [
+						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
 						{
 							internalType: "bytes32",
 							name: "seedSalt_",
