@@ -70,27 +70,32 @@ type ReadOptions = {
 
 async function readUserEvents(redis: RedisClient, opts: ReadOptions) {
 	const key = `sse:${opts.userWallet}`;
-	const blockMs = String(opts.blockMs ?? 5000);
 	const count = String(opts.count ?? 50);
+	const blockMs = opts.blockMs ?? 5000;
 
-	const res = await redis.send("XREAD", [
-		"COUNT",
-		count,
-		"BLOCK",
-		blockMs,
-		"STREAMS",
-		key,
-		opts.lastId ?? "$",
-	]);
+	const args =
+		blockMs > 0
+			? [
+					"COUNT",
+					count,
+					"BLOCK",
+					String(blockMs),
+					"STREAMS",
+					key,
+					opts.lastId ?? "$",
+				]
+			: ["COUNT", count, "STREAMS", key, opts.lastId ?? "0"];
+
+	const res = await redis.send("XREAD", args);
 
 	if (!res) return [];
 
-	// XREAD returns [[streamKey, [[id, [field, value, ...]], ...]]]
-	const result = res;
-	const stream = result[0];
-	if (!stream) return [];
-
-	const [, messages] = stream;
+	// Bun's RedisClient returns XREAD as a RESP3 map object:
+	// { [streamKey]: [[id, [field, value, ...]], ...] }
+	const messages = Object.values(
+		res as Record<string, [string, string[]][]>,
+	)[0];
+	if (!messages) return [];
 
 	return messages.map(([id, fields]: [string, string[]]) => {
 		const obj: Record<string, string> = {};
