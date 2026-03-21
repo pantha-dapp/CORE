@@ -1,7 +1,11 @@
+import { zEvmAddress } from "@pantha/shared/zod";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import type { Address } from "viem";
 import { hexToBytes } from "viem";
+import z from "zod";
 import { usePanthaContext } from "../../context/PanthaProvider";
+import { useEvent } from "../../context/SseProvider";
 import { useEncryptionService } from "../crypto";
 
 const PAGE_SIZE = 30;
@@ -12,7 +16,7 @@ export function usePersonalMessages(participantWallet?: Address) {
 
 	const enabled = !!wallet && !!participantWallet;
 
-	return useInfiniteQuery({
+	const query = useInfiniteQuery({
 		queryKey: ["personal-messages", participantWallet],
 		initialPageParam: 0,
 		enabled,
@@ -50,4 +54,27 @@ export function usePersonalMessages(participantWallet?: Address) {
 			return lastPage.offset + lastPage.messages.length;
 		},
 	});
+
+	useEvent(
+		"dm:new",
+		useCallback(
+			(data: unknown) => {
+				const result = z
+					.object({
+						from: zEvmAddress(),
+					})
+					.safeParse(data);
+				if (!result.success || !participantWallet) return;
+
+				if (
+					result.data.from.toLowerCase() === participantWallet.toLowerCase()
+				) {
+					query.refetch();
+				}
+			},
+			[participantWallet, query.refetch],
+		),
+	);
+
+	return query;
 }
