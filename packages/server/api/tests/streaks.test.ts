@@ -10,6 +10,11 @@ import { testGlobals } from "./helpers/globals";
 import { unwrap } from "./helpers/rpc";
 import { userWallet1, userWallet2 } from "./helpers/setup";
 import {
+	collectSseEvents,
+	drainSseStream,
+	expectSseEvent,
+} from "./helpers/sse";
+import {
 	testBecomeFriends,
 	testCompleteChapter,
 	testCreateCourse,
@@ -22,6 +27,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const NOON_UTC_MS = 12 * 60 * 60 * 1000;
 const FRIENDS_DAY_0_BASE =
 	DAY_0 - (DAY_0 % ONE_DAY_MS) + 14 * ONE_DAY_MS + NOON_UTC_MS;
+// Day 4 of the friends streak block — consecutive to day 3, guaranteeing streak extension
+const SSE_DAY = FRIENDS_DAY_0_BASE + 4 * ONE_DAY_MS;
+
+// Shared across the two SSE describe blocks below
+let sseCourseId: string;
+let sseChapterId: string;
 
 describe("User Streaks", () => {
 	let courseId: string;
@@ -256,5 +267,139 @@ describe("Friends Streaks", () => {
 		await sleep(50);
 		const streak = await getFriendStreak();
 		expect(streak.currentStreak).toBe(1);
+	});
+});
+
+// SSE_DAY is day 4 of the friends streak sequence (FRIENDS_DAY_0 + 4 days).
+describe("SSE Events: streak:extended", () => {
+	beforeAll(async () => {
+		setSystemTime(SSE_DAY);
+		await testGlobals.reauthenticate();
+
+		const { api1, api2 } = testGlobals;
+		sseCourseId = await testCreateCourse(api1);
+		await api1.courses.enroll.$post({ json: { courseId: sseCourseId } });
+		await api2.courses.enroll.$post({ json: { courseId: sseCourseId } });
+
+		const chaptersRes = await api1.courses[":id"].chapters.$get({
+			param: { id: sseCourseId },
+		});
+		const chaptersData = await chaptersRes.json();
+		if (!chaptersData.success) throw new Error("Failed to fetch chapters");
+		const chapter = chaptersData.data.chapters[0];
+		if (!chapter?.id) throw new Error("No chapters found");
+		sseChapterId = chapter.id;
+	});
+
+	afterAll(() => {
+		setSystemTime();
+		testGlobals.reauthenticate();
+	});
+
+	it("emits streak:extended SSE event when user extends their streak", async () => {
+		const { api1, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		const lastId = await drainSseStream(redis, userWallet1.account.address);
+
+		await testCompleteChapter(sseChapterId, api1);
+
+		const evt = await expectSseEvent(redis, {
+			userWallet: userWallet1.account.address,
+			type: "streak:extended",
+			lastId,
+		});
+
+		const payload = evt.payload as { currentStreak: number };
+		expect(payload.currentStreak).toBeGreaterThan(0);
+	});
+
+	it("does not emit streak:extended when activity is recorded twice on the same day", async () => {
+		const { api1, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		// Drain after the previous test's event
+		const lastId = await drainSseStream(redis, userWallet1.account.address);
+
+		// Complete again on the same day — should be a no-op for the streak
+		await testCompleteChapter(sseChapterId, api1);
+
+		const events = await collectSseEvents(redis, {
+			userWallet: userWallet1.account.address,
+			type: "streak:extended",
+			lastId,
+		});
+
+		expect(events).toHaveLength(0);
+	});
+});
+
+describe("SSE Events: friend-streak:extended", () => {
+	// userWallet1 was already active on SSE_DAY (from the streak:extended describe above).
+	// When userWallet2 completes a chapter on the same day, both friends are mutually active
+	// → friend-streak:extended fires for both wallets.
+	beforeAll(async () => {
+		setSystemTime(SSE_DAY);
+		await testGlobals.reauthenticate();
+	});
+
+	afterAll(() => {
+		setSystemTime();
+		testGlobals.reauthenticate();
+	});
+
+	it("does not emit friend-streak:extended when only one user is active", async () => {
+		// userWallet1 completed a chapter in the streak:extended describe above.
+		// userWallet2 has not been active yet today, so no mutual activity has occurred.
+		// Drain historical events first, then confirm no new friend-streak:extended arrived.
+		const { appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// Brief wait to let any in-flight async emissions settle
+		await new Promise((r) => setTimeout(r, 100));
+
+		const events = await collectSseEvents(redis, {
+			userWallet: userWallet2.account.address,
+			type: "friend-streak:extended",
+			lastId,
+		});
+
+		expect(events).toHaveLength(0);
+	});
+
+	it("emits friend-streak:extended to both users when both are active on the same day", async () => {
+		const { api2, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		// Drain both streams before triggering
+		const lastId1 = await drainSseStream(redis, userWallet1.account.address);
+		const lastId2 = await drainSseStream(redis, userWallet2.account.address);
+
+		// api1 is already active today; api2 completing triggers friend-streak logic
+		await testCompleteChapter(sseChapterId, api2);
+
+		const [evt1, evt2] = await Promise.all([
+			expectSseEvent(redis, {
+				userWallet: userWallet1.account.address,
+				type: "friend-streak:extended",
+				lastId: lastId1,
+			}),
+			expectSseEvent(redis, {
+				userWallet: userWallet2.account.address,
+				type: "friend-streak:extended",
+				lastId: lastId2,
+			}),
+		]);
+
+		expect(evt1.payload).toMatchObject({
+			friendWallet: userWallet2.account.address,
+			currentStreak: expect.any(Number),
+		});
+		expect(evt2.payload).toMatchObject({
+			friendWallet: userWallet1.account.address,
+			currentStreak: expect.any(Number),
+		});
 	});
 });
