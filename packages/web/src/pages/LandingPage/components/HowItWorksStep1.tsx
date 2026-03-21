@@ -15,7 +15,7 @@ export const HowItWorksStep1 = forwardRef<HTMLDivElement, HowItWorksStep1Props>(
 		return (
 			<section
 				ref={ref}
-				className="relative font-tusker"
+				className="relative font-titillium"
 				style={{ minHeight: `${SECTION_HEIGHT_VH}vh` }}
 			>
 				<div className="sticky top-0 h-screen flex flex-col items-center justify-end px-6 md:px-12 overflow-visible pb-12 md:pb-16">
