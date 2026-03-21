@@ -12,6 +12,7 @@ import { flowTestnet } from "viem/chains";
 import type { UseWalletClientReturnType } from "wagmi";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
+import { SseProvider } from "./SseProvider";
 
 type Wallet = UseWalletClientReturnType["data"];
 
@@ -79,7 +80,9 @@ export function PanthaProvider(props: PanthaConfig) {
 	);
 
 	return (
-		<PanthaContext.Provider value={value}>{children}</PanthaContext.Provider>
+		<PanthaContext.Provider value={value}>
+			<SseProvider>{children}</SseProvider>
+		</PanthaContext.Provider>
 	);
 }
 
