@@ -92,7 +92,7 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Failed to save message", 500);
 			}
 
-			sse.emitToUser(db.redis, {
+			await sse.emitToUser(db.redis, {
 				userWallet: recipientWallet,
 				type: "dm:new",
 				payload: {
