@@ -7,6 +7,7 @@ import courses from "./courses";
 import faucet from "./faucet";
 import jobs from "./jobs";
 import shop from "./shop";
+import sse from "./sse";
 import type { RouterEnv } from "./types";
 import users from "./users";
 
@@ -26,6 +27,7 @@ export const apiRouter = new Hono<RouterEnv>()
 	.route("/users", users)
 	.route("/faucet", faucet)
 	.route("/shop", shop)
+	.route("/sse", sse)
 
 	.onError((err, ctx) => {
 		if (err instanceof PromptGuardError) {
