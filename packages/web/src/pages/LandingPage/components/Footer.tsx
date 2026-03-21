@@ -15,7 +15,7 @@ export const Footer = forwardRef<HTMLElement>(function Footer(_, ref) {
 			className="relative z-10 px-6 md:px-12 py-20 md:py-28 bg-landing-footer-bg text-white"
 		>
 			<div className="max-w-5xl mx-auto">
-				<h2 className="font-tusker font-bold text-4xl md:text-5xl lg:text-6xl mb-6 md:mb-8">
+				<h2 className="font-titillium font-bold text-4xl md:text-5xl lg:text-6xl mb-6 md:mb-8">
 					Start learning today.
 				</h2>
 				<p className="text-lg md:text-xl text-white/90 mb-12 md:mb-16 max-w-2xl text-haymer font-bold">
