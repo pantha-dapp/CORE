@@ -3,6 +3,7 @@ import { zEvmAddress, zHex } from "@pantha/shared/zod";
 import { Hono } from "hono";
 import z from "zod";
 import { respond } from "../../../../lib/utils/respond";
+import { sse } from "../../../../lib/utils/sse";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import type { RouterEnv } from "../../types";
@@ -91,6 +92,14 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Failed to save message", 500);
 			}
 
+			sse.emitToUser(db.redis, {
+				userWallet: recipientWallet,
+				type: "dm:new",
+				payload: {
+					from: userWallet,
+				},
+			});
+
 			return respond.ok(ctx, { message: message.data[0] }, "Message sent", 201);
 		},
 	)
@@ -102,19 +111,21 @@ export default new Hono<RouterEnv>()
 			"query",
 			z.object({
 				participantWallet: zEvmAddress(),
+				after: z.number().optional(),
 				offset: z.number().default(0),
 			}),
 		),
 		async (ctx) => {
 			const { db } = ctx.var.appState;
 			const { userWallet } = ctx.var;
-			const { participantWallet, offset } = ctx.req.valid("query");
+			const { participantWallet, after, offset } = ctx.req.valid("query");
 
 			const messages = await tryCatch(
 				db.messagesByParticipants({
 					userWallet1: userWallet,
 					userWallet2: participantWallet,
 					offset,
+					after,
 				}),
 			);
 
