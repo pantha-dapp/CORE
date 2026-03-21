@@ -65,66 +65,81 @@ export function CompletionScreen({
 	}, []);
 
 	return (
-		<div className="rounded-xl p-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-			<div className="text-6xl mb-4">🎉</div>
-			<h2 className="text-3xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
+		<div className="rounded-2xl p-5 text-center">
+			<div className="text-5xl mb-3">🎉</div>
+			<h2 className="text-2xl font-bold text-dark-text font-titillium mb-2">
 				Chapter Complete!
 			</h2>
-			<p className="text-gray-600 dark:text-dark-muted mb-8 text-lg font-montserrat">
+			<p className="text-dark-muted mb-6 font-titillium">
 				Great job! You've finished all pages in this chapter.
 			</p>
 
 			{/* Score Breakdown */}
-			<div className="grid grid-cols-3 gap-4 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-				<div className="rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-2">
-					<p className="text-green-700 dark:text-green-400 text-sm font-semibold mb-2 font-montserrat">
+			<div className="grid grid-cols-3 gap-3 mb-6">
+				<div
+					className="rounded-xl bg-dark-success/10 border border-dark-success/30 p-3 animate-chapter-result-in"
+					style={{ animationDelay: "0.1s" }}
+				>
+					<p className="text-dark-success text-xs font-semibold mb-1 font-titillium">
 						Correct
 					</p>
-					<p className="text-4xl font-bold text-green-600 dark:text-green-400 tabular-nums">
+					<p className="text-2xl font-bold text-dark-success tabular-nums">
 						<AnimatedCounter target={correctCount} duration={1200} />
 					</p>
 				</div>
 
-				<div className="rounded-xl bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30 p-2">
-					<p className="text-red-700 dark:text-red-400 text-sm font-semibold mb-2 font-montserrat">
+				<div
+					className="rounded-xl bg-red-900/20 border border-red-500/30 p-3 animate-chapter-result-in"
+					style={{ animationDelay: "0.15s" }}
+				>
+					<p className="text-red-400 text-xs font-semibold mb-1 font-titillium">
 						Incorrect
 					</p>
-					<p className="text-4xl font-bold text-red-600 dark:text-red-400 tabular-nums">
+					<p className="text-2xl font-bold text-red-400 tabular-nums">
 						<AnimatedCounter target={incorrectCount} duration={1200} />
 					</p>
 				</div>
 
-				<div className="rounded-xl bg-gray-100 dark:bg-dark-surface p-2">
-					<p className="text-gray-700 dark:text-dark-muted text-sm font-semibold mb-2 font-montserrat">
+				<div
+					className="rounded-xl bg-dark-surface border border-dark-border/50 p-3 animate-chapter-result-in"
+					style={{ animationDelay: "0.2s" }}
+				>
+					<p className="text-dark-muted text-xs font-semibold mb-1 font-titillium">
 						Total
 					</p>
-					<p className="text-4xl font-bold text-gray-800 dark:text-dark-text tabular-nums">
+					<p className="text-2xl font-bold text-dark-text tabular-nums">
 						<AnimatedCounter target={totalPages} duration={1200} />
 					</p>
 				</div>
 
-				<div className="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 dark:border dark:border-yellow-500/30 p-2 col-span-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-					<p className="text-yellow-700 dark:text-yellow-400 text-sm font-semibold mb-2 font-montserrat">
+				<div
+					className="rounded-xl bg-dark-accent/20 border border-dark-accent/40 p-3 col-span-3 animate-chapter-result-in"
+					style={{ animationDelay: "0.25s" }}
+				>
+					<p className="text-dark-accent text-xs font-semibold mb-1 font-titillium">
 						XP Earned
 					</p>
-					<p className="text-4xl font-bold text-yellow-600 dark:text-yellow-400 tabular-nums">
+					<p className="text-2xl font-bold text-dark-accent tabular-nums">
 						<AnimatedCounter target={xpEarned} duration={1500} />
 					</p>
 				</div>
 			</div>
 
 			{/* Progress Percentage */}
-			<div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
-				<p className="text-gray-600 dark:text-dark-muted mb-3 font-semibold font-montserrat">
+			<div
+				className="mb-6 animate-chapter-result-in"
+				style={{ animationDelay: "0.3s" }}
+			>
+				<p className="text-dark-muted mb-2 text-sm font-semibold font-titillium">
 					Your Score
 				</p>
-				<div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-4 mb-4 overflow-hidden">
+				<div className="w-full bg-dark-surface rounded-full h-2 mb-3 overflow-hidden">
 					<div
-						className="h-4 rounded-full bg-landing-button-primary dark:bg-dark-accent transition-all duration-1500 ease-out"
+						className="h-2 rounded-full bg-dark-accent transition-all duration-1500 ease-out"
 						style={{ width: `${percentage}%` }}
 					/>
 				</div>
-				<p className="text-3xl font-bold text-gray-900 dark:text-dark-text tabular-nums">
+				<p className="text-2xl font-bold text-dark-text tabular-nums">
 					<AnimatedCounter target={percentage} duration={1500} />%
 				</p>
 			</div>
@@ -132,7 +147,8 @@ export function CompletionScreen({
 			<button
 				type="button"
 				onClick={onBackClick}
-				className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-8 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500"
+				className="rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium animate-chapter-result-in"
+				style={{ animationDelay: "0.35s" }}
 			>
 				← Back to Chapters
 			</button>

@@ -210,30 +210,30 @@ export function FillInTheBlanks({
 	if (blankCount === 0) {
 		return (
 			<div className="space-y-6">
-				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				<h3 className="text-xl font-bold text-dark-text font-titillium">
 					Fill in the Blanks
 				</h3>
-				<div className="bg-amber-50 dark:bg-amber-900/20 dark:border dark:border-amber-500/30 p-5 rounded-xl text-center space-y-3">
-					<p className="text-amber-800 dark:text-amber-400 text-sm font-medium font-montserrat">
+				<div className="bg-amber-900/20 dark:border dark:border-amber-500/30 p-5 rounded-xl text-center space-y-3">
+					<p className="text-amber-400 text-sm font-medium font-titillium">
 						⚠️ This question couldn't be displayed properly.
 					</p>
-					<p className="text-gray-600 dark:text-dark-muted text-sm font-montserrat">
+					<p className="text-dark-muted text-sm font-titillium">
 						Tap Continue to move on — it won't affect your progress.
 					</p>
 				</div>
 				{showResult ? (
-					<div className="overflow-hidden rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-5">
-						<p className="text-lg font-bold text-green-800 dark:text-green-400 font-tusker">
+					<div className="overflow-hidden rounded-xl bg-dark-success/10 dark:border dark:border-dark-success/30 p-5">
+						<p className="text-lg font-bold text-dark-success font-titillium">
 							Rendered safely
 						</p>
-						<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
+						<p className="mt-2 text-sm leading-6 text-dark-muted font-titillium">
 							This question was skipped because it could not be rendered.
 						</p>
 						{onViewExplanation && (
 							<button
 								type="button"
 								onClick={onViewExplanation}
-								className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3.5 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
+								className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-dark-surface px-4 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-border font-titillium"
 							>
 								<span>💡</span>
 								<span>
@@ -246,7 +246,7 @@ export function FillInTheBlanks({
 						<button
 							type="button"
 							onClick={onContinue}
-							className="mt-3 w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+							className="mt-3 w-full rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
 						>
 							Next Question →
 						</button>
@@ -255,7 +255,7 @@ export function FillInTheBlanks({
 					<button
 						type="button"
 						onClick={() => onSubmit([])}
-						className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+						className="w-full mt-6 rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
 					>
 						Submit Answer
 					</button>
@@ -266,16 +266,20 @@ export function FillInTheBlanks({
 
 	return (
 		<div className="space-y-6">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+			<h3 className="text-xl font-bold text-dark-text font-titillium">
 				Fill in the Blanks
 			</h3>
 
 			{imageUrl && (
-				<img src={imageUrl} alt="Question" className="rounded-lg w-full" />
+				<img
+					src={imageUrl}
+					alt="Question"
+					className="rounded-xl w-full border border-dark-border/50"
+				/>
 			)}
 
 			{/* Sentence with blanks */}
-			<div className="bg-gray-100 dark:bg-dark-surface p-6 rounded-xl text-lg leading-loose">
+			<div className="bg-dark-surface border border-dark-border/50 p-5 rounded-xl text-base leading-loose">
 				{words.flatMap((word, wordIdx) => {
 					// Split each token by any embedded $N patterns so that a single element
 					// like "( $1 , $2 )." is rendered as text + blank + text + blank + text.
@@ -320,12 +324,12 @@ export function FillInTheBlanks({
 								disabled={
 									showResult || isSubmitting || !isFilled || flyingChip !== null
 								}
-								className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold font-montserrat ${
+								className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold font-titillium btn-press-zoom ${
 									isCorrect
 										? "border-green-500 dark:border-green-400 text-green-600 dark:text-green-400"
 										: isFilled && hiddenBlankIndex !== blankIndex
-											? "border-gray-800 dark:border-dark-accent text-gray-800 dark:text-dark-text hover:border-gray-900 dark:hover:border-dark-text hover:text-gray-900 dark:hover:text-dark-text"
-											: "border-gray-400 dark:border-dark-border text-gray-400 dark:text-dark-muted"
+											? "border-dark-accent text-dark-text hover:border-dark-text"
+											: "border-dark-border text-dark-muted"
 								}`}
 							>
 								{isFilled && hiddenBlankIndex !== blankIndex
@@ -345,7 +349,7 @@ export function FillInTheBlanks({
 						parts.push(
 							<MathText
 								key={`w-${wordIdx}-tail-${occ}`}
-								className="text-gray-800 dark:text-dark-text"
+								className="text-dark-text"
 							>
 								{`${tail} `}
 							</MathText>,
@@ -369,7 +373,10 @@ export function FillInTheBlanks({
 
 			{/* Word bank – click to place; placed options disappear until the blank is cleared */}
 			{availableOptions.length > 0 && (
-				<div className="bg-gray-100 dark:bg-dark-surface p-5 rounded-xl">
+				<div className="bg-dark-surface border border-dark-border/50 p-4 rounded-xl">
+					<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium mb-3">
+						Word bank
+					</p>
 					<div ref={wordBankRef} className="flex flex-wrap gap-2">
 						{remainingOptions.map(({ id, v }) => (
 							<button
@@ -379,7 +386,7 @@ export function FillInTheBlanks({
 									selectOption(v, id, e.currentTarget.getBoundingClientRect())
 								}
 								disabled={showResult || isSubmitting || flyingChip !== null}
-								className={`px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border text-gray-800 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-border hover:border-gray-400 dark:hover:border-dark-accent transition-colors font-montserrat ${hiddenOptionId === id ? "invisible" : ""}`}
+								className={`px-3 py-1.5 rounded-lg text-sm bg-dark-card border border-dark-border text-dark-text hover:bg-dark-border hover:border-dark-accent transition-colors font-titillium btn-press-zoom ${hiddenOptionId === id ? "invisible" : ""}`}
 							>
 								{v}
 							</button>
@@ -388,56 +395,36 @@ export function FillInTheBlanks({
 				</div>
 			)}
 
-			{/* Result message - shown above the fixed buttons */}
+			{/* Result message */}
 			{showResult && (
-				<div className="mt-8 space-y-3">
+				<div className="space-y-3">
 					<div
-						className={`overflow-hidden rounded-xl p-5 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
+						className={`overflow-hidden rounded-xl p-4 ${isCorrect ? "bg-dark-success/10 border border-dark-success/30" : "bg-red-900/20 border border-red-500/30"}`}
 					>
-						<div className="mb-4 flex items-start gap-3">
+						<div className="flex items-start gap-3">
 							<div
-								className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
+								className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ${isCorrect ? "bg-dark-success/20 text-dark-success" : "bg-red-800/40 text-red-400"}`}
 							>
 								{isCorrect ? "📝" : "🔤"}
 							</div>
 							<div>
 								<p
-									className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+									className={`font-bold font-titillium text-base ${isCorrect ? "text-dark-success" : "text-red-400"}`}
 								>
 									{isCorrect ? "Well filled!" : "Almost there"}
 								</p>
-								<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
+								<p className="mt-0.5 text-sm text-dark-muted font-titillium">
 									Use the explanation to understand the missing words, then
 									continue.
 								</p>
 							</div>
 						</div>
 					</div>
-				</div>
-			)}
-
-			{!showResult && (
-				<button
-					type="button"
-					onClick={handleSubmit}
-					disabled={!allFilled || isSubmitting}
-					className={`fixed bottom-4 left-4 right-4 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
-						!allFilled || isSubmitting
-							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
-					} ${isSubmitting ? "opacity-50" : ""}`}
-				>
-					{isSubmitting ? "Checking..." : "Submit Answer"}
-				</button>
-			)}
-
-			{showResult && (
-				<div className="fixed bottom-4 left-4 right-4 space-y-3">
 					{onViewExplanation && (
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat transition-colors"
+							className="w-full flex items-center justify-center gap-2 rounded-lg bg-dark-surface px-3 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-border font-titillium transition-colors btn-press-zoom"
 						>
 							<span>💡</span>
 							<span>
@@ -450,11 +437,27 @@ export function FillInTheBlanks({
 					<button
 						type="button"
 						onClick={onContinue}
-						className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat transition-opacity"
+						className="w-full mt-2 rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium transition-opacity btn-press-zoom"
 					>
 						Next Question →
 					</button>
 				</div>
+			)}
+
+			{/* Submit button – below content, like TeachContent Continue */}
+			{!showResult && (
+				<button
+					type="button"
+					onClick={handleSubmit}
+					disabled={!allFilled || isSubmitting}
+					className={`w-full mt-6 rounded-lg px-4 py-2.5 text-sm font-semibold font-titillium transition-all btn-press-zoom ${
+						!allFilled || isSubmitting
+							? "bg-dark-surface text-dark-muted cursor-not-allowed"
+							: "bg-dark-accent text-dark-bg hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
+				>
+					{isSubmitting ? "Checking..." : "Submit Answer"}
+				</button>
 			)}
 
 			{/* Flying chip overlay for word-bank ↔ blank animations */}

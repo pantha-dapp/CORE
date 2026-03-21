@@ -188,10 +188,10 @@ export default function ChapterDetails() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg flex items-center justify-center px-6 py-8">
+			<div className="min-h-screen dark:bg-dark-bg flex items-center justify-center px-6 py-8">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-landing-hero-text dark:border-dark-accent mx-auto mb-4" />
-					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dark-accent mx-auto mb-4" />
+					<p className="text-dark-muted font-titillium">
 						{isJobPending
 							? "Chapter is being prepared..."
 							: "Loading chapter..."}
@@ -213,18 +213,18 @@ export default function ChapterDetails() {
 		!currentChapter
 	) {
 		return (
-			<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg px-6 py-8">
-				<div className="max-w-4xl mx-auto text-center">
-					<h1 className="text-3xl font-bold text-landing-hero-text dark:text-dark-text font-tusker mb-4">
+			<div className="min-h-screen dark:bg-dark-bg px-6 py-8 flex items-center justify-center">
+				<div className="max-w-md mx-auto text-center">
+					<h1 className="text-2xl font-bold text-dark-text font-titillium mb-3">
 						Chapter Not Found
 					</h1>
-					<p className="text-landing-hero-text/80 dark:text-dark-muted font-montserrat mb-8">
+					<p className="text-dark-muted font-titillium mb-6">
 						The chapter you're looking for doesn't exist.
 					</p>
 					<button
 						type="button"
 						onClick={() => router.navigate({ to: "/dashboard" })}
-						className="rounded-xl bg-white dark:bg-dark-card px-6 py-3 font-semibold text-gray-800 dark:text-dark-text shadow-md hover:bg-gray-50 dark:hover:bg-dark-surface font-montserrat"
+						className="rounded-lg bg-dark-card border border-dark-border px-4 py-2 font-semibold text-dark-text hover:bg-dark-surface transition-colors font-titillium"
 					>
 						← Go Home
 					</button>
@@ -547,34 +547,43 @@ export default function ChapterDetails() {
 	}
 
 	return (
-		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg flex flex-col">
+		<div className="min-h-screen dark:bg-dark-bg flex flex-col relative">
+			{/* Gradient background */}
+			<div
+				className="fixed inset-0 pointer-events-none animate-gradient-bg -z-10"
+				aria-hidden
+				style={{
+					background:
+						"radial-gradient(ellipse 80% 50% at 50% 15%, rgba(30, 44, 72, 0.4) 0%, transparent 50%), radial-gradient(ellipse 60% 80% at 80% 55%, rgba(129, 140, 248, 0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 60% at 20% 90%, rgba(129, 140, 248, 0.06) 0%, transparent 50%)",
+				}}
+			/>
 			{isExplanationOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
 					<button
 						type="button"
 						className="absolute inset-0"
 						onClick={() => setIsExplanationOpen(false)}
 						aria-label="Close explanation"
 					/>
-					<div className="relative z-10 w-full max-w-2xl max-h-[calc(100vh-3rem)] flex flex-col rounded-xl bg-white dark:bg-dark-card shadow-xl overflow-hidden">
+					<div className="relative z-10 w-full max-w-2xl max-h-[calc(100vh-3rem)] flex flex-col rounded-2xl bg-dark-card/95 backdrop-blur-xl border border-dark-border/50 shadow-2xl overflow-hidden animate-chapter-modal-in">
 						{/* Header */}
-						<div className="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-dark-border p-6 sm:p-8">
+						<div className="flex items-start justify-between gap-4 border-b border-dark-border p-4 sm:p-5">
 							<div>
-								<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
+								<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium">
 									Answer explanation
 								</p>
-								<h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker sm:text-3xl">
+								<h2 className="mt-1.5 text-xl font-bold text-dark-text font-titillium sm:text-2xl">
 									Why this answer was{" "}
 									{answerResult?.correct ? "correct" : "incorrect"}
 								</h2>
-								<p className="mt-2 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat sm:text-base">
+								<p className="mt-1 text-sm text-dark-muted font-titillium">
 									Quick review before you move to the next question.
 								</p>
 							</div>
 							<button
 								type="button"
 								onClick={() => setIsExplanationOpen(false)}
-								className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-dark-surface text-xl text-gray-600 dark:text-dark-muted transition hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat"
+								className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dark-surface text-dark-muted transition hover:bg-dark-border font-titillium btn-press-zoom"
 								aria-label="Close explanation"
 							>
 								×
@@ -582,45 +591,45 @@ export default function ChapterDetails() {
 						</div>
 
 						{/* Scrollable Content */}
-						<div className="overflow-y-auto flex-1 p-6 sm:p-8">
+						<div className="overflow-y-auto flex-1 p-4 sm:p-5">
 							{isExplanationLoadingForCurrentAnswer ? (
-								<div className="rounded-xl bg-gray-50 dark:bg-dark-surface p-6">
-									<div className="mb-4 flex items-center gap-3">
-										<div className="h-10 w-10 animate-pulse rounded-xl bg-gray-200 dark:bg-dark-border" />
-										<div className="h-5 w-44 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
+								<div className="rounded-xl bg-dark-surface p-5">
+									<div className="mb-3 flex items-center gap-3">
+										<div className="h-9 w-9 animate-pulse rounded-lg bg-dark-border" />
+										<div className="h-4 w-36 animate-pulse rounded-full bg-dark-border" />
 									</div>
 									<div className="space-y-2">
-										<div className="h-4 w-full animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
-										<div className="h-4 w-11/12 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
-										<div className="h-4 w-4/5 animate-pulse rounded-full bg-gray-200 dark:bg-dark-border" />
+										<div className="h-3 w-full animate-pulse rounded-full bg-dark-border" />
+										<div className="h-3 w-11/12 animate-pulse rounded-full bg-dark-border" />
+										<div className="h-3 w-4/5 animate-pulse rounded-full bg-dark-border" />
 									</div>
-									<p className="mt-5 text-sm font-medium text-gray-600 dark:text-dark-muted font-montserrat">
+									<p className="mt-4 text-sm text-dark-muted font-titillium">
 										Preparing your explanation...
 									</p>
 								</div>
 							) : isExplanationReady ? (
-								<div className="space-y-4">
-									<div className="rounded-xl bg-gray-50 dark:bg-dark-surface p-6">
-										<p className="mb-3 inline-flex rounded-lg bg-gray-200 dark:bg-dark-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-dark-muted font-tusker">
+								<div className="space-y-3">
+									<div className="rounded-xl bg-dark-surface p-4 animate-chapter-result-in">
+										<p className="mb-2 inline-flex rounded-lg bg-dark-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium">
 											Breakdown
 										</p>
 										{explanationContent?.explanation && (
 											<MathText
 												block
-												className="text-base leading-8 text-gray-800 dark:text-dark-text font-montserrat sm:text-lg"
+												className="text-sm leading-7 text-dark-text font-titillium sm:text-base"
 											>
 												{explanationContent.explanation}
 											</MathText>
 										)}
 									</div>
-									<div className="rounded-xl bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30 p-6">
-										<p className="text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-400 font-tusker">
+									<div className="rounded-xl bg-dark-success/10 border border-dark-success/30 p-4">
+										<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-success font-titillium">
 											Key takeaway
 										</p>
 										{explanationContent?.keyTakeaway && (
 											<MathText
 												block
-												className="mt-3 text-sm leading-7 text-gray-800 dark:text-dark-text font-montserrat sm:text-base"
+												className="mt-2 text-sm leading-7 text-dark-text font-titillium"
 											>
 												{explanationContent.keyTakeaway}
 											</MathText>
@@ -628,8 +637,8 @@ export default function ChapterDetails() {
 									</div>
 								</div>
 							) : isExplanationErrorForCurrentAnswer ? (
-								<div className="rounded-xl bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30 p-6">
-									<p className="font-semibold text-red-700 dark:text-red-400 font-montserrat">
+								<div className="rounded-xl bg-red-900/20 border border-red-500/30 p-4">
+									<p className="font-semibold text-red-400 font-titillium">
 										We could not load the explanation right now.
 									</p>
 									<button
@@ -639,7 +648,7 @@ export default function ChapterDetails() {
 												? void refreshExplanationForPage(answerResult.pageIndex)
 												: undefined
 										}
-										className="mt-4 rounded-xl bg-gray-800 dark:bg-dark-accent px-4 py-2 font-semibold text-white hover:bg-gray-700 dark:hover:opacity-90 font-montserrat"
+										className="mt-3 rounded-lg bg-dark-accent px-3 py-2 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
 									>
 										Try Again
 									</button>
@@ -648,14 +657,14 @@ export default function ChapterDetails() {
 						</div>
 
 						{/* Footer with Button */}
-						<div className="border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card p-6 sm:p-8 flex justify-end">
+						<div className="border-t border-dark-border bg-dark-card p-4 sm:p-5 flex justify-end">
 							<button
 								type="button"
 								onClick={() => {
 									hapticFeedback.tap();
 									setIsExplanationOpen(false);
 								}}
-								className="rounded-xl bg-landing-button-primary dark:bg-dark-accent px-5 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat"
+								className="rounded-lg bg-dark-accent px-4 py-2 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
 							>
 								Got it
 							</button>
@@ -666,23 +675,21 @@ export default function ChapterDetails() {
 
 			{/* Confirmation Dialog */}
 			{showConfirmDialog && (
-				<div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-					<div className="bg-white dark:bg-dark-card rounded-xl p-8 max-w-md shadow-xl w-full">
-						<div className="mb-6">
-							<h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
-								Leave Chapter?
-							</h2>
-						</div>
-						<p className="text-gray-600 dark:text-dark-muted mb-8 leading-relaxed font-montserrat">
+				<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+					<div className="bg-dark-card border border-dark-border rounded-2xl p-5 max-w-md shadow-2xl w-full animate-chapter-modal-in">
+						<h2 className="text-xl font-bold text-dark-text font-titillium mb-2">
+							Leave Chapter?
+						</h2>
+						<p className="text-dark-muted text-sm leading-relaxed font-titillium mb-6">
 							If you go back, your progress in this chapter will be reset.
 							You'll start from question 1 next time.
 						</p>
-						<div className="flex gap-3">
+						<div className="flex gap-2">
 							<button
 								type="button"
 								onClick={handleCancelBack}
 								disabled={isDeleting}
-								className="flex-1 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border transition-colors disabled:opacity-50 font-montserrat"
+								className="flex-1 rounded-lg bg-dark-surface px-3 py-2 text-sm font-semibold text-dark-text hover:bg-dark-border transition-colors disabled:opacity-50 font-titillium"
 							>
 								No, Stay
 							</button>
@@ -690,7 +697,7 @@ export default function ChapterDetails() {
 								type="button"
 								onClick={handleConfirmBack}
 								disabled={isDeleting}
-								className="flex-1 rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50 font-montserrat"
+								className="flex-1 rounded-lg bg-red-500/90 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors disabled:opacity-50 font-titillium"
 							>
 								{isDeleting ? "Resetting..." : "Yes, Go Back"}
 							</button>
@@ -700,13 +707,13 @@ export default function ChapterDetails() {
 			)}
 
 			{/* Main Content */}
-			<div className="flex-1 overflow-y-auto">
+			<div className="flex-1 min-h-0 overflow-y-auto pb-32">
 				<div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
 					{/* Header */}
 					<button
 						type="button"
 						onClick={handleBackClick}
-						className="mb-8 inline-flex items-center gap-2 text-gray-700 dark:text-dark-muted hover:text-gray-900 dark:hover:text-dark-text transition-colors font-montserrat"
+						className="mb-6 inline-flex items-center gap-2 text-dark-muted hover:text-dark-text transition-colors font-titillium text-sm animate-back-from-topleft btn-press-zoom"
 					>
 						<span>←</span>
 						<span>Back to Chapters</span>
@@ -716,55 +723,49 @@ export default function ChapterDetails() {
 					<button
 						type="button"
 						onClick={() => setShowChapterDetails((v) => !v)}
-						className="mb-8 w-full text-left"
+						className="mb-6 w-full text-left"
 					>
 						{/* Progress bar - always visible when not complete */}
 						{!isComplete ? (
-							<div className="space-y-3">
-								<div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-dark-border overflow-hidden">
+							<div className="space-y-2">
+								<div className="h-2 w-full rounded-full bg-dark-surface overflow-hidden">
 									<div
-										className="h-full rounded-full bg-landing-button-primary dark:bg-dark-accent transition-all duration-500"
+										className="h-full rounded-full bg-dark-accent transition-all duration-500"
 										style={{
 											width: `${((displayedPageIndex + 1) / totalPages) * 100}%`,
 										}}
 									/>
 								</div>
 								<div className="flex items-center justify-between">
-									<span className="text-sm font-semibold text-gray-700 dark:text-dark-muted tabular-nums">
+									<span className="text-xs font-semibold text-dark-muted tabular-nums font-titillium">
 										{displayedPageIndex + 1}/{totalPages}
 									</span>
-									<span
-										className="text-gray-400 dark:text-dark-muted text-sm"
-										aria-hidden
-									>
+									<span className="text-dark-muted text-xs" aria-hidden>
 										{showChapterDetails ? "▲" : "▼"}
 									</span>
 								</div>
 							</div>
 						) : (
 							<div className="flex items-center justify-between mb-2">
-								<span className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
+								<span className="text-sm font-semibold text-dark-muted font-titillium">
 									Chapter complete
 								</span>
-								<span
-									className="text-gray-400 dark:text-dark-muted text-sm"
-									aria-hidden
-								>
+								<span className="text-dark-muted text-sm" aria-hidden>
 									{showChapterDetails ? "▲" : "▼"}
 								</span>
 							</div>
 						)}
 						{/* Chapter details - shown when expanded */}
 						{showChapterDetails && (
-							<div className="pt-4 mt-4 border-t border-gray-100 dark:border-dark-border">
-								<p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-muted font-tusker">
+							<div className="pt-4 mt-4 border-t border-dark-border">
+								<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium">
 									{course.title}
 								</p>
-								<h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-dark-text font-tusker">
+								<h1 className="mt-2 text-xl font-bold tracking-tight text-dark-text font-titillium">
 									{currentChapter.title}
 								</h1>
 								{currentChapter.description && (
-									<p className="mt-3 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
+									<p className="mt-2 text-sm leading-6 text-dark-muted font-titillium">
 										{currentChapter.description}
 									</p>
 								)}
@@ -784,10 +785,10 @@ export default function ChapterDetails() {
 									onBackClick={handleCompletionBack}
 								/>
 							) : currentPage ? (
-								renderPage(currentPage)
+								<div>{renderPage(currentPage)}</div>
 							) : (
 								<div className="text-center p-8">
-									<p className="text-gray-400 dark:text-dark-muted">
+									<p className="text-dark-muted font-titillium">
 										No content available
 									</p>
 								</div>
@@ -795,7 +796,7 @@ export default function ChapterDetails() {
 						</div>
 					) : (
 						<div className="text-center p-8">
-							<p className="text-gray-400 dark:text-dark-muted">
+							<p className="text-dark-muted font-titillium">
 								Creating session...
 							</p>
 						</div>
@@ -803,10 +804,7 @@ export default function ChapterDetails() {
 				</div>
 			</div>
 
-			{/* Fixed Bottom Button Area */}
-			{!isComplete && session && currentPage && (
-				<div className="h-24 sm:h-20"></div>
-			)}
+			{/* Fixed Bottom Button Area - spacer handled by pb-32 on scroll */}
 		</div>
 	);
 }

@@ -49,10 +49,10 @@ export function IdentifyShownObjectInImage({
 		<div className="space-y-6">
 			{/* Title */}
 			<div>
-				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
+				<h3 className="text-xl font-bold text-dark-text font-titillium mb-2">
 					Identify Object in Image
 				</h3>
-				<p className="text-gray-800 dark:text-dark-text font-montserrat">
+				<p className="text-dark-text text-sm font-titillium">
 					Look at the image and select the correct answer
 				</p>
 			</div>
@@ -135,7 +135,7 @@ export function IdentifyShownObjectInImage({
 						</div>
 						<div>
 							<p
-								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+								className={`text-lg font-bold font-titillium ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
 							>
 								{isCorrect ? "Correct read!" : "Good try"}
 							</p>

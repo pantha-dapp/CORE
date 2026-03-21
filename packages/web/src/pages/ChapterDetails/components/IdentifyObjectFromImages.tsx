@@ -49,20 +49,18 @@ export function IdentifyObjectFromImages({
 		<div className="space-y-6">
 			{/* Title */}
 			<div>
-				<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker mb-2">
+				<h3 className="text-xl font-bold text-dark-text font-titillium mb-2">
 					Identify Object from Images
 				</h3>
-				<p className="text-gray-800 dark:text-dark-text font-montserrat">
+				<p className="text-dark-text text-sm font-titillium">
 					Select the image that shows:{" "}
-					<MathText className="font-semibold text-gray-900 dark:text-dark-text">
-						{object}
-					</MathText>
+					<MathText className="font-semibold text-dark-text">{object}</MathText>
 				</p>
 			</div>
 
 			{/* Question */}
-			<div className="bg-gray-100 dark:bg-dark-surface rounded-xl p-4">
-				<p className="text-lg text-gray-800 dark:text-dark-text font-semibold font-montserrat">
+			<div className="bg-dark-surface border border-dark-border/50 rounded-xl p-4">
+				<p className="text-base text-dark-text font-semibold font-titillium">
 					Which image shows the "<MathText>{object}</MathText>"?
 				</p>
 			</div>
@@ -134,7 +132,7 @@ export function IdentifyObjectFromImages({
 						</div>
 						<div>
 							<p
-								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+								className={`text-lg font-bold font-titillium ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
 							>
 								{isCorrect ? "You spotted it!" : "Take one more look"}
 							</p>

@@ -43,107 +43,113 @@ export function TrueFalse({
 	}
 
 	return (
-		<div className="space-y-4">
-			<h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
-				True or False
-			</h3>
-			{imageUrl && (
-				<img src={imageUrl} alt="True/False" className="rounded-lg w-full" />
-			)}
-			<MathText
-				block
-				className="text-lg text-gray-800 dark:text-dark-text bg-gray-100 dark:bg-dark-surface p-4 rounded-xl font-montserrat"
-			>
-				{statement}
-			</MathText>
-
-			<div className="grid grid-cols-2 gap-4">
-				<button
-					type="button"
-					onClick={() => {
-						if (!showResult) {
-							hapticFeedback.tap();
-							setSelectedAnswer(true);
-						}
-					}}
-					disabled={showResult}
-					className={`p-6 rounded-xl border-2 font-bold text-lg transition-all font-montserrat ${
-						selectedAnswer === true && !showResult
-							? "border-gray-800 dark:border-dark-accent bg-gray-100 dark:bg-dark-surface"
-							: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
-					} ${showResult && selectedAnswer === true && isCorrect ? "border-green-500 dark:border-green-500/50 bg-green-50 dark:bg-green-900/20" : ""} ${
-						showResult && selectedAnswer === true && !isCorrect
-							? "border-red-500 dark:border-red-500/50 bg-red-50 dark:bg-red-900/20"
-							: ""
-					}`}
+		<>
+			<div className="space-y-4">
+				<h3 className="text-xl font-bold text-dark-text font-titillium">
+					True or False
+				</h3>
+				{imageUrl && (
+					<img
+						src={imageUrl}
+						alt="True/False"
+						className="rounded-xl w-full border border-dark-border/50"
+					/>
+				)}
+				<MathText
+					block
+					className="text-base text-dark-text bg-dark-surface p-4 rounded-xl font-titillium border border-dark-border/50 min-h-16"
 				>
-					<span className="text-gray-800 dark:text-dark-text">True</span>
-					{showResult && selectedAnswer === true && isCorrect && (
-						<span className="ml-2 text-green-600 dark:text-green-400">✓</span>
-					)}
-				</button>
+					{statement}
+				</MathText>
 
-				<button
-					type="button"
-					onClick={() => {
-						if (!showResult) {
-							hapticFeedback.tap();
-							setSelectedAnswer(false);
-						}
-					}}
-					disabled={showResult}
-					className={`p-6 rounded-xl border-2 font-bold text-lg transition-all font-montserrat ${
-						selectedAnswer === false && !showResult
-							? "border-gray-800 dark:border-dark-accent bg-gray-100 dark:bg-dark-surface"
-							: "border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border bg-white dark:bg-dark-surface"
-					} ${showResult && selectedAnswer === false && isCorrect ? "border-green-500 dark:border-green-500/50 bg-green-50 dark:bg-green-900/20" : ""} ${
-						showResult && selectedAnswer === false && !isCorrect
-							? "border-red-500 dark:border-red-500/50 bg-red-50 dark:bg-red-900/20"
-							: ""
-					}`}
-				>
-					<span className="text-gray-800 dark:text-dark-text">False</span>
-					{showResult && selectedAnswer === false && isCorrect && (
-						<span className="ml-2 text-green-600 dark:text-green-400">✓</span>
-					)}
-				</button>
-			</div>
+				<div className="grid grid-cols-2 gap-3">
+					<button
+						type="button"
+						onClick={() => {
+							if (!showResult) {
+								hapticFeedback.tap();
+								setSelectedAnswer(true);
+							}
+						}}
+						disabled={showResult}
+						className={`p-4 rounded-lg border-2 font-bold text-base transition-all font-titillium btn-press-zoom ${
+							selectedAnswer === true && !showResult
+								? "border-dark-accent bg-dark-surface"
+								: "border-dark-border hover:border-dark-muted bg-dark-card"
+						} ${showResult && selectedAnswer === true && isCorrect ? "border-dark-success/60 bg-dark-success/10" : ""} ${
+							showResult && selectedAnswer === true && !isCorrect
+								? "border-red-500/60 bg-red-900/20"
+								: ""
+						}`}
+					>
+						<span className="text-dark-text">True</span>
+						{showResult && selectedAnswer === true && isCorrect && (
+							<span className="ml-2 text-dark-success">✓</span>
+						)}
+					</button>
 
-			{/* Result message */}
-			{showResult && (
-				<div
-					className={`overflow-hidden rounded-xl p-5 mt-8 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 dark:border dark:border-green-500/30" : "bg-red-50 dark:bg-red-900/20 dark:border dark:border-red-500/30"}`}
-				>
-					<div className="mb-4 flex items-start gap-3">
-						<div
-							className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${isCorrect ? "bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-400"}`}
-						>
-							{isCorrect ? "⭐" : "🧩"}
-						</div>
-						<div>
-							<p
-								className={`text-lg font-bold font-tusker ${isCorrect ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"}`}
+					<button
+						type="button"
+						onClick={() => {
+							if (!showResult) {
+								hapticFeedback.tap();
+								setSelectedAnswer(false);
+							}
+						}}
+						disabled={showResult}
+						className={`p-4 rounded-lg border-2 font-bold text-base transition-all font-titillium btn-press-zoom ${
+							selectedAnswer === false && !showResult
+								? "border-dark-accent bg-dark-surface"
+								: "border-dark-border hover:border-dark-muted bg-dark-card"
+						} ${showResult && selectedAnswer === false && isCorrect ? "border-dark-success/60 bg-dark-success/10" : ""} ${
+							showResult && selectedAnswer === false && !isCorrect
+								? "border-red-500/60 bg-red-900/20"
+								: ""
+						}`}
+					>
+						<span className="text-dark-text">False</span>
+						{showResult && selectedAnswer === false && isCorrect && (
+							<span className="ml-2 text-dark-success">✓</span>
+						)}
+					</button>
+				</div>
+
+				{/* Result message */}
+				{showResult && (
+					<div
+						className={`overflow-hidden rounded-xl p-4 mt-6 animate-chapter-result-in ${isCorrect ? "bg-dark-success/10 border border-dark-success/30" : "bg-red-900/20 border border-red-500/30"}`}
+					>
+						<div className="flex items-start gap-3">
+							<div
+								className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ${isCorrect ? "bg-dark-success/20 text-dark-success" : "bg-red-800/40 text-red-400"}`}
 							>
-								{isCorrect ? "Correct!" : "Give it one quick review"}
-							</p>
-							<p className="mt-1 text-sm leading-6 text-gray-600 dark:text-dark-muted font-montserrat">
-								Open the explanation, then move to the next one.
-							</p>
+								{isCorrect ? "⭐" : "🧩"}
+							</div>
+							<div>
+								<p
+									className={`font-bold font-titillium text-base ${isCorrect ? "text-dark-success" : "text-red-400"}`}
+								>
+									{isCorrect ? "Correct!" : "Give it one quick review"}
+								</p>
+								<p className="mt-0.5 text-sm text-dark-muted font-titillium">
+									Open the explanation, then move to the next one.
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
+				)}
+			</div>
 
-			{/* Fixed bottom buttons */}
+			{/* Fixed bottom buttons - outside animated wrapper so fixed works vs viewport */}
 			{!showResult && (
 				<button
 					type="button"
 					onClick={handleSubmit}
 					disabled={selectedAnswer === null || isSubmitting}
-					className={`fixed bottom-4 left-4 right-4 rounded-xl px-6 py-3 font-semibold font-montserrat transition-all ${
+					className={`fixed bottom-24 left-4 right-4 z-40 rounded-lg px-4 py-2.5 text-sm font-semibold font-titillium transition-all btn-press-zoom ${
 						selectedAnswer === null
-							? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-							: "bg-landing-button-primary dark:bg-dark-accent text-landing-button-light-bg dark:text-gray-900 hover:opacity-90"
+							? "bg-dark-surface text-dark-muted cursor-not-allowed"
+							: "bg-dark-accent text-dark-bg hover:opacity-90"
 					} ${isSubmitting ? "opacity-50" : ""}`}
 				>
 					{isSubmitting ? "Checking..." : "Submit Answer"}
@@ -151,12 +157,12 @@ export function TrueFalse({
 			)}
 
 			{showResult && (
-				<div className="fixed bottom-4 left-4 right-4 space-y-3">
+				<div className="fixed bottom-24 left-4 right-4 z-40 space-y-2 animate-chapter-result-in">
 					{onViewExplanation && (
 						<button
 							type="button"
 							onClick={onViewExplanation}
-							className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-dark-surface px-4 py-3 text-sm font-semibold text-gray-800 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border font-montserrat transition-colors"
+							className="w-full flex items-center justify-center gap-2 rounded-lg bg-dark-surface px-3 py-2 text-sm font-semibold text-dark-text hover:bg-dark-border font-titillium transition-colors btn-press-zoom"
 						>
 							<span>💡</span>
 							<span>
@@ -169,12 +175,12 @@ export function TrueFalse({
 					<button
 						type="button"
 						onClick={onContinue}
-						className="w-full rounded-xl bg-landing-button-primary dark:bg-dark-accent px-6 py-3 font-semibold text-landing-button-light-bg dark:text-gray-900 hover:opacity-90 font-montserrat transition-opacity"
+						className="w-full rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium transition-opacity btn-press-zoom"
 					>
 						Next Question →
 					</button>
 				</div>
 			)}
-		</div>
+		</>
 	);
 }
