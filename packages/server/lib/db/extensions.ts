@@ -1,7 +1,7 @@
 // import type { Address } from "viem";
 
 import { jsonStringify } from "@pantha/shared";
-import { and, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, or } from "drizzle-orm";
 import { type Address, type Hex, keccak256, toHex, verifyMessage } from "viem";
 import { InvalidStateError } from "../errors";
 import type { DbClient } from "./client";
@@ -338,6 +338,7 @@ export function dbExtensionHelpers(db: DbClient) {
 	async function messagesByParticipants(args: {
 		userWallet1: Address;
 		userWallet2: Address;
+		after?: number;
 		offset?: number;
 	}) {
 		const { userWallet1, userWallet2, offset = 0 } = args;
@@ -355,6 +356,7 @@ export function dbExtensionHelpers(db: DbClient) {
 						eq(schema.personalMessages.senderWallet, userWallet2),
 						eq(schema.personalMessages.recipientWallet, userWallet1),
 					),
+					and(gte(schema.personalMessages.id, args.after ?? 0)),
 				),
 			)
 			.orderBy(desc(schema.personalMessages.id))
