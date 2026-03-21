@@ -2,6 +2,7 @@ import { dateInTimezone, yesterdayOf } from "@pantha/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Address } from "viem";
 import type { Db } from "../db";
+import { sse } from "./sse";
 
 export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 	const [user] = await db
@@ -42,28 +43,45 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 				currentStreak: 1,
 				lastActiveDate: today,
 			});
-			// return;
+
+			sse.emitToUser(db.redis, {
+				userWallet: userWallet,
+				type: "streak:extended",
+				payload: {
+					currentStreak: 1,
+				},
+			});
+		} else if (existingStreak.lastActiveDate === today) {
+			// already counted today, nothing to do
+		} else if (existingStreak.lastActiveDate === yesterday) {
+			await tx
+				.update(db.schema.userStreaks)
+				.set({
+					currentStreak: sql`${db.schema.userStreaks.currentStreak} + 1`,
+					lastActiveDate: today,
+				})
+				.where(eq(db.schema.userStreaks.userId, userWallet));
+
+			sse.emitToUser(db.redis, {
+				userWallet: userWallet,
+				type: "streak:extended",
+				payload: {
+					currentStreak: existingStreak.currentStreak + 1,
+				},
+			});
 		} else {
-			if (existingStreak.lastActiveDate === yesterday) {
-				await tx
-					.update(db.schema.userStreaks)
-					.set({
-						currentStreak: sql`${db.schema.userStreaks.currentStreak} + 1`,
-						lastActiveDate: today,
-					})
-					.where(eq(db.schema.userStreaks.userId, userWallet));
-			} else {
-				await tx
-					.update(db.schema.userStreaks)
-					.set({
-						currentStreak: 1,
-						lastActiveDate: today,
-					})
-					.where(eq(db.schema.userStreaks.userId, userWallet));
-			}
+			await tx
+				.update(db.schema.userStreaks)
+				.set({
+					currentStreak: 1,
+					lastActiveDate: today,
+				})
+				.where(eq(db.schema.userStreaks.userId, userWallet));
 		}
 
 		const friends = await db.userFriends({ userWallet });
+		if (friends.length === 0) return;
+
 		const activeFriendsToday = await tx
 			.select({ userWallet: db.schema.userDailyActivity.userWallet })
 			.from(db.schema.userDailyActivity)
@@ -92,18 +110,41 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 				);
 
 			if (!friendStreak) {
-				// first time we decetect mutual activity
+				// first time we detect mutual activity
 				await tx.insert(db.schema.friendStreaks).values({
 					userWallet1: userA,
 					userWallet2: userB,
 					currentStreak: 1,
 					lastActiveDate: today,
 				});
+
+				sse.emitToUser(db.redis, {
+					userWallet: userWallet,
+					type: "friend-streak:extended",
+					payload: {
+						friendWallet: friendWallet,
+						currentStreak: 1,
+					},
+				});
+				sse.emitToUser(db.redis, {
+					userWallet: friendWallet,
+					type: "friend-streak:extended",
+					payload: {
+						friendWallet: userWallet,
+						currentStreak: 1,
+					},
+				});
+				continue;
+			}
+
+			if (friendStreak.lastActiveDate === today) {
+				// already counted today, nothing to do
 				continue;
 			}
 
 			if (friendStreak.lastActiveDate === yesterday) {
-				// continu an existingstreak
+				// continue an existing streak
+				const newStreak = friendStreak.currentStreak + 1;
 				await tx
 					.update(db.schema.friendStreaks)
 					.set({
@@ -116,8 +157,25 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 							eq(db.schema.friendStreaks.userWallet2, userB),
 						),
 					);
+
+				sse.emitToUser(db.redis, {
+					userWallet: userWallet,
+					type: "friend-streak:extended",
+					payload: {
+						friendWallet: friendWallet,
+						currentStreak: newStreak,
+					},
+				});
+				sse.emitToUser(db.redis, {
+					userWallet: friendWallet,
+					type: "friend-streak:extended",
+					payload: {
+						friendWallet: userWallet,
+						currentStreak: newStreak,
+					},
+				});
 			} else {
-				// streak broken, omg! reset
+				// streak broken, reset
 				await tx
 					.update(db.schema.friendStreaks)
 					.set({
