@@ -8,13 +8,8 @@ import type clarificationQuestionGenerator from "../../../../lib/ai/tasks/clarif
 import { generateCanonicalCourseDescriptor } from "../../../../lib/ai/tasks/utils";
 import { createVectorDb } from "../../../../lib/db/vec/client";
 import { RateLimitExceededError } from "../../../../lib/errors";
-import { prepareChapter } from "../../../../lib/utils/chapters";
-import {
-	insertCourseIntoVectorDb,
-	prepareCourseIcons,
-} from "../../../../lib/utils/courses";
+import { insertCourseIntoVectorDb } from "../../../../lib/utils/courses";
 import { respond } from "../../../../lib/utils/respond";
-import { prepareSimilarCourses } from "../../../../lib/utils/similarCourses";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import { createJob } from "../../jobs";
@@ -137,7 +132,7 @@ export default new Hono<RouterEnv>()
 				),
 		),
 		async (ctx) => {
-			const { db, ai } = ctx.var.appState;
+			const { db, ai, eventBus } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const action = ctx.req.valid("json");
 
@@ -525,15 +520,15 @@ export default new Hono<RouterEnv>()
 									throw err;
 								});
 
-							await Promise.all([
-								db.enrollUserInCourse({
-									userWallet: userWallet,
-									courseId: generatedCourseId,
-								}),
-								prepareCourseIcons(generatedCourseId, { db, ai }),
-								prepareChapter(firstChapterId, { db, ai }),
-								prepareSimilarCourses(generatedCourseId, { db, ai }),
-							]);
+							await db.enrollUserInCourse({
+								userWallet: userWallet,
+								courseId: generatedCourseId,
+							});
+
+							eventBus.emit("course.generate", {
+								walletAddress: userWallet,
+								courseId: generatedCourseId,
+							});
 
 							ongoingSession.state = "finished";
 							ongoingSession.courseId = generatedCourseId;
