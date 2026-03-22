@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import Icon from "../../shared/components/Icon";
+import PageHeaderWithStats from "../../shared/components/PageHeaderWithStats";
 
 type Tab = "feed" | "chats" | "friends";
 
@@ -27,8 +28,8 @@ function TabButton({
 			onClick={onClick}
 			className={`flex-1 py-3 rounded-full font-semibold transition font-montserrat ${
 				active
-					? "bg-white dark:bg-gray-800 text-landing-hero-bg dark:text-dark-text shadow-sm"
-					: "text-landing-hero-text/80 dark:text-gray-300 hover:text-landing-hero-text dark:hover:text-gray-100"
+					? "bg-dark-surface text-dark-accent"
+					: "text-dark-muted hover:text-dark-text"
 			}`}
 		>
 			{label}
@@ -44,7 +45,9 @@ function SectionCard({
 	className?: string;
 }) {
 	return (
-		<div className={`bg-white rounded-xl p-5 shadow-md ${className}`}>
+		<div
+			className={`border border-dark-border rounded-xl p-4 bg-linear-to-br from-dark-card/95 to-dark-surface/50 backdrop-blur-xl ${className}`}
+		>
 			{children}
 		</div>
 	);
@@ -108,7 +111,7 @@ function UserSearchBar() {
 	return (
 		<div ref={containerRef} className="relative mb-6">
 			<div className="relative">
-				<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-landing-hero-bg/70" />
+				<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-muted" />
 				<input
 					type="text"
 					placeholder="Search users by username..."
@@ -118,12 +121,12 @@ function UserSearchBar() {
 						setIsOpen(true);
 					}}
 					onFocus={() => setIsOpen(true)}
-					className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border border-white/30 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-landing-hero-text/30 focus:border-landing-hero-text font-montserrat shadow-md"
+					className="w-full pl-12 pr-4 py-3 bg-dark-surface/80 rounded-xl border border-dark-border text-dark-text placeholder:text-dark-muted focus:outline-none focus:ring-2 focus:ring-dark-accent/40 focus:border-dark-accent font-montserrat"
 				/>
 			</div>
 
 			{showDropdown && (
-				<div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl z-50">
+				<div className="absolute top-full left-0 right-0 mt-2 bg-dark-surface/95 border border-dark-border rounded-xl overflow-hidden z-50">
 					{isLoading ? (
 						<div className="flex items-center justify-center py-6 text-gray-500 text-sm font-montserrat">
 							<Icon name="loader" size={18} className="animate-spin mr-2" />
@@ -138,53 +141,59 @@ function UserSearchBar() {
 						</div>
 					) : (
 						<div className="max-h-80 overflow-y-auto">
-							{users.map((user) => {
-								const isFollowing = followingSet.has(user.walletAddress);
-								const isSelf = wallet?.account.address === user.walletAddress;
+							{users.map(
+								(user: {
+									walletAddress: string;
+									username?: string;
+									name?: string;
+								}) => {
+									const isFollowing = followingSet.has(user.walletAddress);
+									const isSelf = wallet?.account.address === user.walletAddress;
 
-								return (
-									<div
-										key={user.walletAddress}
-										className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition"
-									>
-										<div className="w-10 h-10 rounded-full bg-linear-to-br from-landing-hero-bg to-purple-500 flex items-center justify-center font-bold text-sm shrink-0 text-white">
-											{(user.username ?? "?").charAt(0).toUpperCase()}
-										</div>
-										<div className="flex-1 min-w-0">
-											<p className="font-semibold text-gray-900 truncate font-montserrat">
-												{user.username}
-											</p>
-											{user.name && (
-												<p className="text-xs text-gray-500 truncate font-montserrat">
-													{user.name}
+									return (
+										<div
+											key={user.walletAddress}
+											className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition"
+										>
+											<div className="w-10 h-10 rounded-full bg-dark-accent flex items-center justify-center font-bold text-sm shrink-0 text-dark-bg">
+												{(user.username ?? "?").charAt(0).toUpperCase()}
+											</div>
+											<div className="flex-1 min-w-0">
+												<p className="font-semibold text-dark-text truncate font-montserrat">
+													{user.username}
 												</p>
-											)}
+												{user.name && (
+													<p className="text-xs text-dark-muted truncate font-montserrat">
+														{user.name}
+													</p>
+												)}
+											</div>
+											{!isSelf &&
+												(isFollowing ? (
+													<button
+														type="button"
+														onClick={() =>
+															handleUnfollow(user.walletAddress as Address)
+														}
+														className="bg-dark-border hover:bg-dark-border/80 text-dark-text px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
+													>
+														Unfollow
+													</button>
+												) : (
+													<button
+														type="button"
+														onClick={() =>
+															handleFollow(user.walletAddress as Address)
+														}
+														className="bg-dark-accent hover:bg-dark-accent/90 text-dark-bg px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
+													>
+														Follow
+													</button>
+												))}
 										</div>
-										{!isSelf &&
-											(isFollowing ? (
-												<button
-													type="button"
-													onClick={() =>
-														handleUnfollow(user.walletAddress as Address)
-													}
-													className="bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
-												>
-													Unfollow
-												</button>
-											) : (
-												<button
-													type="button"
-													onClick={() =>
-														handleFollow(user.walletAddress as Address)
-													}
-													className="bg-landing-button-primary hover:opacity-90 text-landing-button-light-bg px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
-												>
-													Follow
-												</button>
-											))}
-									</div>
-								);
-							})}
+									);
+								},
+							)}
 						</div>
 					)}
 				</div>
@@ -196,20 +205,19 @@ function UserSearchBar() {
 export default function Social() {
 	const [activeTab, setActiveTab] = useState<Tab>("feed");
 	return (
-		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg text-landing-hero-text dark:text-dark-text px-4 pb-24">
+		<div className="dark min-h-screen pt-6 bg-linear-to-br from-dark-bg via-dark-surface/50 to-dark-bg text-dark-text px-4 pb-24">
 			<div className="max-w-4xl mx-auto">
-				<div className="h-20" />
-
-				<h1 className="text-3xl font-bold mb-2 font-tusker">Social</h1>
-				<p className="text-landing-hero-text/90 mb-6 font-montserrat">
-					Connect with friends, share progress, and learn together.
-				</p>
+				<PageHeaderWithStats
+					badge="Community"
+					title="Social"
+					subtitle="Connect with friends, share progress, and learn together."
+				/>
 
 				{/* User Search */}
 				<UserSearchBar />
 
 				{/* Tabs */}
-				<div className="bg-white/20 dark:bg-dark-card/50 rounded-full p-1.5 backdrop-blur-sm mb-6 flex gap-2">
+				<div className="rounded-full p-1.5 mb-6 flex gap-2 border border-gray-200 dark:border-dark-border bg-white/10 dark:bg-dark-surface/40">
 					<TabButton
 						label="Feed"
 						active={activeTab === "feed"}
@@ -231,16 +239,16 @@ export default function Social() {
 				{activeTab === "feed" && (
 					<div className="space-y-6">
 						{/* Celebrate Card */}
-						<SectionCard className="bg-linear-to-br from-landing-gold/40 to-landing-hero-text/30 border-2 border-landing-gold/60">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center gap-4 mb-4">
-								<div className="w-14 h-14 bg-landing-gold rounded-full flex items-center justify-center text-3xl border-2 border-landing-hero-bg/30">
+								<div className="w-14 h-14 bg-dark-accent rounded-full flex items-center justify-center text-3xl border-2 border-dark-accent/30">
 									🎉
 								</div>
 								<div className="flex-1">
-									<h3 className="text-xl font-bold text-landing-hero-bg font-tusker">
+									<h3 className="text-xl font-bold text-dark-accent font-titillium">
 										Celebrate with friends!
 									</h3>
-									<p className="text-sm text-landing-hero-bg/80 font-montserrat">
+									<p className="text-sm text-dark-muted font-montserrat">
 										Share your achievements and inspire others
 									</p>
 								</div>
@@ -248,13 +256,13 @@ export default function Social() {
 							<div className="flex gap-3">
 								<button
 									type="button"
-									className="flex-1 bg-landing-hero-text hover:opacity-90 text-landing-hero-bg py-3 rounded-xl font-semibold transition font-montserrat border-2 border-landing-hero-bg/30"
+									className="flex-1 bg-dark-accent hover:bg-dark-accent/90 text-dark-bg py-3 rounded-xl font-semibold transition font-montserrat"
 								>
 									Share Achievement
 								</button>
 								<button
 									type="button"
-									className="px-6 bg-landing-hero-bg/30 hover:bg-landing-hero-bg/50 text-landing-hero-bg py-3 rounded-xl font-semibold transition font-montserrat border-2 border-landing-hero-bg/40"
+									className="px-6 bg-dark-border hover:bg-dark-border/80 text-dark-text py-3 rounded-xl font-semibold transition font-montserrat"
 								>
 									View Friends
 								</button>
@@ -262,22 +270,22 @@ export default function Social() {
 						</SectionCard>
 
 						{/* Daily Tips */}
-						<SectionCard className="bg-linear-to-br from-landing-peach/50 to-landing-mint/40 border-2 border-landing-peach/70">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-start gap-4">
-								<div className="w-12 h-12 bg-landing-peach rounded-full flex items-center justify-center text-2xl shrink-0 border-2 border-landing-magenta/30">
+								<div className="w-12 h-12 bg-dark-accent/20 rounded-full flex items-center justify-center text-2xl shrink-0 border-2 border-dark-accent/30">
 									💡
 								</div>
 								<div className="flex-1">
-									<h3 className="text-lg font-bold text-landing-magenta font-tusker mb-2">
+									<h3 className="text-lg font-bold text-dark-accent font-titillium mb-2">
 										Today's Learning Tip
 									</h3>
-									<p className="text-landing-slate/90 text-sm mb-3 font-montserrat">
+									<p className="text-dark-muted text-sm mb-3 font-montserrat">
 										Practice consistently! Studies show that learning in short,
 										daily sessions is more effective than cramming. Try to
 										complete at least one chapter every day to maintain your
 										streak.
 									</p>
-									<div className="flex items-center gap-2 text-xs text-landing-slate font-montserrat font-semibold">
+									<div className="flex items-center gap-2 text-xs text-dark-muted font-montserrat font-semibold">
 										<span>📚</span>
 										<span>Based on your progress</span>
 									</div>
@@ -286,10 +294,10 @@ export default function Social() {
 						</SectionCard>
 
 						{/* Trending Now */}
-						<SectionCard className="bg-linear-to-br from-landing-red/15 to-landing-gold/20 border-2 border-landing-red/40">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center gap-3 mb-5">
 								<span className="text-2xl">🔥</span>
-								<h3 className="text-xl font-bold text-landing-red font-tusker">
+								<h3 className="text-xl font-bold text-dark-accent font-titillium">
 									Trending Now
 								</h3>
 							</div>
@@ -300,21 +308,21 @@ export default function Social() {
 										topic: "Advanced Neural Networks",
 										learners: "2.3k learners this week",
 										trend: "+45%",
-										rowBg: "bg-landing-red/10 border-landing-red/30",
+										rowBg: "bg-dark-surface border-dark-accent",
 									},
 									{
 										rank: 2,
 										topic: "Blockchain Fundamentals",
 										learners: "1.8k learners this week",
 										trend: "+38%",
-										rowBg: "bg-landing-magenta/10 border-landing-magenta/30",
+										rowBg: "bg-dark-surface border-dark-border",
 									},
 									{
 										rank: 3,
 										topic: "Python for Data Science",
 										learners: "1.5k learners this week",
 										trend: "+32%",
-										rowBg: "bg-landing-slate/10 border-landing-slate/30",
+										rowBg: "bg-dark-surface border-dark-border",
 									},
 								].map((item) => (
 									<div
@@ -322,20 +330,20 @@ export default function Social() {
 										className={`flex items-center justify-between p-4 rounded-2xl hover:opacity-90 transition cursor-pointer border-2 ${item.rowBg}`}
 									>
 										<div className="flex items-center gap-4">
-											<div className="text-2xl font-bold text-landing-hero-bg font-tusker">
+											<div className="text-2xl font-bold text-dark-accent font-titillium">
 												#{item.rank}
 											</div>
 											<div>
-												<h4 className="font-semibold text-landing-slate font-montserrat">
+												<h4 className="font-semibold text-dark-text font-montserrat">
 													{item.topic}
 												</h4>
-												<p className="text-sm text-landing-slate/70 font-montserrat">
+												<p className="text-sm text-dark-muted font-montserrat">
 													{item.learners}
 												</p>
 											</div>
 										</div>
 										<div className="flex items-center gap-2">
-											<span className="text-landing-footer-bg text-sm font-semibold font-montserrat">
+											<span className="text-dark-accent text-sm font-semibold font-montserrat">
 												{item.trend}
 											</span>
 										</div>
@@ -345,10 +353,10 @@ export default function Social() {
 						</SectionCard>
 
 						{/* Who's Learning What */}
-						<SectionCard className="bg-linear-to-br from-landing-magenta/15 to-landing-slate/20 border-2 border-landing-magenta/40">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center gap-3 mb-5">
 								<span className="text-2xl">👥</span>
-								<h3 className="text-xl font-bold text-landing-magenta font-tusker">
+								<h3 className="text-xl font-bold text-dark-accent font-titillium">
 									Who's Learning What
 								</h3>
 							</div>
@@ -361,7 +369,7 @@ export default function Social() {
 										course: "Machine Learning Basics",
 										achievement: "Earned 50 XP",
 										time: "2 min ago",
-										avatarBg: "from-landing-footer-bg to-landing-slate",
+										avatarBg: "from-dark-accent to-dark-border",
 									},
 									{
 										user: "Alex Kumar",
@@ -384,7 +392,7 @@ export default function Social() {
 								].map((activity) => (
 									<div
 										key={`${activity.user}-${activity.course}`}
-										className="flex items-start gap-4 p-4 bg-white/60 rounded-2xl hover:bg-white/80 transition border-2 border-landing-magenta/20"
+										className="flex items-start gap-4 p-4 bg-dark-surface/50 rounded-2xl hover:bg-dark-surface transition border border-dark-border"
 									>
 										<div
 											className={`w-12 h-12 rounded-full bg-linear-to-br ${activity.avatarBg} flex items-center justify-center font-bold text-sm shrink-0 text-white border-2 border-white/50`}
@@ -393,29 +401,29 @@ export default function Social() {
 										</div>
 										<div className="flex-1 min-w-0">
 											<p className="text-sm mb-1 font-montserrat">
-												<span className="font-semibold text-landing-slate">
+												<span className="font-semibold text-dark-text">
 													{activity.user}
 												</span>
-												<span className="text-landing-slate/70">
+												<span className="text-dark-muted">
 													{" "}
 													{activity.action}{" "}
 												</span>
-												<span className="font-semibold text-landing-magenta">
+												<span className="font-semibold text-dark-accent">
 													{activity.course}
 												</span>
 											</p>
 											<div className="flex items-center gap-3 text-xs font-montserrat">
-												<span className="text-landing-footer-bg font-semibold">
+												<span className="text-dark-accent font-semibold">
 													{activity.achievement}
 												</span>
-												<span className="text-landing-slate/60">
+												<span className="text-dark-muted">
 													• {activity.time}
 												</span>
 											</div>
 										</div>
 										<button
 											type="button"
-											className="text-landing-magenta hover:text-landing-magenta/80 text-sm font-semibold transition font-montserrat"
+											className="text-dark-accent hover:text-dark-accent/80 text-sm font-semibold transition font-montserrat"
 										>
 											Follow
 										</button>
@@ -463,10 +471,10 @@ export default function Social() {
 							},
 						].map((chat, i) => {
 							const chatColors = [
-								"bg-linear-to-br from-landing-slate to-landing-magenta border-landing-magenta/40",
-								"bg-linear-to-br from-landing-peach to-landing-gold border-landing-gold/50",
-								"bg-linear-to-br from-landing-hero-bg to-landing-slate border-landing-slate/40",
-								"bg-linear-to-br from-landing-red/80 to-landing-gold border-landing-red/50",
+								"bg-dark-surface border-dark-border",
+								"bg-dark-surface border-dark-border",
+								"bg-dark-surface border-dark-border",
+								"bg-dark-surface border-dark-border",
 							];
 							const cardStyle = chatColors[i % chatColors.length];
 							return (
@@ -476,19 +484,19 @@ export default function Social() {
 								>
 									<div className="flex items-center gap-4">
 										<div className="relative shrink-0">
-											<div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center font-bold text-landing-slate border-2 border-white">
+											<div className="w-14 h-14 rounded-full bg-dark-surface flex items-center justify-center font-bold text-dark-text border border-dark-border">
 												{chat.avatar}
 											</div>
 											{chat.online && (
-												<div className="absolute bottom-0 right-0 w-4 h-4 bg-landing-footer-bg rounded-full border-2 border-white" />
+												<div className="absolute bottom-0 right-0 w-4 h-4 bg-dark-accent rounded-full border-2 border-dark-surface" />
 											)}
 										</div>
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center justify-between mb-1">
-												<h3 className="font-semibold truncate text-white font-montserrat drop-shadow-sm">
+												<h3 className="font-semibold truncate text-dark-text font-montserrat drop-shadow-sm">
 													{chat.user}
 												</h3>
-												<span className="text-xs text-white/80 shrink-0 font-montserrat">
+												<span className="text-xs text-dark-muted shrink-0 font-montserrat">
 													{chat.time}
 												</span>
 											</div>
@@ -497,7 +505,7 @@ export default function Social() {
 													{chat.lastMessage}
 												</p>
 												{chat.unread > 0 && (
-													<span className="ml-2 bg-landing-hero-text text-landing-hero-bg text-xs px-2 py-1 rounded-full shrink-0 font-montserrat font-semibold border-2 border-white/50">
+													<span className="ml-2 bg-dark-accent text-dark-bg text-xs px-2 py-1 rounded-full shrink-0 font-montserrat font-semibold">
 														{chat.unread}
 													</span>
 												)}
@@ -513,14 +521,14 @@ export default function Social() {
 				{activeTab === "friends" && (
 					<div className="space-y-6">
 						{/* Friend Requests */}
-						<SectionCard className="bg-linear-to-br from-landing-peach/40 to-landing-gold/30 border-2 border-landing-gold/50">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center justify-between mb-5">
 								<div className="flex items-center gap-3">
 									<span className="text-2xl">👋</span>
-									<h3 className="text-xl font-bold text-landing-slate font-tusker">
+									<h3 className="text-xl font-bold text-landing-slate font-titillium">
 										Friend Requests
 									</h3>
-									<span className="bg-landing-red text-landing-gold text-xs px-2 py-1 rounded-full font-montserrat font-semibold border-2 border-landing-gold/50">
+									<span className="bg-dark-accent text-dark-bg text-xs px-2 py-1 rounded-full font-montserrat font-semibold">
 										3
 									</span>
 								</div>
@@ -548,32 +556,32 @@ export default function Social() {
 								].map((request) => (
 									<div
 										key={request.user}
-										className="flex items-center gap-4 p-4 bg-white/70 rounded-2xl border-2 border-landing-gold/40"
+										className="flex items-center gap-4 p-4 bg-dark-surface/50 rounded-2xl border border-dark-border"
 									>
-										<div className="w-14 h-14 rounded-full bg-linear-to-br from-landing-slate to-landing-magenta flex items-center justify-center font-bold shrink-0 text-white border-2 border-landing-gold/30">
+										<div className="w-14 h-14 rounded-full bg-dark-accent/20 flex items-center justify-center font-bold shrink-0 text-dark-accent border border-dark-accent/30">
 											{request.avatar}
 										</div>
 										<div className="flex-1 min-w-0">
-											<h4 className="font-semibold text-landing-slate font-montserrat">
+											<h4 className="font-semibold text-dark-text font-montserrat">
 												{request.user}
 											</h4>
-											<p className="text-sm text-landing-slate/80 truncate font-montserrat">
+											<p className="text-sm text-dark-muted truncate font-montserrat">
 												{request.info}
 											</p>
-											<p className="text-xs text-landing-slate/60 mt-1 font-montserrat">
+											<p className="text-xs text-dark-muted mt-1 font-montserrat">
 												{request.time}
 											</p>
 										</div>
 										<div className="flex gap-2 shrink-0">
 											<button
 												type="button"
-												className="bg-landing-footer-bg hover:opacity-90 text-landing-gold px-4 py-2 rounded-xl font-semibold text-sm transition font-montserrat border-2 border-landing-gold/30"
+												className="bg-dark-accent hover:bg-dark-accent/90 text-dark-bg px-4 py-2 rounded-xl font-semibold text-sm transition font-montserrat"
 											>
 												Accept
 											</button>
 											<button
 												type="button"
-												className="bg-landing-red/20 hover:bg-landing-red/30 text-landing-red px-4 py-2 rounded-xl font-semibold text-sm transition font-montserrat border-2 border-landing-red/30"
+												className="bg-dark-border hover:bg-red-600/30 text-red-600 px-4 py-2 rounded-xl font-semibold text-sm transition font-montserrat"
 											>
 												Decline
 											</button>
@@ -584,20 +592,20 @@ export default function Social() {
 						</SectionCard>
 
 						{/* My Friends */}
-						<SectionCard className="bg-linear-to-br from-landing-mint/30 to-landing-peach/30 border-2 border-landing-mint/50">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center justify-between mb-5">
 								<div className="flex items-center gap-3">
 									<span className="text-2xl">👥</span>
-									<h3 className="text-xl font-bold text-landing-slate font-tusker">
+									<h3 className="text-xl font-bold text-landing-slate font-titillium">
 										My Friends
 									</h3>
-									<span className="text-sm text-landing-slate/80 font-montserrat">
+									<span className="text-sm text-dark-muted font-montserrat">
 										(24 friends)
 									</span>
 								</div>
 								<button
 									type="button"
-									className="text-landing-magenta hover:text-landing-magenta/80 text-sm font-semibold transition font-montserrat"
+									className="text-dark-accent hover:text-dark-accent/80 text-sm font-semibold transition font-montserrat"
 								>
 									See All
 								</button>
@@ -610,7 +618,7 @@ export default function Social() {
 										status: "Currently learning: Neural Networks",
 										streak: "15 day streak 🔥",
 										online: true,
-										cardBg: "bg-landing-peach/40 border-landing-gold/40",
+										cardBg: "bg-dark-surface border-dark-border",
 									},
 									{
 										user: "Alex Kumar",
@@ -618,7 +626,7 @@ export default function Social() {
 										status: "Completed 8 courses this month",
 										streak: "Top 10% learner 🏆",
 										online: true,
-										cardBg: "bg-landing-magenta/20 border-landing-magenta/40",
+										cardBg: "bg-dark-surface border-dark-border",
 									},
 									{
 										user: "Emma Rodriguez",
@@ -626,7 +634,7 @@ export default function Social() {
 										status: "Studying AI Safety",
 										streak: "30 day streak 🔥",
 										online: false,
-										cardBg: "bg-landing-slate/20 border-landing-slate/40",
+										cardBg: "bg-dark-surface border-dark-border",
 									},
 									{
 										user: "James Wilson",
@@ -634,8 +642,7 @@ export default function Social() {
 										status: "Taking a break",
 										streak: "Joined 3 months ago",
 										online: false,
-										cardBg:
-											"bg-landing-footer-bg/20 border-landing-footer-bg/40",
+										cardBg: "bg-dark-surface border-dark-border",
 									},
 								].map((friend) => (
 									<div
@@ -648,31 +655,31 @@ export default function Social() {
 													{friend.avatar}
 												</div>
 												{friend.online && (
-													<div className="absolute bottom-0 right-0 w-3 h-3 bg-landing-footer-bg rounded-full border-2 border-white" />
+													<div className="absolute bottom-0 right-0 w-3 h-3 bg-dark-accent rounded-full border-2 border-dark-surface" />
 												)}
 											</div>
 											<div className="flex-1 min-w-0">
-												<h4 className="font-semibold text-landing-slate font-montserrat">
+												<h4 className="font-semibold text-dark-text font-montserrat">
 													{friend.user}
 												</h4>
-												<p className="text-xs text-landing-slate/70 font-montserrat">
+												<p className="text-xs text-dark-muted font-montserrat">
 													{friend.streak}
 												</p>
 											</div>
 										</div>
-										<p className="text-sm text-landing-slate/80 mb-3 truncate font-montserrat">
+										<p className="text-sm text-dark-muted mb-3 truncate font-montserrat">
 											{friend.status}
 										</p>
 										<div className="flex gap-2">
 											<button
 												type="button"
-												className="flex-1 bg-landing-slate hover:opacity-90 text-landing-gold px-3 py-2 rounded-xl text-sm font-semibold transition font-montserrat border-2 border-landing-gold/30"
+												className="flex-1 bg-dark-accent hover:bg-dark-accent/90 text-dark-bg px-3 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
 											>
 												Message
 											</button>
 											<button
 												type="button"
-												className="flex-1 bg-landing-magenta/30 hover:bg-landing-magenta/50 text-landing-magenta px-3 py-2 rounded-xl text-sm font-semibold transition font-montserrat border-2 border-landing-magenta/40"
+												className="flex-1 bg-dark-border hover:bg-dark-border/80 text-dark-text px-3 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
 											>
 												View
 											</button>
@@ -683,14 +690,14 @@ export default function Social() {
 						</SectionCard>
 
 						{/* Leaderboard */}
-						<SectionCard className="bg-linear-to-br from-landing-footer-bg/30 to-landing-slate/30 border-2 border-landing-footer-bg/50">
+						<SectionCard className="border-0 bg-transparent p-0">
 							<div className="flex items-center gap-3 mb-5">
 								<span className="text-2xl">🏆</span>
-								<h3 className="text-xl font-bold text-landing-footer-bg font-tusker">
+								<h3 className="text-xl font-bold text-dark-accent font-titillium">
 									Friends Leaderboard
 								</h3>
 							</div>
-							<p className="text-sm text-landing-slate/90 mb-4 font-montserrat">
+							<p className="text-sm text-dark-muted mb-4 font-montserrat">
 								See how you rank among your friends this week
 							</p>
 							<div className="space-y-3">
@@ -699,29 +706,29 @@ export default function Social() {
 										rank: 1,
 										user: "Emma Rodriguez",
 										xp: "2,450 XP",
-										rowBg: "bg-landing-gold/50 border-landing-gold",
-										avatarBg: "from-landing-gold to-landing-hero-text",
+										rowBg: "bg-dark-accent/10 border-dark-accent",
+										avatarBg: "from-dark-accent to-dark-border",
 									},
 									{
 										rank: 2,
 										user: "You",
 										xp: "2,180 XP",
-										rowBg: "bg-landing-hero-text/40 border-landing-hero-text",
-										avatarBg: "from-landing-footer-bg to-landing-slate",
+										rowBg: "bg-dark-accent/10 border-dark-accent",
+										avatarBg: "from-dark-accent to-dark-border",
 									},
 									{
 										rank: 3,
 										user: "Alex Kumar",
 										xp: "1,920 XP",
-										rowBg: "bg-landing-peach/50 border-landing-peach",
-										avatarBg: "from-landing-magenta to-landing-slate",
+										rowBg: "bg-dark-surface border-dark-border",
+										avatarBg: "from-dark-accent to-dark-border",
 									},
 								].map((entry) => (
 									<div
 										key={entry.rank}
 										className={`flex items-center gap-4 p-3 rounded-xl border-2 ${entry.rowBg}`}
 									>
-										<div className="text-2xl font-bold text-landing-slate font-tusker">
+										<div className="text-2xl font-bold text-dark-text font-titillium">
 											#{entry.rank}
 										</div>
 										<div
@@ -730,10 +737,10 @@ export default function Social() {
 											{entry.user.charAt(0)}
 										</div>
 										<div className="flex-1">
-											<p className="font-semibold text-landing-slate font-montserrat">
+											<p className="font-semibold text-dark-text font-montserrat">
 												{entry.user}
 											</p>
-											<p className="text-sm text-landing-slate/80 font-montserrat">
+											<p className="text-sm text-dark-muted font-montserrat">
 												{entry.xp}
 											</p>
 										</div>

@@ -14,7 +14,6 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import type { Address } from "viem";
-import { DotsBackground } from "../../shared/components/DotsBackground";
 import { useTheme } from "../../shared/contexts/ThemeContext";
 
 type SocialTab = "friends" | "followers" | "following";
@@ -54,35 +53,45 @@ export default function Profile(): JSX.Element {
 
 	return (
 		<>
-			<div className="min-h-screen relative overflow-hidden bg-landing-hero-bg dark:bg-dark-bg">
-				<DotsBackground className="absolute inset-0 dark:opacity-30" />
-				<div className="absolute inset-3 rounded-lg pointer-events-none bg-landing-hero-bg dark:bg-dark-bg" />
-				<div className="absolute inset-3 border-4 border-black dark:border-dark-border rounded-lg pointer-events-none" />
-				<div className="absolute inset-6 pointer-events-auto overflow-y-auto px-4 py-6 pb-28">
-					<div className="max-w-lg mx-auto space-y-4">
+			<div className="dark min-h-screen relative overflow-hidden bg-dark-bg">
+				{/* Gradient background - animated pulse */}
+				<div
+					className="fixed inset-0 pointer-events-none animate-gradient-bg"
+					aria-hidden
+					style={{
+						background:
+							"radial-gradient(ellipse 80% 50% at 50% 15%, rgba(30, 44, 72, 0.4) 0%, transparent 50%), radial-gradient(ellipse 60% 80% at 80% 55%, rgba(129, 140, 248, 0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 60% at 20% 90%, rgba(129, 140, 248, 0.06) 0%, transparent 50%)",
+					}}
+				/>
+				<div className="relative h-screen overflow-y-auto px-4 pb-40">
+					<div className="max-w-lg mx-auto space-y-4 pt-4">
 						{/* ── Top Bar ── */}
-						<div className="flex items-center justify-between mb-2">
-							<h1 className="text-2xl font-bold tracking-tight text-landing-hero-text dark:text-gray-100 font-tusker">
-								Profile
-							</h1>
-							<button
-								type="button"
-								onClick={() => setOpenSettings(true)}
-								className="p-2 rounded-lg bg-white dark:bg-dark-card border-2 border-black dark:border-dark-border hover:opacity-90 text-xl transition-opacity font-montserrat"
-								aria-label="Settings"
-							>
-								⚙️
-							</button>
+						<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
+							<div className="font-titillium p-1">
+								<div className="flex items-center justify-between gap-3">
+									<h1 className="text-2xl font-bold tracking-tight text-dark-text font-titillium">
+										Profile
+									</h1>
+									<button
+										type="button"
+										onClick={() => setOpenSettings(true)}
+										className="p-2 rounded-lg bg-dark-surface hover:bg-dark-border transition-colors text-xl"
+										aria-label="Settings"
+									>
+										⚙️
+									</button>
+								</div>
+							</div>
 						</div>
 
-						{/* ── Profile Card ── */}
-						<div className="bg-white dark:bg-dark-card border-2 border-black dark:border-dark-border rounded-lg p-5 flex items-center gap-4">
+						{/* ── Profile Section ── */}
+						<div className="p-5 flex items-center gap-4 rounded-xl bg-dark-surface/30">
 							{/* Avatar + streak badge */}
 							<div className="relative shrink-0">
 								<img
 									src={`https://api.dicebear.com/7.x/bottts/svg?seed=${walletAddress ?? "default"}`}
 									alt="avatar"
-									className="w-20 h-20 rounded-full border-4 border-landing-button-primary dark:border-gray-500 bg-gray-100 dark:bg-dark-surface"
+									className="w-20 h-20 rounded-full border-4 border-dark-accent bg-dark-surface"
 								/>
 								{streak > 0 && (
 									<span className="absolute -bottom-1 -right-1 bg-amber-500 text-xs font-bold rounded-full px-1.5 py-0.5 border-2 border-white leading-none font-montserrat">
@@ -93,7 +102,7 @@ export default function Profile(): JSX.Element {
 
 							{/* Info */}
 							<div className="flex-1 min-w-0">
-								<h2 className="text-xl font-bold truncate leading-tight text-gray-900 dark:text-gray-100 font-tusker">
+								<h2 className="text-xl font-bold truncate leading-tight text-dark-text font-titillium">
 									{userInfo?.user?.name ?? "—"}
 								</h2>
 
@@ -101,16 +110,16 @@ export default function Profile(): JSX.Element {
 									@{userInfo?.user?.username ?? "—"}
 								</p>
 								{walletAddress && (
-									<p className="text-xs text-gray-400 dark:text-dark-muted font-mono mt-0.5">
+									<p className="text-xs text-dark-muted font-mono mt-0.5">
 										{truncateWallet(walletAddress)}
 									</p>
 								)}
 								{userInfo?.user?.timezone && (
-									<p className="text-xs text-gray-500 mt-0.5 font-montserrat">
+									<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
 										🌍 {userInfo.user.timezone}
 									</p>
 								)}
-								<p className="text-sm text-gray-500 truncate font-montserrat">
+								<p className="text-sm text-dark-muted truncate font-montserrat">
 									{userInfo?.user?.profileVisibility ?? "—"}
 								</p>
 							</div>
@@ -123,7 +132,7 @@ export default function Profile(): JSX.Element {
 								await Promise.all([logoutPrivy(), logoutPantha()]);
 								router.navigate({ to: "/login", replace: true });
 							}}
-							className="w-full py-3 px-4 rounded-lg font-medium bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-800 transition-colors font-montserrat"
+							className="w-full py-3 px-4 rounded-xl font-medium bg-red-600 text-white hover:bg-red-700 transition-colors font-montserrat"
 						>
 							Sign Out
 						</button>
@@ -139,9 +148,9 @@ export default function Profile(): JSX.Element {
 						</div>
 
 						{/* ── Social Card ── */}
-						<div className="bg-white dark:bg-dark-card border-2 border-black dark:border-dark-border rounded-lg overflow-hidden">
+						<div className="bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl rounded-2xl overflow-hidden">
 							{/* Summary row */}
-							<div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-600 border-b-2 border-black dark:border-dark-border">
+							<div className="grid grid-cols-3 divide-x divide-dark-border border-b border-dark-border">
 								<SocialSummaryItem
 									label="Followers"
 									count={followersCount}
@@ -210,11 +219,10 @@ export default function Profile(): JSX.Element {
 							</div>
 						</div>
 
-						{/* ── Find Friends CTA ── */}
 						<button
 							type="button"
 							onClick={() => router.navigate({ to: "/social", replace: false })}
-							className="w-full py-3 px-4 rounded-lg font-medium bg-landing-button-primary dark:bg-dark-surface text-white hover:opacity-90 dark:hover:bg-gray-600 transition-colors font-montserrat"
+							className="w-full py-3 px-4 rounded-xl font-medium bg-dark-accent text-white hover:bg-dark-accent/90 transition-colors font-montserrat"
 						>
 							🔍 Find Friends
 						</button>
@@ -231,21 +239,21 @@ export default function Profile(): JSX.Element {
 						className="absolute inset-0 bg-black/40 w-full"
 						onClick={() => setSelectedFriend(null)}
 					/>
-					<div className="relative w-full max-h-[90vh] bg-white dark:bg-dark-card border-t-4 border-black dark:border-dark-border rounded-t-2xl animate-slide-up flex flex-col">
+					<div className="relative w-full max-h-[90vh] bg-dark-card border-t border-dark-border rounded-t-2xl animate-slide-up flex flex-col">
 						{/* handle */}
 						<div className="shrink-0 pt-3 pb-1 flex justify-center">
-							<div className="w-10 h-1 bg-gray-300 dark:bg-dark-surface0 rounded-full" />
+							<div className="w-10 h-1 bg-dark-surface rounded-full" />
 						</div>
 
 						{/* Header */}
-						<div className="shrink-0 flex items-center justify-between px-5 py-3 border-b-2 border-gray-200 dark:border-dark-border">
-							<h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-tusker">
+						<div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-dark-border">
+							<h2 className="text-lg font-bold text-dark-text font-titillium">
 								Friend Profile
 							</h2>
 							<button
 								type="button"
 								onClick={() => setSelectedFriend(null)}
-								className="text-gray-500 hover:text-gray-900 text-xl p-1 transition-colors"
+								className="text-dark-muted hover:text-dark-text text-xl p-1 transition-colors"
 							>
 								✕
 							</button>
@@ -254,19 +262,19 @@ export default function Profile(): JSX.Element {
 						{/* Scrollable content */}
 						<div className="flex-1 overflow-y-auto min-h-0 px-5 py-4 space-y-4">
 							{friendProfileLoading ? (
-								<div className="text-center py-16 text-gray-500 font-montserrat">
+								<div className="text-center py-16 text-dark-muted font-montserrat">
 									<p className="text-4xl mb-2">⏳</p>
 									<p className="text-sm">Loading profile…</p>
 								</div>
 							) : friendProfile ? (
 								<>
 									{/* Avatar + info */}
-									<div className="bg-gray-50 dark:bg-dark-surface border-2 border-gray-200 dark:border-dark-border rounded-lg p-4 flex items-center gap-4">
+									<div className="bg-dark-surface border border-dark-border rounded-2xl p-4 flex items-center gap-4">
 										<div className="relative shrink-0">
 											<img
 												src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedFriend}`}
 												alt="avatar"
-												className="w-16 h-16 rounded-full border-2 border-landing-button-primary bg-gray-100"
+												className="w-16 h-16 rounded-full border-2 border-dark-accent bg-dark-surface"
 											/>
 											{(friendProfile.profile.streak?.currentStreak ?? 0) >
 												0 && (
@@ -276,17 +284,17 @@ export default function Profile(): JSX.Element {
 											)}
 										</div>
 										<div className="flex-1 min-w-0">
-											<h3 className="text-lg font-bold truncate text-gray-900 dark:text-gray-100 font-tusker">
+											<h3 className="text-lg font-bold truncate text-dark-text font-titillium">
 												{friendProfile.profile.name ?? "—"}
 											</h3>
-											<p className="text-sm text-gray-500 dark:text-dark-muted truncate font-montserrat">
+											<p className="text-sm text-dark-muted truncate font-montserrat">
 												@{friendProfile.profile.username ?? "—"}
 											</p>
-											<p className="text-xs text-gray-400 dark:text-dark-muted font-mono mt-0.5">
+											<p className="text-xs text-dark-muted font-mono mt-0.5">
 												{truncateWallet(selectedFriend)}
 											</p>
 											{friendProfile.profile.timezone && (
-												<p className="text-xs text-gray-500 mt-0.5 font-montserrat">
+												<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
 													🌍 {friendProfile.profile.timezone}
 												</p>
 											)}
@@ -312,15 +320,15 @@ export default function Profile(): JSX.Element {
 									{/* Courses */}
 									{friendProfile.profile.courses.length > 0 && (
 										<div className="space-y-2">
-											<p className="text-xs font-bold uppercase tracking-widest text-gray-500 font-tusker">
+											<p className="text-xs font-bold uppercase tracking-widest text-dark-muted font-titillium">
 												Courses
 											</p>
 											{friendProfile.profile.courses.map((c) => (
 												<div
 													key={c.id}
-													className="bg-gray-50 dark:bg-dark-surface border-2 border-gray-200 dark:border-dark-border rounded-lg px-4 py-3 flex justify-between items-center"
+													className="bg-dark-surface border border-dark-border rounded-2xl px-4 py-3 flex justify-between items-center"
 												>
-													<p className="text-sm font-semibold truncate text-gray-900 dark:text-gray-100 font-montserrat">
+													<p className="text-sm font-semibold truncate text-dark-text font-montserrat">
 														{c.courseId}
 													</p>
 													<span className="text-xs text-green-600 font-bold ml-2 shrink-0 font-montserrat">
@@ -367,18 +375,18 @@ export default function Profile(): JSX.Element {
 						onClick={() => setOpenSettings(false)}
 					/>
 					{/* Sheet — flex column keeps Sign Out always visible */}
-					<div className="relative w-full max-h-[85vh] bg-white dark:bg-dark-card border-t-4 border-black dark:border-dark-border rounded-t-2xl animate-slide-up flex flex-col">
+					<div className="relative w-full max-h-[85vh] bg-dark-surface/90 border-t border-dark-border rounded-t-xl animate-slide-up flex flex-col">
 						{/* ── Fixed top: handle + header ── */}
-						<div className="shrink-0 px-6 pt-4 pb-3 border-b-2 border-gray-200 dark:border-dark-border">
-							<div className="w-10 h-1 bg-gray-300 dark:bg-dark-surface0 rounded-full mx-auto mb-3" />
+						<div className="shrink-0 px-6 pt-4 pb-3 border-b border-dark-border">
+							<div className="w-10 h-1 bg-dark-surface rounded-full mx-auto mb-3" />
 							<div className="flex justify-between items-center">
-								<h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-tusker">
+								<h2 className="text-xl font-bold text-dark-text font-titillium">
 									Settings
 								</h2>
 								<button
 									type="button"
 									onClick={() => setOpenSettings(false)}
-									className="text-gray-500 dark:text-dark-muted hover:text-gray-900 dark:hover:text-gray-100 text-xl transition-colors p-1"
+									className="text-dark-muted dark:text-dark-muted hover:text-gray-900 dark:hover:text-gray-100 text-xl transition-colors p-1"
 								>
 									✕
 								</button>
@@ -452,7 +460,7 @@ export default function Profile(): JSX.Element {
 						<div className="shrink-0 px-6 pt-4 pb-3 border-b-2 border-gray-200 dark:border-dark-border">
 							<div className="w-10 h-1 bg-gray-300 dark:bg-dark-surface0 rounded-full mx-auto mb-3" />
 							<div className="flex justify-between items-center">
-								<h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-tusker">
+								<h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-titillium">
 									Edit Profile
 								</h2>
 								<button
@@ -471,7 +479,7 @@ export default function Profile(): JSX.Element {
 							<div className="space-y-1.5">
 								<label
 									htmlFor="edit-name"
-									className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-tusker"
+									className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-titillium"
 								>
 									Name
 								</label>
@@ -489,7 +497,7 @@ export default function Profile(): JSX.Element {
 							<div className="space-y-1.5">
 								<label
 									htmlFor="edit-username"
-									className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-tusker"
+									className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-titillium"
 								>
 									Username
 								</label>
@@ -510,7 +518,7 @@ export default function Profile(): JSX.Element {
 
 							{/* Profile Visibility */}
 							<div className="space-y-1.5">
-								<p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-tusker">
+								<p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted font-titillium">
 									Profile Visibility
 								</p>
 								<div className="flex gap-3">
@@ -578,15 +586,13 @@ function StatCard({
 	value: string;
 }) {
 	return (
-		<div className="bg-white dark:bg-dark-card border-2 border-black dark:border-dark-border rounded-lg p-4 flex items-center gap-3">
+		<div className="bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl rounded-2xl p-4 flex items-center gap-3">
 			<span className="text-3xl leading-none">{icon}</span>
 			<div>
-				<p className="text-xl font-bold leading-tight text-gray-900 dark:text-gray-100 font-tusker">
+				<p className="text-xl font-bold leading-tight text-dark-text font-titillium">
 					{value}
 				</p>
-				<p className="text-xs text-gray-500 dark:text-dark-muted font-montserrat">
-					{label}
-				</p>
+				<p className="text-xs text-dark-muted font-montserrat">{label}</p>
 			</div>
 		</div>
 	);
@@ -614,7 +620,7 @@ function SocialSummaryItem({
 			}`}
 		>
 			<p
-				className={`text-lg font-bold ${active ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-dark-muted"} font-tusker`}
+				className={`text-lg font-bold ${active ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-dark-muted"} font-titillium`}
 			>
 				{count}
 			</p>
@@ -686,13 +692,11 @@ function EmptyState({ emoji, text }: { emoji: string; text: string }) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="bg-gray-50 dark:bg-dark-surface border-2 border-gray-200 dark:border-dark-border rounded-lg p-3 text-center">
-			<p className="text-base font-bold text-gray-900 dark:text-gray-100 font-tusker">
+		<div className="bg-dark-surface border border-dark-border rounded-2xl p-3 text-center">
+			<p className="text-base font-bold text-dark-text font-titillium">
 				{value}
 			</p>
-			<p className="text-xs text-gray-500 dark:text-dark-muted mt-0.5 font-montserrat">
-				{label}
-			</p>
+			<p className="text-xs text-dark-muted mt-0.5 font-montserrat">{label}</p>
 		</div>
 	);
 }
@@ -706,7 +710,7 @@ function SettingsSection({
 }) {
 	return (
 		<div className="space-y-1">
-			<p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-dark-muted px-1 mb-2 font-tusker">
+			<p className="text-xs font-bold uppercase tracking-widest text-dark-muted px-1 mb-2 font-titillium">
 				{title}
 			</p>
 			<div className="space-y-1">{children}</div>
@@ -727,7 +731,7 @@ function SettingsItem({
 		<button
 			type="button"
 			onClick={onClick}
-			className="w-full flex items-center gap-3 bg-gray-50 hover:bg-gray-100 dark:bg-dark-card dark:hover:bg-dark-surface dark:border-dark-border border-2 border-gray-200 px-4 py-3 rounded-lg text-left transition-colors font-montserrat"
+			className="w-full flex items-center gap-3 bg-dark-surface hover:bg-dark-border border border-dark-border px-4 py-3 rounded-2xl text-left transition-colors font-montserrat"
 		>
 			<span className="text-base">{icon}</span>
 			<span className="text-sm font-medium text-gray-900 dark:text-gray-100">
