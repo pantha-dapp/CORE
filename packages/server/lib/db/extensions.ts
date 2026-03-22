@@ -366,6 +366,62 @@ export function dbExtensionHelpers(db: DbClient) {
 		return messages;
 	}
 
+	async function getCourseEnrollmentsByCourseId(args: { courseId: string }) {
+		const { courseId } = args;
+
+		const enrollments = await db
+			.select()
+			.from(schema.userCourses)
+			.where(eq(schema.userCourses.courseId, courseId))
+			.orderBy(schema.userCourses.createdAt);
+
+		return enrollments;
+	}
+
+	async function getLearningGroupChatMembers(args: { courseId: string }) {
+		const { courseId } = args;
+		const courses = await db
+			.select()
+			.from(schema.learningGroupCourses)
+			.where(eq(schema.learningGroupCourses.courseId, courseId));
+
+		const userWallets = db
+			.select({ userWallet: schema.userCourses.userWallet })
+			.from(schema.userCourses)
+			.where(
+				inArray(
+					schema.userCourses.courseId,
+					courses.map((c) => c.courseId),
+				),
+			);
+
+		const members = await db
+			.select({
+				walletAddress: schema.users.walletAddress,
+				username: schema.users.username,
+			})
+			.from(schema.users)
+			.where(inArray(schema.users.walletAddress, userWallets));
+
+		return members;
+	}
+
+	async function getLearningGroupMembershipsOfUser(args: {
+		userWallet: Address;
+	}) {
+		const { userWallet } = args;
+
+		const courses = await userEnrollments({ userWallet });
+
+		const courseIds = courses.map((c) => c.courseId);
+		const memberships = await db
+			.select()
+			.from(schema.learningGroupCourses)
+			.where(inArray(schema.learningGroupCourses.courseId, courseIds));
+
+		return memberships;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -384,5 +440,8 @@ export function dbExtensionHelpers(db: DbClient) {
 		userActionPreviousHash,
 		registerAction,
 		messagesByParticipants,
+		getCourseEnrollmentsByCourseId,
+		getLearningGroupChatMembers,
+		getLearningGroupMembershipsOfUser,
 	};
 }
