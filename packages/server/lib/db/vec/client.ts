@@ -246,7 +246,7 @@ export function createVectorDb<T extends VectorDbClientKey>(
 	return client;
 }
 
-function _cosineSimilarity(a: number[], b: number[]) {
+export function cosineSimilarity(a: number[], b: number[]) {
 	if (a.length !== b.length) throw new Error("Vectors must be of same length");
 
 	const dotProduct = a.reduce((sum, ai, i) => {
