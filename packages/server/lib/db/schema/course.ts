@@ -6,6 +6,7 @@ export const courses = t.sqliteTable("courses", {
 	id: tUuid("id").primaryKey(),
 	title: t.text("title").notNull(),
 	description: t.text("description").notNull(),
+	category: t.text("category"),
 
 	icon: tImageParts("icon").notNull(),
 
