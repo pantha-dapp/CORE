@@ -19,7 +19,7 @@ export function Hero() {
 
 	return (
 		<div
-			className="relative h-screen overflow-hidden flex flex-col font-tusker transition-colors duration-[2s] ease-out"
+			className="relative h-screen overflow-hidden flex flex-col font-titillium transition-colors duration-[2s] ease-out"
 			style={{
 				backgroundColor: wordsCanStart
 					? "var(--color-landing-hero-bg)"
@@ -30,7 +30,7 @@ export function Hero() {
 			{/* Navbar */}
 			<header className="shrink-0 z-10 mx-4 mt-4 md:mx-8 md:mt-6">
 				<nav className="flex justify-between items-center bg-white border-4 border-black px-3 py-1">
-					<span className="font-tusker font-bold text-xl tracking-tight text-black">
+					<span className="font-titillium font-bold text-xl tracking-tight text-black">
 						PANTHA
 					</span>
 					<button
