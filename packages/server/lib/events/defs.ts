@@ -23,4 +23,9 @@ export const eventPayloadDefs = {
 	"streak.extended": z.object({
 		walletAddress: zEvmAddress(),
 	}),
+
+	"course.generate": z.object({
+		walletAddress: zEvmAddress(),
+		courseId: z.string(),
+	}),
 };
