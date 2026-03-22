@@ -108,7 +108,7 @@ export function TokenEconomy() {
 										style={{ backgroundColor: card.bg }}
 									>
 										<p
-											className="w-full text-center font-tusker font-bold text-4xl md:text-4xl lg:text-5xl leading-snug"
+											className="w-full text-center font-titillium font-bold text-4xl md:text-4xl lg:text-5xl leading-snug"
 											style={{ color: card.text }}
 										>
 											{card.content}

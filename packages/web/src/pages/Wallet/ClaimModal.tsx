@@ -47,7 +47,7 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 				{/* Header */}
 				<div className="border-b border-gray-200 px-6 py-4 dark:border-dark-border sm:px-8">
 					<div className="flex items-center justify-between">
-						<h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+						<h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text font-titillium">
 							Tokens & Claims
 						</h2>
 						<button
@@ -68,7 +68,7 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 						<p className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
 							Your XP Balance
 						</p>
-						<p className="mt-2 text-4xl font-bold text-landing-button-primary dark:text-dark-accent font-tusker">
+						<p className="mt-2 text-4xl font-bold text-landing-button-primary dark:text-dark-accent font-titillium">
 							{userInfoLoading ? "Loading..." : xpCount}
 						</p>
 						<p className="mt-1 text-xs text-gray-500 dark:text-dark-muted font-montserrat">
@@ -81,7 +81,7 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 						<p className="text-sm font-semibold text-gray-600 dark:text-dark-muted font-montserrat">
 							PANTHA Token Balance
 						</p>
-						<p className="mt-2 text-4xl font-bold text-blue-600 dark:text-blue-400 font-tusker">
+						<p className="mt-2 text-4xl font-bold text-blue-600 dark:text-blue-400 font-titillium">
 							{isLoadingBalance
 								? "Loading..."
 								: tokenBalance
@@ -108,7 +108,7 @@ export default function ClaimModal({ isOpen, onClose }: ClaimModalProps) {
 								<span className="text-sm text-gray-600 dark:text-dark-muted font-montserrat">
 									Day Streak
 								</span>
-								<span className="text-lg font-bold text-green-600 dark:text-green-400 font-tusker">
+								<span className="text-lg font-bold text-green-600 dark:text-green-400 font-titillium">
 									{userInfo.user.streak?.currentStreak ?? 0} 🔥
 								</span>
 							</div>
