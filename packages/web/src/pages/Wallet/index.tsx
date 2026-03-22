@@ -1,6 +1,7 @@
 import { usePanthaContext } from "@pantha/react";
 import { useUserInfo } from "@pantha/react/hooks";
 import { useState } from "react";
+import PageHeaderWithStats from "../../shared/components/PageHeaderWithStats";
 import ClaimModal from "./ClaimModal";
 
 export default function Wallet() {
@@ -17,24 +18,20 @@ export default function Wallet() {
 	const xpBalance = userInfo?.user?.xpCount ?? 0;
 
 	return (
-		<div className="min-h-screen bg-landing-hero-bg dark:bg-dark-bg">
+		<div className="dark min-h-screen bg-linear-to-br from-dark-bg via-dark-surface/50 to-dark-bg">
 			<div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-4xl font-bold text-gray-900 dark:text-dark-text font-tusker">
-						Wallet
-					</h1>
-					<p className="mt-2 text-lg text-gray-600 dark:text-dark-muted font-montserrat">
-						Track your rewards and tokens
-					</p>
-				</div>
+				<PageHeaderWithStats
+					badge="Assets"
+					title="Wallet"
+					subtitle="Track your rewards and tokens"
+				/>
 
 				{/* Main Balance Card */}
-				<div className="mb-8 rounded-2xl bg-linear-to-br from-landing-button-primary to-blue-600 dark:from-dark-accent dark:to-blue-700 p-8 text-white shadow-lg">
+				<div className="mb-8 rounded-2xl bg-linear-to-br from-dark-accent to-dark-accent/80 p-8 text-white shadow-lg">
 					<p className="text-sm font-semibold uppercase tracking-wider opacity-90 font-montserrat">
 						Your XP
 					</p>
-					<h2 className="mt-3 text-5xl font-bold font-tusker">
+					<h2 className="mt-3 text-5xl font-bold font-titillium">
 						{userInfoLoading ? "Loading..." : xpBalance}
 					</h2>
 					<p className="mt-2 text-sm opacity-75 font-montserrat">
@@ -45,42 +42,42 @@ export default function Wallet() {
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="mt-6 rounded-xl bg-white px-6 py-3 font-semibold text-landing-button-primary transition-all hover:shadow-lg dark:bg-dark-card dark:text-dark-accent font-montserrat"
+						className="mt-6 rounded-xl bg-white px-6 py-3 font-semibold text-dark-accent transition-all hover:shadow-lg dark:bg-dark-card dark:text-dark-accent font-montserrat"
 					>
 						Manage Tokens & Claims
 					</button>
 				</div>
 
 				{/* Quick Overview */}
-				<div className="rounded-xl bg-white dark:bg-dark-card p-6 shadow-sm sm:p-8">
-					<h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-dark-text font-tusker">
+				<div className="rounded-2xl bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl p-6 sm:p-8">
+					<h3 className="mb-6 text-xl font-bold text-dark-text font-titillium">
 						Quick Overview
 					</h3>
 
 					<div className="grid gap-4 sm:grid-cols-3">
-						<div className="rounded-lg border border-gray-200 p-4 dark:border-dark-border">
-							<p className="text-sm text-gray-600 dark:text-dark-muted font-montserrat">
+						<div className="rounded-lg border border-dark-border bg-linear-to-br from-dark-surface to-dark-surface/30 p-4">
+							<p className="text-sm text-dark-muted font-montserrat">
 								Total XP
 							</p>
-							<p className="mt-2 text-3xl font-bold text-landing-button-primary dark:text-dark-accent font-tusker">
+							<p className="mt-2 text-3xl font-bold text-dark-accent font-titillium">
 								{userInfoLoading ? "..." : xpBalance}
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-gray-200 p-4 dark:border-dark-border">
-							<p className="text-sm text-gray-600 dark:text-dark-muted font-montserrat">
+						<div className="rounded-lg border border-dark-border bg-linear-to-br from-dark-surface to-dark-surface/30 p-4">
+							<p className="text-sm text-dark-muted font-montserrat">
 								Day Streak
 							</p>
-							<p className="mt-2 text-3xl font-bold text-green-600 dark:text-green-400 font-tusker">
+							<p className="mt-2 text-3xl font-bold text-green-400 font-titillium">
 								{userInfo?.user?.streak?.currentStreak ?? 0}
 							</p>
 						</div>
 
-						<div className="rounded-lg border border-gray-200 p-4 dark:border-dark-border">
-							<p className="text-sm text-gray-600 dark:text-dark-muted font-montserrat">
+						<div className="rounded-lg border border-dark-border bg-linear-to-br from-dark-surface to-dark-surface/30 p-4">
+							<p className="text-sm text-dark-muted font-montserrat">
 								Account Active
 							</p>
-							<p className="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400 font-tusker">
+							<p className="mt-2 text-3xl font-bold text-blue-400 font-titillium">
 								{userInfo?.user?.name ? "✓" : "..."}
 							</p>
 						</div>
