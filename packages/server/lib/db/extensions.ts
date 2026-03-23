@@ -378,12 +378,23 @@ export function dbExtensionHelpers(db: DbClient) {
 		return enrollments;
 	}
 
-	async function getLearningGroupChatMembers(args: { courseId: string }) {
+	async function getLearningGroupChatByCourseId(args: { courseId: string }) {
 		const { courseId } = args;
-		const courses = await db
+
+		const [chat] = await db
 			.select()
 			.from(schema.learningGroupCourses)
 			.where(eq(schema.learningGroupCourses.courseId, courseId));
+
+		return chat;
+	}
+
+	async function getLearningGroupChatMembers(args: { chatId: number }) {
+		const { chatId } = args;
+		const courses = await db
+			.select()
+			.from(schema.learningGroupCourses)
+			.where(eq(schema.learningGroupCourses.learningGroupChatId, chatId));
 
 		const userWallets = db
 			.select({ userWallet: schema.userCourses.userWallet })
@@ -422,6 +433,23 @@ export function dbExtensionHelpers(db: DbClient) {
 		return memberships;
 	}
 
+	async function getLearningGroupChatMessages(args: {
+		chatId: number;
+		offset?: number;
+	}) {
+		const { chatId, offset = 0 } = args;
+
+		const messages = await db
+			.select()
+			.from(schema.learningGroupMessages)
+			.where(eq(schema.learningGroupMessages.learningGroupChatId, chatId))
+			.orderBy(desc(schema.learningGroupMessages.id))
+			.offset(offset)
+			.limit(LIMIT_PER_PAGE_MESSAGES_BY_PARTICIPANTS);
+
+		return messages;
+	}
+
 	return {
 		userEnrollments,
 		enrollUserInCourse,
@@ -441,7 +469,9 @@ export function dbExtensionHelpers(db: DbClient) {
 		registerAction,
 		messagesByParticipants,
 		getCourseEnrollmentsByCourseId,
+		getLearningGroupChatByCourseId,
 		getLearningGroupChatMembers,
 		getLearningGroupMembershipsOfUser,
+		getLearningGroupChatMessages,
 	};
 }
