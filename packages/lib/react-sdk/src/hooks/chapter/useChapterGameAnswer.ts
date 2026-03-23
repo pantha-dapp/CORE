@@ -52,23 +52,33 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 
 			const data = actionResponse.data;
 
-			if (data.complete) {
-				queryClient.invalidateQueries({
-					queryKey: ["userInfo"],
+			if (!data.complete && chapterId) {
+				queryClient.setQueryData(["last-chapter-game-session", chapterId], {
+					chapterId,
+					currentPage: data.currentPage,
 				});
-				queryClient.refetchQueries({
-					queryKey: ["userInfo"],
-				});
-			} else {
-				if (chapterId) {
-					queryClient.setQueryData(["last-chapter-game-session", chapterId], {
-						chapterId,
-						currentPage: data.currentPage,
-					});
-				}
 			}
 
 			return data;
+		},
+		onSuccess: (data) => {
+			if (!data.complete) return;
+
+			const walletAddress = wallet?.account.address;
+
+			// Immediate invalidate + refetch — picks up pending XP log (counted by server)
+			queryClient.invalidateQueries({ queryKey: ["userInfo", walletAddress] });
+			queryClient.refetchQueries({ queryKey: ["userInfo", walletAddress] });
+
+			// Second refetch after 4 s — by then the on-chain tx is likely confirmed
+			// and the XP log status transitions from "pending" → "success"
+			setTimeout(() => {
+				queryClient.refetchQueries({ queryKey: ["userInfo", walletAddress] });
+			}, 4_000);
+
+			// Also invalidate course enrollments so progress bar updates
+			queryClient.invalidateQueries({ queryKey: ["userEnrollments"] });
+			queryClient.invalidateQueries({ queryKey: ["userCourses"] });
 		},
 	});
 }
