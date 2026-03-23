@@ -1,5 +1,4 @@
-import { randomBytes } from "node:crypto";
-import { x25519 } from "@noble/curves/ed25519";
+import { x25519 } from "@noble/curves/ed25519.js";
 import {
 	type Account,
 	type Chain,
@@ -20,10 +19,12 @@ export async function walletKeyGen(
 	},
 ) {
 	const { salts } = args;
-	const saltSeed = salts?.seed ? toBytes(salts.seed) : randomBytes(16);
+	const saltSeed = salts?.seed
+		? toBytes(salts.seed)
+		: crypto.getRandomValues(new Uint8Array(16));
 	const saltChallenge = salts?.challenge
 		? toBytes(salts.challenge)
-		: randomBytes(16);
+		: crypto.getRandomValues(new Uint8Array(16));
 
 	const registerChallenge = `pantha:${wallet.account.address}:${saltChallenge}:${saltSeed}`;
 
