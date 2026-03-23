@@ -141,4 +141,176 @@ export default new Hono<RouterEnv>()
 				200,
 			);
 		},
+	)
+
+	.get("/groups", authenticated, async (ctx) => {
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
+
+		const groups = await tryCatch(
+			db.getLearningGroupMembershipsOfUser({
+				userWallet,
+			}),
+		);
+
+		if (groups.error) {
+			console.error(
+				"Failed to fetch learning groups from database",
+				groups.error,
+			);
+			return respond.err(ctx, "Failed to fetch learning groups", 500);
+		}
+
+		return respond.ok(
+			ctx,
+			{ groups: groups.data },
+			"Learning groups fetched successfully",
+			200,
+		);
+	})
+
+	.get(
+		"/groups/:chatId/members",
+		authenticated,
+		validator(
+			"param",
+			z.object({
+				chatId: z.number(),
+			}),
+		),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const chatId = ctx.req.valid("param").chatId;
+
+			const members = await tryCatch(
+				db.getLearningGroupChatMembers({
+					chatId,
+				}),
+			);
+
+			if (members.error) {
+				console.error(
+					"Failed to fetch learning group members from database",
+					members.error,
+				);
+				return respond.err(ctx, "Failed to fetch learning group members", 500);
+			}
+
+			return respond.ok(
+				ctx,
+				{ members: members.data },
+				"Learning group members fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.post(
+		"/groups/:chatId/messages",
+		authenticated,
+		validator(
+			"param",
+			z.object({
+				chatId: z.number(),
+			}),
+		),
+		validator(
+			"json",
+			z.object({
+				content: z.string().min(1),
+			}),
+		),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { chatId } = ctx.req.valid("param");
+			const { content } = ctx.req.valid("json");
+
+			const message = await tryCatch(
+				db
+					.insert(db.schema.learningGroupMessages)
+					.values({
+						learningGroupChatId: chatId,
+						senderWallet: userWallet,
+						content,
+					})
+					.returning(),
+			);
+
+			if (message.error) {
+				console.error(
+					"Failed to save learning group message to database",
+					message.error,
+				);
+				return respond.err(ctx, "Failed to save learning group message", 500);
+			}
+
+			const members = await tryCatch(
+				db.getLearningGroupChatMembers({ chatId }),
+			);
+
+			if (!members.error) {
+				const recipientWallets = members.data
+					.map((m) => m.walletAddress)
+					.filter((w) => w !== userWallet);
+
+				await sse.emitToUsers(
+					db.redis,
+					recipientWallets,
+					"learning-group:message",
+					{
+						learningGroupChatId: chatId,
+						from: userWallet,
+					},
+				);
+			}
+
+			return respond.ok(
+				ctx,
+				{ message: message.data[0] },
+				"Learning group message sent",
+				201,
+			);
+		},
+	)
+
+	.get(
+		"/groups/:chatId/messages",
+		authenticated,
+		validator(
+			"param",
+			z.object({
+				chatId: z.number(),
+			}),
+		),
+		validator(
+			"query",
+			z.object({
+				offset: z.number().default(0),
+			}),
+		),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { chatId } = ctx.req.valid("param");
+			const { offset } = ctx.req.valid("query");
+
+			const messages = await tryCatch(
+				db.getLearningGroupChatMessages({ chatId, offset }),
+			);
+
+			if (messages.error) {
+				console.error(
+					"Failed to fetch learning group messages from database",
+					messages.error,
+				);
+				return respond.err(ctx, "Failed to fetch learning group messages", 500);
+			}
+
+			return respond.ok(
+				ctx,
+				{ messages: messages.data },
+				"Learning group messages fetched successfully",
+				200,
+			);
+		},
 	);
