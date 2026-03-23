@@ -32,3 +32,16 @@ export const learningGroupCourses = t.sqliteTable("learning_group_courses", {
 		.references(() => courses.id, { onDelete: "cascade" })
 		.notNull(),
 });
+
+export const learningGroupMessages = t.sqliteTable("learning_group_messages", {
+	id: t.integer().primaryKey({ autoIncrement: true }),
+	learningGroupChatId: t
+		.integer()
+		.references(() => learningGroupChats.id, { onDelete: "cascade" })
+		.notNull(),
+	senderWallet: tEvmAddress()
+		.references(() => users.walletAddress)
+		.notNull(),
+	content: t.text().notNull(),
+	createdAt: timestamps.createdAt,
+});
