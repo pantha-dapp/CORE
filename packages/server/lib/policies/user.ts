@@ -1,4 +1,4 @@
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"user"> = {
@@ -12,15 +12,13 @@ const enforcers: Enforcers<"user"> = {
 
 		if (target.profileVisibility === "public") return true;
 
-		const isFriend = await db.isUserFriend({
+		const isFollowing = await db.isUserFollowing({
 			userWallet: user,
 			targetWallet: resource.userWallet,
 		});
-		if (isFriend) return true;
+		if (isFollowing) return true;
 
-		throw new UnauthorizedError(
-			"You do not have permission to view this user's profile.",
-		);
+		throw new ForbiddenError("This profile is private.");
 	},
 
 	"user.follow": async (user, resource, app) => {
@@ -34,16 +32,14 @@ const enforcers: Enforcers<"user"> = {
 
 		if (target.followPolicy === "anyone") return true;
 
-		throw new UnauthorizedError(
-			"You do not have permission to follow this user.",
-		);
+		throw new ForbiddenError("You do not have permission to follow this user.");
 	},
 
 	"user.unfollow": async (user, resource, app) => {
 		const { db } = app;
 
 		if (user === resource.userWallet)
-			throw new UnauthorizedError("You cannot unfollow yourself.");
+			throw new ForbiddenError("You cannot unfollow yourself.");
 
 		const target = await db.userByWallet({ userWallet: resource.userWallet });
 		if (!target) throw new NotFoundError("User not found.");
@@ -55,7 +51,7 @@ const enforcers: Enforcers<"user"> = {
 
 		if (isFollowing) return true;
 
-		throw new UnauthorizedError(
+		throw new ForbiddenError(
 			"You do not have permission to unfollow this user.",
 		);
 	},
