@@ -4,6 +4,10 @@ type EventDefs = {
 	"dm:new": {
 		from: string;
 	};
+	"learning-group:message": {
+		learningGroupChatId: number;
+		from: string;
+	};
 	"streak:extended": {
 		currentStreak: number;
 	};
