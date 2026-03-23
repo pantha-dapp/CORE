@@ -1,4 +1,3 @@
-import { HOUR } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
@@ -24,7 +23,7 @@ export function useUserInfo(args: { walletAddress?: string }) {
 
 			return userResponse.data;
 		},
-		staleTime: 1 * HOUR,
+		staleTime: 5 * 60 * 1000, // 5 minutes
 		enabled: !!wallet?.account.address,
 	});
 }
