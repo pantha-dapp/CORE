@@ -329,7 +329,7 @@ export default new Hono()
 						.where(eq(db.schema.userStreaks.userId, wallet))
 						.then((rows) => rows[0] ?? null),
 					db.userEnrollments({ userWallet: wallet }),
-					db.userFriends({ userWallet: wallet }),
+					db.userFriendsWithStreaks({ userWallet: wallet }),
 					db
 						.userFollowers({ userWallet: wallet })
 						.then((rows) => rows.map((r) => r.follower)),
