@@ -1,5 +1,6 @@
 import { jsonParse, jsonStringify } from "@pantha/shared";
 import { MINUTE } from "@pantha/shared/constants";
+import { zHex } from "@pantha/shared/zod";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
@@ -151,9 +152,16 @@ export default new Hono<RouterEnv>()
 				answer: z.string().array().min(1),
 			}),
 		),
+		validator(
+			"header",
+			z.object({
+				"X-Signature": zHex(),
+			}),
+		),
 		async (ctx) => {
 			const { eventBus, db } = ctx.var.appState;
 			const { userWallet } = ctx.var;
+			const { "X-Signature": signature } = ctx.req.valid("header");
 			const { answer } = ctx.req.valid("json");
 
 			const expired = checkSessionExpiry(userWallet);
@@ -238,15 +246,27 @@ export default new Hono<RouterEnv>()
 				correct = false;
 			}
 
-			session[correct ? "correct" : "incorrect"].push(session.currentPage);
 			session.currentPage += 1;
 
 			gameSessions.set(userWallet, session);
 
 			if (!skipLogging) {
+				session[correct ? "correct" : "incorrect"].push(session.currentPage);
+
 				await db.insert(db.schema.userAnswerLogs).values({
 					pageId: page.id,
 					correct: correct,
+				});
+
+				await db.registerAction({
+					userWallet,
+					label: "page:answer",
+					data: {
+						chapterId: session.chapterId,
+						pageId: page.id,
+						correct,
+					},
+					signature,
 				});
 			}
 
