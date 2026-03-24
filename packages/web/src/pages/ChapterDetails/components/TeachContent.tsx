@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import { useState } from "react";
-import { renderMathText } from "../../../shared/utils/math";
+import { renderMathInHtml } from "../../../shared/utils/math";
 import "katex/dist/katex.min.css";
 
 interface Props {
@@ -11,7 +11,12 @@ interface Props {
 }
 
 export function TeachContent({ topic, markdown, imageUrl, onContinue }: Props) {
-	const htmlContent = marked(renderMathText(markdown));
+	// Process order matters:
+	// 1. marked() converts raw markdown to HTML and passes inline HTML (e.g.
+	//    pre-rendered KaTeX <span class="katex"> blocks) through unchanged.
+	// 2. renderMathInHtml() then renders any remaining \(...\)/\[...\]/$...$ math
+	//    expressions in the HTML output without touching the pre-rendered blocks.
+	const htmlContent = renderMathInHtml(marked(markdown) as string);
 	const [isContinuing, setIsContinuing] = useState(false);
 
 	async function handleContinue() {
