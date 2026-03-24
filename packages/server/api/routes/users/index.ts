@@ -259,6 +259,27 @@ export default new Hono()
 	)
 
 	.get(
+		"/:wallet/action-hash",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { wallet } = ctx.req.valid("param");
+
+			const actionHash = await db.userActionPreviousHash({
+				userWallet: wallet,
+			});
+
+			return respond.ok(
+				ctx,
+				{ actionHash },
+				"User action hash fetched successfully",
+				200,
+			);
+		},
+	)
+
+	.get(
 		"/:wallet/friends",
 		authenticated,
 		validator("param", z.object({ wallet: zEvmAddress() })),
