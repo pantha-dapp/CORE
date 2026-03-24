@@ -71,6 +71,13 @@
 			"when": 1774049515478,
 			"tag": "0009_shiny_jack_power",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1742774400000,
+			"tag": "0010_learning_group_chats",
+			"breakpoints": true
 		}
 	]
 }
