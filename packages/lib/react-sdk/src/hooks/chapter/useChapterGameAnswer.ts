@@ -11,13 +11,13 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 	const chapterId = args?.chapterId;
 
 	const prevHash = useSelfActionHash();
-	const session = useChapterGameSession({ enabled: true });
+	const session = useChapterGameSession({ enabled: true, chapterId });
 
 	return useMutation({
 		mutationFn: async (args: { answer: string[] }) => {
 			const { answer } = args;
 
-			if (!wallet || !session.data?.currentPage) {
+			if (!wallet || session.data?.currentPage === undefined) {
 				throw new Error("not connected");
 			}
 
@@ -66,17 +66,13 @@ export function useChapterGameAnswer(args?: { chapterId?: string }) {
 
 			const walletAddress = wallet?.account.address;
 
-			// Immediate invalidate + refetch — picks up pending XP log (counted by server)
 			queryClient.invalidateQueries({ queryKey: ["userInfo", walletAddress] });
 			queryClient.refetchQueries({ queryKey: ["userInfo", walletAddress] });
 
-			// Second refetch after 4 s — by then the on-chain tx is likely confirmed
-			// and the XP log status transitions from "pending" → "success"
 			setTimeout(() => {
 				queryClient.refetchQueries({ queryKey: ["userInfo", walletAddress] });
 			}, 4_000);
 
-			// Also invalidate course enrollments so progress bar updates
 			queryClient.invalidateQueries({ queryKey: ["userEnrollments"] });
 			queryClient.invalidateQueries({ queryKey: ["userCourses"] });
 		},
