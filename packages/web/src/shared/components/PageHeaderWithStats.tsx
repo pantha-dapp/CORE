@@ -42,13 +42,13 @@ export default function PageHeaderWithStats({
 					<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
 						<span className="text-sm">💎</span>
 						<span className="text-xs font-semibold text-dark-accent tabular-nums">
-							{userInfo.data?.user.xpCount ?? 0}
+							{userInfo?.user.xpCount ?? 0}
 						</span>
 					</div>
 					<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
 						<span className="text-sm">⚡</span>
 						<span className="text-xs font-semibold text-dark-accent tabular-nums">
-							{userInfo.data?.user.xp ?? 0}
+							{userInfo?.user.xp ?? 0}
 						</span>
 					</div>
 				</div>

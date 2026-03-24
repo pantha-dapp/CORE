@@ -1,8 +1,11 @@
 import { usePanthaContext } from "@pantha/react";
 import {
+	useCourseById,
+	useFollowUser,
 	useFriendProfileView,
 	useLogout,
 	useSelfFriends,
+	useUnfollowUser,
 	useUserFollowers,
 	useUserFollowing,
 	useUserInfo,
@@ -29,7 +32,7 @@ export default function Profile(): JSX.Element {
 		"public",
 	);
 	const [socialTab, setSocialTab] = useState<SocialTab>("friends");
-	const [selectedFriend, setSelectedFriend] = useState<Address | null>(null);
+	const [selectedProfile, setSelectedProfile] = useState<Address | null>(null);
 	const { mutateAsync: logoutPantha } = useLogout();
 	const { wallet } = usePanthaContext();
 	const walletAddress = wallet?.account.address;
@@ -37,16 +40,26 @@ export default function Profile(): JSX.Element {
 	const { data: userFollowers } = useUserFollowers({ walletAddress });
 	const { data: userFollowing } = useUserFollowing({ walletAddress });
 	const { data: selfFriends } = useSelfFriends();
-	const { data: friendProfile, isLoading: friendProfileLoading } =
-		useFriendProfileView({ walletAddress: selectedFriend ?? undefined });
+	const {
+		data: profileData,
+		isLoading: profileLoading,
+		isError: profileIsPrivate,
+	} = useFriendProfileView({ walletAddress: selectedProfile ?? undefined });
 	const { mutateAsync: updateUserProfile, isPending: isUpdating } =
 		useUserUpdateProfile();
+	const { mutateAsync: followUser, isPending: isFollowPending } =
+		useFollowUser();
+	const { mutateAsync: unfollowUser, isPending: isUnfollowPending } =
+		useUnfollowUser();
 	const { theme, toggleTheme } = useTheme();
 
 	const streak = userInfo?.user?.streak?.currentStreak ?? 0;
 	const followersCount = userFollowers?.followers.length ?? 0;
 	const followingCount = userFollowing?.following.length ?? 0;
 	const friendsCount = selfFriends?.friends.length ?? 0;
+	const isFollowingSelected = selectedProfile
+		? (userFollowing?.following ?? []).includes(selectedProfile)
+		: false;
 
 	const truncateWallet = (addr: string) =>
 		`${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -69,303 +82,395 @@ export default function Profile(): JSX.Element {
 						<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
 							<div className="font-titillium p-1">
 								<div className="flex items-center justify-between gap-3">
-									<h1 className="text-2xl font-bold tracking-tight text-dark-text font-titillium">
-										Profile
-									</h1>
-									<button
-										type="button"
-										onClick={() => setOpenSettings(true)}
-										className="p-2 rounded-lg bg-dark-surface hover:bg-dark-border transition-colors text-xl"
-										aria-label="Settings"
-									>
-										⚙️
-									</button>
+									{selectedProfile ? (
+										<>
+											<button
+												type="button"
+												onClick={() => setSelectedProfile(null)}
+												className="flex items-center gap-2 text-dark-muted hover:text-dark-text transition-colors font-montserrat text-sm font-semibold"
+											>
+												← Back
+											</button>
+											<h1 className="text-xl font-bold text-dark-text font-titillium">
+												Profile Details
+											</h1>
+											<div className="w-10" />
+										</>
+									) : (
+										<>
+											<h1 className="text-2xl font-bold tracking-tight text-dark-text font-titillium">
+												Profile
+											</h1>
+											<button
+												type="button"
+												onClick={() => setOpenSettings(true)}
+												className="p-2 rounded-lg bg-dark-surface hover:bg-dark-border transition-colors text-xl"
+												aria-label="Settings"
+											>
+												⚙️
+											</button>
+										</>
+									)}
 								</div>
 							</div>
 						</div>
 
-						{/* ── Profile Section ── */}
-						<div className="p-5 flex items-center gap-4 rounded-xl bg-dark-surface/30">
-							{/* Avatar + streak badge */}
-							<div className="relative shrink-0">
-								<img
-									src={`https://api.dicebear.com/7.x/bottts/svg?seed=${walletAddress ?? "default"}`}
-									alt="avatar"
-									className="w-20 h-20 rounded-full border-4 border-dark-accent bg-dark-surface"
-								/>
-								{streak > 0 && (
-									<span className="absolute -bottom-1 -right-1 bg-amber-500 text-xs font-bold rounded-full px-1.5 py-0.5 border-2 border-white leading-none font-montserrat">
-										🔥{streak}
-									</span>
-								)}
-							</div>
-
-							{/* Info */}
-							<div className="flex-1 min-w-0">
-								<h2 className="text-xl font-bold truncate leading-tight text-dark-text font-titillium">
-									{userInfo?.user?.name ?? "—"}
-								</h2>
-
-								<p className="text-sm text-gray-500 dark:text-dark-muted truncate font-montserrat">
-									@{userInfo?.user?.username ?? "—"}
-								</p>
-								{walletAddress && (
-									<p className="text-xs text-dark-muted font-mono mt-0.5">
-										{truncateWallet(walletAddress)}
-									</p>
-								)}
-								{userInfo?.user?.timezone && (
-									<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
-										🌍 {userInfo.user.timezone}
-									</p>
-								)}
-								<p className="text-sm text-dark-muted truncate font-montserrat">
-									{userInfo?.user?.profileVisibility ?? "—"}
-								</p>
-							</div>
-						</div>
-
-						{/* ── Sign Out ── */}
-						<button
-							type="button"
-							onClick={async () => {
-								await Promise.all([logoutPrivy(), logoutPantha()]);
-								router.navigate({ to: "/login", replace: true });
-							}}
-							className="w-full py-3 px-4 rounded-xl font-medium bg-red-600 text-white hover:bg-red-700 transition-colors font-montserrat"
-						>
-							Sign Out
-						</button>
-
-						{/* ── Stats Row ── */}
-						<div className="grid grid-cols-2 gap-3">
-							<StatCard icon="🔥" label="Day Streak" value={`${streak} days`} />
-							<StatCard
-								icon="👫"
-								label="Friends"
-								value={String(friendsCount)}
-							/>
-						</div>
-
-						{/* ── Social Card ── */}
-						<div className="bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl rounded-2xl overflow-hidden">
-							{/* Summary row */}
-							<div className="grid grid-cols-3 divide-x divide-dark-border border-b border-dark-border">
-								<SocialSummaryItem
-									label="Followers"
-									count={followersCount}
-									active={socialTab === "followers"}
-									onClick={() => setSocialTab("followers")}
-								/>
-								<SocialSummaryItem
-									label="Following"
-									count={followingCount}
-									active={socialTab === "following"}
-									onClick={() => setSocialTab("following")}
-								/>
-								<SocialSummaryItem
-									label="Friends"
-									count={friendsCount}
-									active={socialTab === "friends"}
-									onClick={() => setSocialTab("friends")}
-								/>
-							</div>
-
-							{/* Tab list */}
-							<div className="p-4 space-y-1 max-h-60 overflow-y-auto">
-								{socialTab === "friends" &&
-									(!selfFriends?.friends.length ? (
-										<EmptyState
-											emoji="🤝"
-											text="No friends yet — follow users back to become friends!"
-										/>
-									) : (
-										selfFriends.friends.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
-												label="Friend"
-												labelColor="text-cyan-600"
-												onClick={() => setSelectedFriend(addr as Address)}
+						{/* ── Inline: selected user profile OR own profile ── */}
+						{selectedProfile ? (
+							/* ── Selected User Profile (inline, no routing) ── */
+							<div className="space-y-4">
+								{profileLoading ? (
+									<div className="text-center py-20 text-dark-muted font-montserrat">
+										<p className="text-4xl mb-2">⏳</p>
+										<p className="text-sm">Loading profile…</p>
+									</div>
+								) : profileIsPrivate || !profileData ? (
+									/* Private or unavailable */
+									<div className="flex flex-col items-center py-20 gap-5">
+										<div className="relative">
+											<img
+												src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedProfile}`}
+												alt="avatar"
+												className="w-20 h-20 rounded-full border-4 border-dark-border bg-dark-surface opacity-40"
 											/>
-										))
-									))}
-								{socialTab === "followers" &&
-									(!userFollowers?.followers.length ? (
-										<EmptyState emoji="🙈" text="No followers yet." />
-									) : (
-										userFollowers.followers.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
-												label="Follower"
-												labelColor="text-violet-600"
+										</div>
+										<div className="text-center text-dark-muted font-montserrat">
+											<p className="text-4xl mb-2">🔒</p>
+											<p className="text-lg font-bold text-dark-text mb-1 font-titillium">
+												Private Profile
+											</p>
+											<p className="text-sm">This user's profile is private.</p>
+											<p className="text-xs font-mono mt-2">
+												{truncateWallet(selectedProfile)}
+											</p>
+										</div>
+										{selectedProfile !== walletAddress && (
+											<button
+												type="button"
+												onClick={async () => {
+													if (isFollowingSelected) {
+														await unfollowUser({
+															walletToUnfollow: selectedProfile,
+														});
+													} else {
+														await followUser({
+															walletToFollow: selectedProfile,
+														});
+													}
+												}}
+												disabled={isFollowPending || isUnfollowPending}
+												className={`px-8 py-2.5 rounded-xl font-semibold font-montserrat text-sm transition-colors disabled:opacity-60 ${
+													isFollowingSelected
+														? "bg-dark-surface border border-dark-border text-dark-muted hover:bg-red-900/20 hover:text-red-400 hover:border-red-800"
+														: "bg-dark-accent text-white hover:bg-dark-accent/80"
+												}`}
+											>
+												{isFollowPending || isUnfollowPending
+													? "Updating…"
+													: isFollowingSelected
+														? "✓ Following · Unfollow"
+														: "Follow"}
+											</button>
+										)}
+									</div>
+								) : (
+									/* Public profile content */
+									<>
+										{/* Header */}
+										<div className="p-5 rounded-2xl bg-dark-surface/30 flex items-center gap-4">
+											<div className="relative shrink-0">
+												<img
+													src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedProfile}`}
+													alt="avatar"
+													className="w-20 h-20 rounded-full border-4 border-dark-accent bg-dark-surface"
+												/>
+												{(profileData.profile.streak?.currentStreak ?? 0) >
+													0 && (
+													<span className="absolute -bottom-1 -right-1 bg-amber-500 text-xs font-bold rounded-full px-1.5 py-0.5 border-2 border-white leading-none font-montserrat">
+														🔥{profileData.profile.streak.currentStreak}
+													</span>
+												)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<h2 className="text-xl font-bold truncate leading-tight text-dark-text font-titillium">
+													{profileData.profile.name ?? "—"}
+												</h2>
+												<p className="text-sm text-dark-muted truncate font-montserrat">
+													@{profileData.profile.username ?? "—"}
+												</p>
+												<p className="text-xs text-dark-muted font-mono mt-0.5">
+													{truncateWallet(selectedProfile)}
+												</p>
+												{profileData.profile.timezone && (
+													<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
+														🌍 {profileData.profile.timezone}
+													</p>
+												)}
+											</div>
+										</div>
+
+										{/* Follow / Unfollow button */}
+										{selectedProfile !== walletAddress && (
+											<button
+												type="button"
+												onClick={async () => {
+													if (isFollowingSelected) {
+														await unfollowUser({
+															walletToUnfollow: selectedProfile,
+														});
+													} else {
+														await followUser({
+															walletToFollow: selectedProfile,
+														});
+													}
+												}}
+												disabled={isFollowPending || isUnfollowPending}
+												className={`w-full py-3 px-4 rounded-xl font-semibold font-montserrat text-sm transition-colors disabled:opacity-60 ${
+													isFollowingSelected
+														? "bg-dark-surface border border-dark-border text-dark-muted hover:bg-red-900/20 hover:text-red-400 hover:border-red-800"
+														: "bg-dark-accent text-white hover:bg-dark-accent/80"
+												}`}
+											>
+												{isFollowPending || isUnfollowPending
+													? "Updating…"
+													: isFollowingSelected
+														? "✓ Following · Unfollow"
+														: "Follow"}
+											</button>
+										)}
+
+										{/* Stats */}
+										<div className="grid grid-cols-3 gap-2">
+											<MiniStat
+												label="Streak"
+												value={`🔥 ${profileData.profile.streak?.currentStreak ?? 0}`}
 											/>
-										))
-									))}
-								{socialTab === "following" &&
-									(!userFollowing?.following.length ? (
-										<EmptyState emoji="🔭" text="Not following anyone yet." />
-									) : (
-										userFollowing.following.map((addr) => (
-											<WalletRow
-												key={addr}
-												address={addr}
+											<MiniStat
+												label="Friends"
+												value={`👫 ${profileData.profile.friends.length}`}
+											/>
+											<MiniStat
+												label="Courses"
+												value={`📚 ${profileData.profile.courses.length}`}
+											/>
+										</div>
+										<div className="grid grid-cols-2 gap-2">
+											<MiniStat
+												label="Followers"
+												value={String(profileData.profile.followers.length)}
+											/>
+											<MiniStat
 												label="Following"
-												labelColor="text-green-600"
+												value={String(profileData.profile.following.length)}
 											/>
-										))
-									))}
-							</div>
-						</div>
+										</div>
 
-						<button
-							type="button"
-							onClick={() => router.navigate({ to: "/social", replace: false })}
-							className="w-full py-3 px-4 rounded-xl font-medium bg-dark-accent text-white hover:bg-dark-accent/90 transition-colors font-montserrat"
-						>
-							🔍 Find Friends
-						</button>
+										{/* Courses */}
+										{profileData.profile.courses.length > 0 && (
+											<div className="space-y-2">
+												<p className="text-xs font-bold uppercase tracking-widest text-dark-muted font-titillium">
+													Courses
+												</p>
+												{profileData.profile.courses.map((c) => (
+													<CourseRow
+														key={c.id}
+														courseId={c.courseId}
+														progress={c.progress}
+													/>
+												))}
+											</div>
+										)}
+
+										{/* Friends & their streaks */}
+										{profileData.profile.friends.length > 0 && (
+											<div className="space-y-2">
+												<p className="text-xs font-bold uppercase tracking-widest text-dark-muted font-titillium">
+													Friends &amp; Streaks
+												</p>
+												{profileData.profile.friends.map((f) => (
+													<div
+														key={f.wallet}
+														className="bg-dark-surface border border-dark-border rounded-2xl px-4 py-3 flex items-center gap-3"
+													>
+														<img
+															src={`https://api.dicebear.com/7.x/bottts/svg?seed=${f.wallet}`}
+															alt="avatar"
+															className="w-8 h-8 rounded-full bg-dark-surface border border-dark-border shrink-0"
+														/>
+														<p className="font-mono text-sm text-dark-text flex-1 truncate">
+															{truncateWallet(f.wallet)}
+														</p>
+														{f.streak.currentStreak > 0 && (
+															<span className="text-xs font-bold text-amber-500 font-montserrat">
+																🔥 {f.streak.currentStreak}
+															</span>
+														)}
+													</div>
+												))}
+											</div>
+										)}
+									</>
+								)}
+							</div>
+						) : (
+							<>
+								{/* ── Profile Section ── */}
+								<div className="p-5 flex items-center gap-4 rounded-xl bg-dark-surface/30">
+									{/* Avatar + streak badge */}
+									<div className="relative shrink-0">
+										<img
+											src={`https://api.dicebear.com/7.x/bottts/svg?seed=${walletAddress ?? "default"}`}
+											alt="avatar"
+											className="w-20 h-20 rounded-full border-4 border-dark-accent bg-dark-surface"
+										/>
+										{streak > 0 && (
+											<span className="absolute -bottom-1 -right-1 bg-amber-500 text-xs font-bold rounded-full px-1.5 py-0.5 border-2 border-white leading-none font-montserrat">
+												🔥{streak}
+											</span>
+										)}
+									</div>
+
+									{/* Info */}
+									<div className="flex-1 min-w-0">
+										<h2 className="text-xl font-bold truncate leading-tight text-dark-text font-titillium">
+											{userInfo?.user?.name ?? "—"}
+										</h2>
+
+										<p className="text-sm text-gray-500 dark:text-dark-muted truncate font-montserrat">
+											@{userInfo?.user?.username ?? "—"}
+										</p>
+										{walletAddress && (
+											<p className="text-xs text-dark-muted font-mono mt-0.5">
+												{truncateWallet(walletAddress)}
+											</p>
+										)}
+										{userInfo?.user?.timezone && (
+											<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
+												🌍 {userInfo.user.timezone}
+											</p>
+										)}
+										<p className="text-sm text-dark-muted truncate font-montserrat">
+											{userInfo?.user?.profileVisibility ?? "—"}
+										</p>
+									</div>
+								</div>
+
+								{/* ── Sign Out ── */}
+								<button
+									type="button"
+									onClick={async () => {
+										await Promise.all([logoutPrivy(), logoutPantha()]);
+										router.navigate({ to: "/login", replace: true });
+									}}
+									className="w-full py-3 px-4 rounded-xl font-medium bg-red-600 text-white hover:bg-red-700 transition-colors font-montserrat"
+								>
+									Sign Out
+								</button>
+
+								{/* ── Stats Row ── */}
+								<div className="grid grid-cols-2 gap-3">
+									<StatCard
+										icon="🔥"
+										label="Day Streak"
+										value={`${streak} days`}
+									/>
+									<StatCard
+										icon="👫"
+										label="Friends"
+										value={String(friendsCount)}
+									/>
+								</div>
+
+								{/* ── Social Card ── */}
+								<div className="bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl rounded-2xl overflow-hidden">
+									{/* Summary row */}
+									<div className="grid grid-cols-3 divide-x divide-dark-border border-b border-dark-border">
+										<SocialSummaryItem
+											label="Followers"
+											count={followersCount}
+											active={socialTab === "followers"}
+											onClick={() => setSocialTab("followers")}
+										/>
+										<SocialSummaryItem
+											label="Following"
+											count={followingCount}
+											active={socialTab === "following"}
+											onClick={() => setSocialTab("following")}
+										/>
+										<SocialSummaryItem
+											label="Friends"
+											count={friendsCount}
+											active={socialTab === "friends"}
+											onClick={() => setSocialTab("friends")}
+										/>
+									</div>
+
+									{/* Tab list */}
+									<div className="p-4 space-y-1 max-h-60 overflow-y-auto">
+										{socialTab === "friends" &&
+											(!selfFriends?.friends.length ? (
+												<EmptyState
+													emoji="🤝"
+													text="No friends yet — follow users back to become friends!"
+												/>
+											) : (
+												selfFriends.friends.map((f) => (
+													<WalletRow
+														key={f.wallet}
+														address={f.wallet}
+														label={
+															f.streak.currentStreak > 0
+																? `Friend 🔥${f.streak.currentStreak}`
+																: "Friend"
+														}
+														labelColor="text-cyan-600"
+														onClick={() =>
+															setSelectedProfile(f.wallet as Address)
+														}
+													/>
+												))
+											))}
+										{socialTab === "followers" &&
+											(!userFollowers?.followers.length ? (
+												<EmptyState emoji="🙈" text="No followers yet." />
+											) : (
+												userFollowers.followers.map((addr) => (
+													<WalletRow
+														key={addr}
+														address={addr}
+														label="Follower"
+														labelColor="text-violet-600"
+														onClick={() => setSelectedProfile(addr as Address)}
+													/>
+												))
+											))}
+										{socialTab === "following" &&
+											(!userFollowing?.following.length ? (
+												<EmptyState
+													emoji="🔭"
+													text="Not following anyone yet."
+												/>
+											) : (
+												userFollowing.following.map((addr) => (
+													<WalletRow
+														key={addr}
+														address={addr}
+														label="Following"
+														labelColor="text-green-600"
+														onClick={() => setSelectedProfile(addr as Address)}
+													/>
+												))
+											))}
+									</div>
+								</div>
+							</>
+						)}
 					</div>
 				</div>
 			</div>
 
-			{/* ── Friend Profile Sheet ── */}
-			{selectedFriend && (
-				<div className="fixed inset-0 z-50 flex items-end">
-					<button
-						type="button"
-						aria-label="Close friend profile"
-						className="absolute inset-0 bg-black/40 w-full"
-						onClick={() => setSelectedFriend(null)}
-					/>
-					<div className="relative w-full max-h-[90vh] bg-dark-card border-t border-dark-border rounded-t-2xl animate-slide-up flex flex-col">
-						{/* handle */}
-						<div className="shrink-0 pt-3 pb-1 flex justify-center">
-							<div className="w-10 h-1 bg-dark-surface rounded-full" />
-						</div>
-
-						{/* Header */}
-						<div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-dark-border">
-							<h2 className="text-lg font-bold text-dark-text font-titillium">
-								Friend Profile
-							</h2>
-							<button
-								type="button"
-								onClick={() => setSelectedFriend(null)}
-								className="text-dark-muted hover:text-dark-text text-xl p-1 transition-colors"
-							>
-								✕
-							</button>
-						</div>
-
-						{/* Scrollable content */}
-						<div className="flex-1 overflow-y-auto min-h-0 px-5 py-4 space-y-4">
-							{friendProfileLoading ? (
-								<div className="text-center py-16 text-dark-muted font-montserrat">
-									<p className="text-4xl mb-2">⏳</p>
-									<p className="text-sm">Loading profile…</p>
-								</div>
-							) : friendProfile ? (
-								<>
-									{/* Avatar + info */}
-									<div className="bg-dark-surface border border-dark-border rounded-2xl p-4 flex items-center gap-4">
-										<div className="relative shrink-0">
-											<img
-												src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedFriend}`}
-												alt="avatar"
-												className="w-16 h-16 rounded-full border-2 border-dark-accent bg-dark-surface"
-											/>
-											{(friendProfile.profile.streak?.currentStreak ?? 0) >
-												0 && (
-												<span className="absolute -bottom-1 -right-1 bg-amber-500 text-xs font-bold rounded-full px-1.5 py-0.5 border-2 border-white leading-none font-montserrat">
-													🔥{friendProfile.profile.streak.currentStreak}
-												</span>
-											)}
-										</div>
-										<div className="flex-1 min-w-0">
-											<h3 className="text-lg font-bold truncate text-dark-text font-titillium">
-												{friendProfile.profile.name ?? "—"}
-											</h3>
-											<p className="text-sm text-dark-muted truncate font-montserrat">
-												@{friendProfile.profile.username ?? "—"}
-											</p>
-											<p className="text-xs text-dark-muted font-mono mt-0.5">
-												{truncateWallet(selectedFriend)}
-											</p>
-											{friendProfile.profile.timezone && (
-												<p className="text-xs text-dark-muted mt-0.5 font-montserrat">
-													🌍 {friendProfile.profile.timezone}
-												</p>
-											)}
-										</div>
-									</div>
-
-									{/* Stats */}
-									<div className="grid grid-cols-3 gap-2">
-										<MiniStat
-											label="Streak"
-											value={`🔥 ${friendProfile.profile.streak?.currentStreak ?? 0}`}
-										/>
-										<MiniStat
-											label="Friends"
-											value={`👫 ${friendProfile.profile.friends.length}`}
-										/>
-										<MiniStat
-											label="Courses"
-											value={`📚 ${friendProfile.profile.courses.length}`}
-										/>
-									</div>
-
-									{/* Courses */}
-									{friendProfile.profile.courses.length > 0 && (
-										<div className="space-y-2">
-											<p className="text-xs font-bold uppercase tracking-widest text-dark-muted font-titillium">
-												Courses
-											</p>
-											{friendProfile.profile.courses.map((c) => (
-												<div
-													key={c.id}
-													className="bg-dark-surface border border-dark-border rounded-2xl px-4 py-3 flex justify-between items-center"
-												>
-													<p className="text-sm font-semibold truncate text-dark-text font-montserrat">
-														{c.courseId}
-													</p>
-													<span className="text-xs text-green-600 font-bold ml-2 shrink-0 font-montserrat">
-														{c.progress}%
-													</span>
-												</div>
-											))}
-										</div>
-									)}
-
-									{/* Followers / Following */}
-									<div className="grid grid-cols-2 gap-2">
-										<MiniStat
-											label="Followers"
-											value={String(friendProfile.profile.followers.length)}
-										/>
-										<MiniStat
-											label="Following"
-											value={String(friendProfile.profile.following.length)}
-										/>
-									</div>
-								</>
-							) : (
-								<EmptyState
-									emoji="🔒"
-									text="Profile not available. You may not be mutual friends."
-								/>
-							)}
-						</div>
-
-						<div className="shrink-0 pb-8" />
-					</div>
-				</div>
-			)}
-
 			{/* ── Settings Bottom Sheet ── */}
-			{openSettings && (
+			{!selectedProfile && openSettings && (
 				<div className="fixed inset-0 z-50 flex items-end">
 					{/* Backdrop */}
 					<button
@@ -447,7 +552,7 @@ export default function Profile(): JSX.Element {
 			)}
 
 			{/* ── Edit Profile Bottom Sheet ── */}
-			{openEditProfile && (
+			{!selectedProfile && openEditProfile && (
 				<div className="fixed inset-0 z-60 flex items-end">
 					<button
 						type="button"
@@ -575,6 +680,26 @@ export default function Profile(): JSX.Element {
 	);
 }
 /* ── Sub-components ── */
+
+function CourseRow({
+	courseId,
+	progress,
+}: {
+	courseId: string;
+	progress: number;
+}) {
+	const { data } = useCourseById({ id: courseId });
+	return (
+		<div className="bg-dark-surface border border-dark-border rounded-2xl px-4 py-3 flex justify-between items-center">
+			<p className="text-sm font-semibold truncate text-dark-text font-montserrat">
+				{data?.title ?? "Course Title"}
+			</p>
+			<span className="text-xs text-green-600 font-bold ml-2 shrink-0 font-montserrat">
+				{progress}%
+			</span>
+		</div>
+	);
+}
 
 function StatCard({
 	icon,
