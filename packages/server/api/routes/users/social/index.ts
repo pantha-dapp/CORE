@@ -175,7 +175,7 @@ export default new Hono<RouterEnv>()
 		validator(
 			"param",
 			z.object({
-				chatId: z.number(),
+				chatId: z.coerce.number(),
 			}),
 		),
 		async (ctx) => {
@@ -211,7 +211,7 @@ export default new Hono<RouterEnv>()
 		validator(
 			"param",
 			z.object({
-				chatId: z.number(),
+				chatId: z.coerce.number(),
 			}),
 		),
 		validator(
@@ -280,13 +280,13 @@ export default new Hono<RouterEnv>()
 		validator(
 			"param",
 			z.object({
-				chatId: z.number(),
+				chatId: z.coerce.number(),
 			}),
 		),
 		validator(
 			"query",
 			z.object({
-				offset: z.number().default(0),
+				offset: z.coerce.number().default(0),
 			}),
 		),
 		async (ctx) => {
