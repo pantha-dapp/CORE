@@ -1,7 +1,7 @@
 // import type { Address } from "viem";
 
 import { jsonStringify } from "@pantha/shared";
-import { and, desc, eq, gte, inArray, like, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, or, sql } from "drizzle-orm";
 import { type Address, type Hex, keccak256, toHex, verifyMessage } from "viem";
 import { InvalidStateError } from "../errors";
 import type { DbClient } from "./client";
@@ -284,7 +284,7 @@ export function dbExtensionHelpers(db: DbClient) {
 			.select()
 			.from(schema.userActions)
 			.where(and(eq(schema.userActions.userWallet, userWallet)))
-			.orderBy(desc(schema.userActions.createdAt))
+			.orderBy(desc(sql`rowid`))
 			.limit(1);
 
 		return prev ? prev.hash : keccak256(toHex("GENESIS"));
