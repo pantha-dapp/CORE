@@ -1,4 +1,5 @@
 import { describe, expect, it, setSystemTime } from "bun:test";
+import { jsonStringify } from "@pantha/shared";
 import { testGlobals } from "./helpers/globals";
 import { userWallet1 } from "./helpers/setup";
 import { testCompleteChapter, testCreateCourse } from "./helpers/testHelpers";
@@ -64,6 +65,8 @@ describe("Courses Generation & Entrollment", () => {
 });
 
 describe("Chapter & game Sessions", async () => {
+	let trackedPage = 0;
+
 	const session = async (api: typeof testGlobals.api1 = testGlobals.api1) => {
 		const res = await api.courses.chapters.session.$get({
 			query: { chapterId: firstChapterId },
@@ -72,6 +75,7 @@ describe("Chapter & game Sessions", async () => {
 		if (!data.success) {
 			throw new Error("Failed to create chapter session");
 		}
+		trackedPage = data.data.currentPage;
 		return data.data;
 	};
 
@@ -92,15 +96,36 @@ describe("Chapter & game Sessions", async () => {
 		return pages;
 	};
 
-	async function answer(answer: string[]) {
+	async function answer(answerValue: string[]) {
 		const { api1 } = testGlobals;
+
+		const currentPages = await pages();
+		const pageId = currentPages[trackedPage]?.id as string;
+
+		const hashRes = await api1.users[":wallet"]["action-hash"].$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		const hashData = await hashRes.json();
+		if (!hashData.success) throw new Error("Failed to get action hash");
+		const prevHash = hashData.data.actionHash;
+
+		const message = jsonStringify({
+			prevHash,
+			userWallet: userWallet1.account.address,
+			label: "page:answer",
+			data: { chapterId: firstChapterId, pageId, correct: true },
+		});
+		const signature = await userWallet1.signMessage({ message });
+
 		const res = await api1.courses.chapters.session.answer.$post({
-			json: { answer },
+			json: { answer: answerValue },
+			header: { "X-Signature": signature },
 		});
 		const data = await res.json();
 		if (!data.success) {
-			throw new Error("Failed to submit answer");
+			throw new Error(`Failed to submit answer: ${data.error}`);
 		}
+		trackedPage++;
 		return data.data;
 	}
 
