@@ -12,13 +12,9 @@ export const followings = t.sqliteTable(
 	(table) => [t.primaryKey({ columns: [table.follower, table.following] })],
 );
 
-export const feedpost = t.sqliteTable(
-	"feedpost",
-	{
-		follower: tEvmAddress().notNull(),
-		following: tEvmAddress().notNull(),
+export const feedpost = t.sqliteTable("feedpost", {
+	id: t.integer("id").primaryKey({ autoIncrement: true }),
+	type: t.text("type", { enum: [""] }).notNull(),
 
-		...timestamps,
-	},
-	(table) => [t.primaryKey({ columns: [table.follower, table.following] })],
-);
+	...timestamps,
+});
