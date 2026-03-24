@@ -139,6 +139,13 @@ export async function testCreateCourse(
 	const finishedSession = await getSession();
 	const courseId = finishedSession.courseId ?? "";
 
+	// Wait for all background event handlers (e.g. prepareChapter) to finish
+	// before returning, so tests see a fully-prepared chapter.
+	const bus = testGlobals.appState.eventBus as { drain?: () => Promise<void> };
+	if (typeof bus.drain === "function") {
+		await bus.drain();
+	}
+
 	return courseId;
 }
 
@@ -149,6 +156,7 @@ export async function testCreateCourse(
 export async function testCompleteChapter(
 	chapterId: string,
 	api1 = testGlobals.api1,
+	wallet: typeof userWallet1 = userWallet1,
 ): Promise<boolean> {
 	const getSession = async () => {
 		const res = await api1.courses.chapters.session.$get({
@@ -177,15 +185,37 @@ export async function testCompleteChapter(
 		throw new Error("Unexpected response: no pages in data");
 	};
 
-	const getCurrentPage = async () => {
+	// Returns { content, pageId } for the current page
+	// biome-ignore lint/suspicious/noExplicitAny: its just a test
+	const getCurrentPage = async (): Promise<{
+		content: any;
+		pageId: string;
+	}> => {
 		const { currentPage } = await getSession();
 		const pagesData = await getPages();
-		return pagesData[currentPage]?.content;
+		const page = pagesData[currentPage];
+		return { content: page?.content, pageId: page?.id as string };
 	};
 
-	const submitAnswer = async (answer: string[]) => {
+	const submitAnswer = async (answer: string[], pageId: string) => {
+		const hashRes = await api1.users[":wallet"]["action-hash"].$get({
+			param: { wallet: wallet.account.address },
+		});
+		const hashData = await hashRes.json();
+		if (!hashData.success) throw new Error("Failed to get action hash");
+		const prevHash = hashData.data.actionHash;
+
+		const message = jsonStringify({
+			prevHash,
+			userWallet: wallet.account.address,
+			label: "page:answer",
+			data: { chapterId, pageId, correct: true },
+		});
+		const signature = await wallet.signMessage({ message });
+
 		const res = await api1.courses.chapters.session.answer.$post({
 			json: { answer },
+			header: { "X-Signature": signature },
 		});
 		const data = await res.json();
 		if (!data.success) {
@@ -240,35 +270,46 @@ export async function testCompleteChapter(
 			);
 		}
 
-		const page = await getCurrentPage();
+		const { content: page, pageId } = await getCurrentPage();
 		const matchingPage = findMatchingPage(testChapterGenerationPages, page);
 
 		let resp: Awaited<ReturnType<typeof submitAnswer>>;
 
 		if (page?.type === "example_uses") {
-			resp = await submitAnswer([""]);
+			resp = await submitAnswer([""], pageId);
 		} else if (page?.type === "quiz") {
-			resp = await submitAnswer([
-				matchingPage?.content.correctOptionIndex?.toString() ?? "",
-			]);
+			resp = await submitAnswer(
+				[matchingPage?.content.correctOptionIndex?.toString() ?? ""],
+				pageId,
+			);
 		} else if (page?.type === "teach_and_explain_content") {
-			resp = await submitAnswer([""]);
+			resp = await submitAnswer([""], pageId);
 		} else if (page?.type === "true_false") {
-			resp = await submitAnswer([
-				matchingPage?.content.isTrue?.toString() ?? "",
-			]);
+			resp = await submitAnswer(
+				[matchingPage?.content.isTrue?.toString() ?? ""],
+				pageId,
+			);
 		} else if (page?.type === "identify_shown_object_in_image") {
-			resp = await submitAnswer([
-				matchingPage?.content.correctOptionIndex?.toString() ?? "",
-			]);
+			resp = await submitAnswer(
+				[matchingPage?.content.correctOptionIndex?.toString() ?? ""],
+				pageId,
+			);
 		} else if (page?.type === "matching") {
-			resp = await submitAnswer([
-				JSON.stringify(shuffleArray(matchingPage.content.pairs ?? []), null, 2),
-			]);
+			resp = await submitAnswer(
+				[
+					JSON.stringify(
+						shuffleArray(matchingPage.content.pairs ?? []),
+						null,
+						2,
+					),
+				],
+				pageId,
+			);
 		} else if (page?.type === "identify_object_from_images") {
-			resp = await submitAnswer([
-				matchingPage?.content.correctImageIndex?.toString() ?? "",
-			]);
+			resp = await submitAnswer(
+				[matchingPage?.content.correctImageIndex?.toString() ?? ""],
+				pageId,
+			);
 		} else {
 			throw new Error(`Unknown page type: ${page?.type}`);
 		}
