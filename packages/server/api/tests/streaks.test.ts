@@ -223,15 +223,15 @@ describe("Friends Streaks", () => {
 	});
 
 	it("friend streak becomes 1 after both are active on the same day", async () => {
-		await testCompleteChapter(chapterId, testGlobals.api2);
+		await testCompleteChapter(chapterId, testGlobals.api2, userWallet2);
 		await sleep(50);
 		const streak = await getFriendStreak();
 		expect(streak.currentStreak).toBe(1);
 	});
 
 	it("additional activity on the same day does NOT increase friend streak", async () => {
-		await testCompleteChapter(chapterId, testGlobals.api1);
-		await testCompleteChapter(chapterId, testGlobals.api2);
+		await testCompleteChapter(chapterId, testGlobals.api1, userWallet1);
+		await testCompleteChapter(chapterId, testGlobals.api2, userWallet2);
 		await sleep(50);
 		const streak = await getFriendStreak();
 		expect(streak.currentStreak).toBe(1);
@@ -241,8 +241,8 @@ describe("Friends Streaks", () => {
 	it("friend streak increments to 2 when both are active on the next consecutive day", async () => {
 		setSystemTime(FRIENDS_DAY_0 + ONE_DAY_MS);
 		await testGlobals.reauthenticate();
-		await testCompleteChapter(chapterId, testGlobals.api1);
-		await testCompleteChapter(chapterId, testGlobals.api2);
+		await testCompleteChapter(chapterId, testGlobals.api1, userWallet1);
+		await testCompleteChapter(chapterId, testGlobals.api2, userWallet2);
 		await sleep(50);
 		const streak = await getFriendStreak();
 		expect(streak.currentStreak).toBe(2);
@@ -262,8 +262,8 @@ describe("Friends Streaks", () => {
 	it("friend streak resets to 1 after a missed shared day", async () => {
 		setSystemTime(FRIENDS_DAY_0 + 3 * ONE_DAY_MS);
 		await testGlobals.reauthenticate();
-		await testCompleteChapter(chapterId, testGlobals.api1);
-		await testCompleteChapter(chapterId, testGlobals.api2);
+		await testCompleteChapter(chapterId, testGlobals.api1, userWallet1);
+		await testCompleteChapter(chapterId, testGlobals.api2, userWallet2);
 		await sleep(50);
 		const streak = await getFriendStreak();
 		expect(streak.currentStreak).toBe(1);
@@ -378,7 +378,7 @@ describe("SSE Events: friend-streak:extended", () => {
 		const lastId2 = await drainSseStream(redis, userWallet2.account.address);
 
 		// api1 is already active today; api2 completing triggers friend-streak logic
-		await testCompleteChapter(sseChapterId, api2);
+		await testCompleteChapter(sseChapterId, api2, userWallet2);
 
 		const [evt1, evt2] = await Promise.all([
 			expectSseEvent(redis, {
