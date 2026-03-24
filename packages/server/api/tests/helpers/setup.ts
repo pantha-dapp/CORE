@@ -116,6 +116,8 @@ beforeAll(
 
 		registerEventHandlers(appState);
 
+		testGlobals.appState = appState;
+
 		const testApi = new Hono<RouterEnv>()
 			.use("*", async (ctx, next) => {
 				ctx.set("appState", appState);
