@@ -209,31 +209,46 @@ export function FillInTheBlanks({
 	// Show a simple "Continue" card so the user is not stuck with a broken UI.
 	if (blankCount === 0) {
 		return (
-			<div className="space-y-6">
-				<h3 className="text-xl font-bold text-dark-text font-titillium">
-					Fill in the Blanks
-				</h3>
-				<div className="bg-amber-900/20 dark:border dark:border-amber-500/30 p-5 rounded-xl text-center space-y-3">
-					<p className="text-amber-400 text-sm font-medium font-titillium">
-						⚠️ This question couldn't be displayed properly.
-					</p>
-					<p className="text-dark-muted text-sm font-titillium">
-						Tap Continue to move on — it won't affect your progress.
-					</p>
+			<>
+				<div className="space-y-6 pb-32">
+					<h3 className="text-xl font-bold text-dark-text font-titillium">
+						Fill in the Blanks
+					</h3>
+					<div className="bg-amber-900/20 dark:border dark:border-amber-500/30 p-5 rounded-xl text-center space-y-3">
+						<p className="text-amber-400 text-sm font-medium font-titillium">
+							⚠️ This question couldn't be displayed properly.
+						</p>
+						<p className="text-dark-muted text-sm font-titillium">
+							Tap Continue to move on — it won't affect your progress.
+						</p>
+					</div>
+					{showResult && (
+						<div className="overflow-hidden rounded-xl bg-dark-success/10 dark:border dark:border-dark-success/30 p-5">
+							<p className="text-lg font-bold text-dark-success font-titillium">
+								Rendered safely
+							</p>
+							<p className="mt-2 text-sm leading-6 text-dark-muted font-titillium">
+								This question was skipped because it could not be rendered.
+							</p>
+						</div>
+					)}
 				</div>
-				{showResult ? (
-					<div className="overflow-hidden rounded-xl bg-dark-success/10 dark:border dark:border-dark-success/30 p-5">
-						<p className="text-lg font-bold text-dark-success font-titillium">
-							Rendered safely
-						</p>
-						<p className="mt-2 text-sm leading-6 text-dark-muted font-titillium">
-							This question was skipped because it could not be rendered.
-						</p>
+				{!showResult && (
+					<button
+						type="button"
+						onClick={() => onSubmit([])}
+						className="fixed bottom-24 left-4 right-4 z-40 rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
+					>
+						Submit Answer
+					</button>
+				)}
+				{showResult && (
+					<div className="fixed bottom-24 left-4 right-4 z-40 space-y-2 animate-chapter-result-in">
 						{onViewExplanation && (
 							<button
 								type="button"
 								onClick={onViewExplanation}
-								className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-dark-surface px-4 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-border font-titillium"
+								className="w-full flex items-center justify-center gap-2 rounded-lg bg-dark-surface px-4 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-border font-titillium"
 							>
 								<span>💡</span>
 								<span>
@@ -246,158 +261,151 @@ export function FillInTheBlanks({
 						<button
 							type="button"
 							onClick={onContinue}
-							className="mt-3 w-full rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
+							className="w-full rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
 						>
 							Next Question →
 						</button>
 					</div>
-				) : (
-					<button
-						type="button"
-						onClick={() => onSubmit([])}
-						className="w-full mt-6 rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium"
-					>
-						Submit Answer
-					</button>
 				)}
-			</div>
+			</>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
-			<h3 className="text-xl font-bold text-dark-text font-titillium">
-				Fill in the Blanks
-			</h3>
+		<>
+			{" "}
+			<div className="space-y-6 pb-32">
+				{" "}
+				<h3 className="text-xl font-bold text-dark-text font-titillium">
+					Fill in the Blanks
+				</h3>
+				{imageUrl && (
+					<img
+						src={imageUrl}
+						alt="Question"
+						className="rounded-xl w-full border border-dark-border/50"
+					/>
+				)}
+				{/* Sentence with blanks */}
+				<div className="bg-dark-surface border border-dark-border/50 p-5 rounded-xl text-base leading-loose">
+					{words.flatMap((word, wordIdx) => {
+						// Split each token by any embedded $N patterns so that a single element
+						// like "( $1 , $2 )." is rendered as text + blank + text + blank + text.
+						const parts: ReactNode[] = [];
+						const regex = /\$(\d+)/g;
+						let lastIndex = 0;
+						let foundAny = false;
 
-			{imageUrl && (
-				<img
-					src={imageUrl}
-					alt="Question"
-					className="rounded-xl w-full border border-dark-border/50"
-				/>
-			)}
-
-			{/* Sentence with blanks */}
-			<div className="bg-dark-surface border border-dark-border/50 p-5 rounded-xl text-base leading-loose">
-				{words.flatMap((word, wordIdx) => {
-					// Split each token by any embedded $N patterns so that a single element
-					// like "( $1 , $2 )." is rendered as text + blank + text + blank + text.
-					const parts: ReactNode[] = [];
-					const regex = /\$(\d+)/g;
-					let lastIndex = 0;
-					let foundAny = false;
-
-					for (
-						let match = regex.exec(word);
-						match !== null;
-						match = regex.exec(word)
-					) {
-						foundAny = true;
-						// Plain text before this placeholder
-						if (match.index > lastIndex) {
+						for (
+							let match = regex.exec(word);
+							match !== null;
+							match = regex.exec(word)
+						) {
+							foundAny = true;
+							// Plain text before this placeholder
+							if (match.index > lastIndex) {
+								parts.push(
+									<span
+										key={`w-${wordIdx}-t-${lastIndex}`}
+										className="text-gray-800 dark:text-dark-text"
+									>
+										{word.slice(lastIndex, match.index)}
+									</span>,
+								);
+							}
+							// Blank button for this $N
+							const blankIndex = parseInt(match[1], 10) - 1;
+							const userAnswer = userInputs[blankIndex] ?? "";
+							const isFilled = userAnswer.trim().length > 0;
+							const isCorrect = showResult && isFilled;
 							parts.push(
-								<span
-									key={`w-${wordIdx}-t-${lastIndex}`}
-									className="text-gray-800 dark:text-dark-text"
+								<button
+									key={`blank-${wordIdx}-${match[1]}`}
+									type="button"
+									data-blank-index={blankIndex}
+									onClick={(e) =>
+										clearBlank(
+											blankIndex,
+											e.currentTarget.getBoundingClientRect(),
+										)
+									}
+									disabled={
+										showResult ||
+										isSubmitting ||
+										!isFilled ||
+										flyingChip !== null
+									}
+									className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold font-titillium btn-press-zoom ${
+										isCorrect
+											? "border-green-500 dark:border-green-400 text-green-600 dark:text-green-400"
+											: isFilled && hiddenBlankIndex !== blankIndex
+												? "border-dark-accent text-dark-text hover:border-dark-text"
+												: "border-dark-border text-dark-muted"
+									}`}
 								>
-									{word.slice(lastIndex, match.index)}
+									{isFilled && hiddenBlankIndex !== blankIndex
+										? userAnswer
+										: "___"}
+								</button>,
+							);
+							lastIndex = regex.lastIndex;
+						}
+
+						// Remaining text after the last placeholder (or the full word if no $N found)
+						const tail = word.slice(lastIndex);
+						if (tail) {
+							const occ = words
+								.slice(0, wordIdx)
+								.filter((w) => w === word).length;
+							parts.push(
+								<MathText
+									key={`w-${wordIdx}-tail-${occ}`}
+									className="text-dark-text"
+								>
+									{`${tail} `}
+								</MathText>,
+							);
+						} else if (foundAny) {
+							// Token was entirely placeholder(s) — add a trailing space.
+							// Key uses word content + occurrence count to avoid lint warnings.
+							const spOcc = words
+								.slice(0, wordIdx)
+								.filter((w) => w === word).length;
+							parts.push(
+								<span key={`w-${word}-${spOcc}-sp`} aria-hidden>
+									{" "}
 								</span>,
 							);
 						}
-						// Blank button for this $N
-						const blankIndex = parseInt(match[1], 10) - 1;
-						const userAnswer = userInputs[blankIndex] ?? "";
-						const isFilled = userAnswer.trim().length > 0;
-						const isCorrect = showResult && isFilled;
-						parts.push(
-							<button
-								key={`blank-${wordIdx}-${match[1]}`}
-								type="button"
-								data-blank-index={blankIndex}
-								onClick={(e) =>
-									clearBlank(
-										blankIndex,
-										e.currentTarget.getBoundingClientRect(),
-									)
-								}
-								disabled={
-									showResult || isSubmitting || !isFilled || flyingChip !== null
-								}
-								className={`inline-flex items-center justify-center mx-1 px-3 py-1 min-w-28 border-b-2 border-t-0 border-l-0 border-r-0 rounded-none bg-transparent focus:outline-none transition-colors font-semibold font-titillium btn-press-zoom ${
-									isCorrect
-										? "border-green-500 dark:border-green-400 text-green-600 dark:text-green-400"
-										: isFilled && hiddenBlankIndex !== blankIndex
-											? "border-dark-accent text-dark-text hover:border-dark-text"
-											: "border-dark-border text-dark-muted"
-								}`}
-							>
-								{isFilled && hiddenBlankIndex !== blankIndex
-									? userAnswer
-									: "___"}
-							</button>,
-						);
-						lastIndex = regex.lastIndex;
-					}
 
-					// Remaining text after the last placeholder (or the full word if no $N found)
-					const tail = word.slice(lastIndex);
-					if (tail) {
-						const occ = words
-							.slice(0, wordIdx)
-							.filter((w) => w === word).length;
-						parts.push(
-							<MathText
-								key={`w-${wordIdx}-tail-${occ}`}
-								className="text-dark-text"
-							>
-								{`${tail} `}
-							</MathText>,
-						);
-					} else if (foundAny) {
-						// Token was entirely placeholder(s) — add a trailing space.
-						// Key uses word content + occurrence count to avoid lint warnings.
-						const spOcc = words
-							.slice(0, wordIdx)
-							.filter((w) => w === word).length;
-						parts.push(
-							<span key={`w-${word}-${spOcc}-sp`} aria-hidden>
-								{" "}
-							</span>,
-						);
-					}
-
-					return parts;
-				})}
-			</div>
-
-			{/* Word bank – click to place; placed options disappear until the blank is cleared */}
-			{availableOptions.length > 0 && (
-				<div className="bg-dark-surface border border-dark-border/50 p-4 rounded-xl">
-					<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium mb-3">
-						Word bank
-					</p>
-					<div ref={wordBankRef} className="flex flex-wrap gap-2">
-						{remainingOptions.map(({ id, v }) => (
-							<button
-								key={`hint-${id}`}
-								type="button"
-								onClick={(e) =>
-									selectOption(v, id, e.currentTarget.getBoundingClientRect())
-								}
-								disabled={showResult || isSubmitting || flyingChip !== null}
-								className={`px-3 py-1.5 rounded-lg text-sm bg-dark-card border border-dark-border text-dark-text hover:bg-dark-border hover:border-dark-accent transition-colors font-titillium btn-press-zoom ${hiddenOptionId === id ? "invisible" : ""}`}
-							>
-								{v}
-							</button>
-						))}
-					</div>
+						return parts;
+					})}
 				</div>
-			)}
-
-			{/* Result message */}
-			{showResult && (
-				<div className="space-y-3">
+				{/* Word bank – click to place; placed options disappear until the blank is cleared */}
+				{availableOptions.length > 0 && (
+					<div className="bg-dark-surface border border-dark-border/50 p-4 rounded-xl">
+						<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted font-titillium mb-3">
+							Word bank
+						</p>
+						<div ref={wordBankRef} className="flex flex-wrap gap-2">
+							{remainingOptions.map(({ id, v }) => (
+								<button
+									key={`hint-${id}`}
+									type="button"
+									onClick={(e) =>
+										selectOption(v, id, e.currentTarget.getBoundingClientRect())
+									}
+									disabled={showResult || isSubmitting || flyingChip !== null}
+									className={`px-3 py-1.5 rounded-lg text-sm bg-dark-card border border-dark-border text-dark-text hover:bg-dark-border hover:border-dark-accent transition-colors font-titillium btn-press-zoom ${hiddenOptionId === id ? "invisible" : ""}`}
+								>
+									{v}
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+				{/* Result message */}
+				{showResult && (
 					<div
 						className={`overflow-hidden rounded-xl p-4 ${isCorrect ? "bg-dark-success/10 border border-dark-success/30" : "bg-red-900/20 border border-red-500/30"}`}
 					>
@@ -420,6 +428,48 @@ export function FillInTheBlanks({
 							</div>
 						</div>
 					</div>
+				)}
+				{/* Flying chip overlay for word-bank ↔ blank animations */}
+				{flyingChip && (
+					<div
+						className="fixed z-9999 pointer-events-none"
+						style={{
+							left:
+								flyingChip.phase === "flying"
+									? flyingChip.to.x
+									: flyingChip.from.x,
+							top:
+								flyingChip.phase === "flying"
+									? flyingChip.to.y
+									: flyingChip.from.y,
+							transition:
+								flyingChip.phase === "flying"
+									? `left ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1), top ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
+									: "none",
+						}}
+					>
+						<span className="inline-block px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-purple-400 dark:border-dark-accent text-gray-800 dark:text-dark-text font-semibold font-montserrat shadow-lg shadow-purple-500/20 dark:shadow-black/30">
+							{flyingChip.text}
+						</span>
+					</div>
+				)}
+			</div>
+			{!showResult && (
+				<button
+					type="button"
+					onClick={handleSubmit}
+					disabled={!allFilled || isSubmitting}
+					className={`fixed bottom-24 left-4 right-4 z-40 rounded-lg px-4 py-2.5 text-sm font-semibold font-titillium transition-all btn-press-zoom ${
+						!allFilled || isSubmitting
+							? "bg-dark-surface text-dark-muted cursor-not-allowed"
+							: "bg-dark-accent text-dark-bg hover:opacity-90"
+					} ${isSubmitting ? "opacity-50" : ""}`}
+				>
+					{isSubmitting ? "Checking..." : "Submit Answer"}
+				</button>
+			)}
+			{showResult && (
+				<div className="fixed bottom-24 left-4 right-4 z-40 space-y-2 animate-chapter-result-in">
 					{onViewExplanation && (
 						<button
 							type="button"
@@ -437,53 +487,12 @@ export function FillInTheBlanks({
 					<button
 						type="button"
 						onClick={onContinue}
-						className="w-full mt-2 rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium transition-opacity btn-press-zoom"
+						className="w-full rounded-lg bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg hover:opacity-90 font-titillium transition-opacity btn-press-zoom"
 					>
 						Next Question →
 					</button>
 				</div>
 			)}
-
-			{/* Submit button – below content, like TeachContent Continue */}
-			{!showResult && (
-				<button
-					type="button"
-					onClick={handleSubmit}
-					disabled={!allFilled || isSubmitting}
-					className={`w-full mt-6 rounded-lg px-4 py-2.5 text-sm font-semibold font-titillium transition-all btn-press-zoom ${
-						!allFilled || isSubmitting
-							? "bg-dark-surface text-dark-muted cursor-not-allowed"
-							: "bg-dark-accent text-dark-bg hover:opacity-90"
-					} ${isSubmitting ? "opacity-50" : ""}`}
-				>
-					{isSubmitting ? "Checking..." : "Submit Answer"}
-				</button>
-			)}
-
-			{/* Flying chip overlay for word-bank ↔ blank animations */}
-			{flyingChip && (
-				<div
-					className="fixed z-9999 pointer-events-none"
-					style={{
-						left:
-							flyingChip.phase === "flying"
-								? flyingChip.to.x
-								: flyingChip.from.x,
-						top:
-							flyingChip.phase === "flying"
-								? flyingChip.to.y
-								: flyingChip.from.y,
-						transition:
-							flyingChip.phase === "flying"
-								? `left ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1), top ${ANIMATION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
-								: "none",
-					}}
-				>
-					<span className="inline-block px-3 py-1 rounded-full text-sm bg-white dark:bg-dark-card border border-purple-400 dark:border-dark-accent text-gray-800 dark:text-dark-text font-semibold font-montserrat shadow-lg shadow-purple-500/20 dark:shadow-black/30">
-						{flyingChip.text}
-					</span>
-				</div>
-			)}
-		</div>
+		</>
 	);
 }
