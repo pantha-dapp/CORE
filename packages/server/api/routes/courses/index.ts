@@ -1,6 +1,7 @@
 import { tryCatch } from "@pantha/shared";
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { UMAP } from "umap-js";
 import z from "zod";
 import { generateCanonicalCourseDescriptor } from "../../../lib/ai/tasks/utils";
 import { createVectorDb } from "../../../lib/db/vec/client";
@@ -35,6 +36,7 @@ export default new Hono()
 
 		const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
 
+		const seenIds = new Set<string>();
 		const courses: { id: string; vector: number[] }[] = [];
 
 		for (const enrollment of enrolledCourses) {
@@ -51,7 +53,11 @@ export default new Hono()
 				topics: course.topics,
 			});
 			const courseEmbedding = await ai.embedding.text(canonicalDescriptor);
-			courses.push({ id: enrollment.courseId, vector: courseEmbedding });
+
+			if (!seenIds.has(enrollment.courseId)) {
+				seenIds.add(enrollment.courseId);
+				courses.push({ id: enrollment.courseId, vector: courseEmbedding });
+			}
 
 			if (courses.length >= MAX) break;
 
@@ -61,20 +67,63 @@ export default new Hono()
 			);
 			for (const c of similarCourses) {
 				if (courses.length >= MAX) break;
+				if (seenIds.has(c.payload.courseId)) continue;
+				seenIds.add(c.payload.courseId);
 				courses.push({ id: c.payload.courseId, vector: c.vector ?? [] });
 			}
 		}
 
-		const suggestions = db
+		const suggestions = await db
 			.select()
 			.from(db.schema.courses)
 			.orderBy(sql`RANDOM()`)
 			.limit(N);
 
+		const cachedPoints = await Promise.all(
+			courses.map((c) => db.redis.get(`umap:course:${c.id}`)),
+		);
+
+		const allCached = cachedPoints.every((p) => p !== null);
+
+		let coursesWithPoints: { id: string; point: { x: number; y: number } }[];
+
+		if (allCached) {
+			coursesWithPoints = courses.map((c, i) => {
+				const point = JSON.parse(cachedPoints[i] as string);
+				return { id: c.id, point };
+			});
+		} else {
+			const vectors = courses.map((c) => {
+				const norm = Math.sqrt(c.vector.reduce((sum, x) => sum + x * x, 0));
+				return c.vector.map((x) => x / norm + (Math.random() - 0.5) * 1e-10);
+			});
+
+			let points2D: number[][] = vectors.map(() => [0, 0]);
+			if (vectors.length >= 2) {
+				const umap = new UMAP({
+					nNeighbors: Math.min(5, vectors.length - 1),
+					minDist: 0.1,
+					nComponents: 2,
+				});
+				points2D = umap.fit(vectors);
+			}
+
+			coursesWithPoints = courses.map((c, i) => ({
+				id: c.id,
+				point: { x: points2D[i]?.[0] ?? 0, y: points2D[i]?.[1] ?? 0 },
+			}));
+
+			await Promise.all(
+				coursesWithPoints.map((c) =>
+					db.redis.setex(`umap:course:${c.id}`, 3600, JSON.stringify(c.point)),
+				),
+			);
+		}
+
 		return respond.ok(
 			ctx,
 			{
-				courses,
+				courses: coursesWithPoints,
 				suggestions,
 			},
 			"Similar courses fetched successfully.",
