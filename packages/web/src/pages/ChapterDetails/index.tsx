@@ -71,11 +71,6 @@ export default function ChapterDetails() {
 		}
 	}
 
-	// Swipe detection state
-	// const swipeStartX = useRef(0);
-	// const swipeStartY = useRef(0);
-	// const SWIPE_THRESHOLD = 30; // Reduced for mobile: minimum pixels to detect swipe
-	// const MAX_VERTICAL_DISTANCE = 80; // Maximum vertical movement allowed
 	const { data: course, isLoading: courseLoading } = useCourseById({
 		id: courseId ?? "",
 	});
@@ -118,66 +113,6 @@ export default function ChapterDetails() {
 		enabled: pagesReady,
 	});
 	const submitAnswer = useChapterGameAnswer({ chapterId: chapterId ?? "" });
-
-	// Swipe gesture handling
-	// useEffect(() => {
-	// 	const handlePointerDown = (e: PointerEvent) => {
-	// 		swipeStartX.current = e.clientX;
-	// 		swipeStartY.current = e.clientY;
-	// 		console.log("Pointer Down:", { x: e.clientX, y: e.clientY });
-	// 	};
-
-	// 	const handlePointerUp = (e: PointerEvent) => {
-	// 		const swipeEndX = e.clientX;
-	// 		const swipeEndY = e.clientY;
-
-	// 		// Calculate swipe distance
-	// 		// Negative = swiping right (go back gesture on mobile)
-	// 		// Positive = swiping left
-	// 		const swipeDistanceX = swipeStartX.current - swipeEndX;
-	// 		const swipeDistanceY = Math.abs(swipeStartY.current - swipeEndY);
-	// 		const absoluteSwipeX = Math.abs(swipeDistanceX);
-
-	// 		console.log("Pointer Up - Swipe Distances:", {
-	// 			swipeDistanceX: swipeDistanceX,
-	// 			absoluteSwipeX: absoluteSwipeX,
-	// 			verticalDistance: swipeDistanceY,
-	// 			startX: swipeStartX.current,
-	// 			startY: swipeStartY.current,
-	// 			endX: swipeEndX,
-	// 			endY: swipeEndY,
-	// 			threshold: SWIPE_THRESHOLD,
-	// 			maxVertical: MAX_VERTICAL_DISTANCE,
-	// 			direction: swipeDistanceX < 0 ? "RIGHT (Go Back)" : "LEFT",
-	// 		});
-
-	// 		// Support both:
-	// 		// - RIGHT swipe (negative value) = standard mobile back gesture
-	// 		// - LEFT swipe (positive value) = alternative gesture
-	// 		// The absolute value must be greater than threshold and vertical movement must be minimal
-	// 		const isValidSwipe =
-	// 			absoluteSwipeX > SWIPE_THRESHOLD &&
-	// 			swipeDistanceY < MAX_VERTICAL_DISTANCE;
-
-	// 		console.log("Is Valid Swipe?", isValidSwipe);
-
-	// 		if (isValidSwipe) {
-	// 			console.log("SWIPE DETECTED! Opening dialog...");
-	// 			handleBackClick();
-	// 		}
-	// 	};
-
-	// 	document.addEventListener("pointerdown", handlePointerDown);
-	// 	document.addEventListener("pointerup", handlePointerUp);
-
-	// 	console.log("Swipe detection listener attached");
-
-	// 	return () => {
-	// 		document.removeEventListener("pointerdown", handlePointerDown);
-	// 		document.removeEventListener("pointerup", handlePointerUp);
-	// 		console.log("Swipe detection listener removed");
-	// 	};
-	// }, []);
 
 	const isLoading =
 		courseLoading ||
