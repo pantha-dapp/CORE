@@ -22,12 +22,14 @@ export default function (appState: AppState) {
 				.orderBy(db.schema.courseChapters.order)
 				.limit(2);
 
-			if (!firstChapter || !secondChapter) return;
+			if (!firstChapter) return;
 
 			await Promise.all([
 				prepareCourseIcons(courseId, { db, ai }),
 				prepareChapter(firstChapter.id, { db, ai }),
-				prepareChapter(secondChapter.id, { db, ai }),
+				...(secondChapter
+					? [prepareChapter(secondChapter.id, { db, ai })]
+					: []),
 				prepareSimilarCourses(courseId, { db, ai }),
 			]);
 		} catch (err) {
