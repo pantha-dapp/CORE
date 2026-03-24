@@ -79,7 +79,7 @@ export const app = new Hono()
 	.use(
 		cors({
 			origin: ["*"],
-			allowHeaders: ["Content-Type", "Authorization"],
+			allowHeaders: ["Content-Type", "Authorization", "X-Signature"],
 			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 			credentials: true,
 		}),
