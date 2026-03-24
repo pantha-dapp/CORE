@@ -6,7 +6,7 @@ import {
 	useUserInfo,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
-import { Check, ChevronDown, Lock, X } from "lucide-react";
+import { Check, Lock, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHapticFeedback } from "../../shared/utils/haptics";
 
