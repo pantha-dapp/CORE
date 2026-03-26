@@ -1,12 +1,16 @@
 import { tryCatch } from "@pantha/shared";
 import { zEvmAddress, zHex } from "@pantha/shared/zod";
+import { desc, eq, gte, inArray, sql, sum } from "drizzle-orm";
 import { Hono } from "hono";
+import { DateTime } from "luxon";
 import z from "zod";
 import { respond } from "../../../../lib/utils/respond";
 import { sse } from "../../../../lib/utils/sse";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import type { RouterEnv } from "../../types";
+
+const WEEKLY_LEADERBOARD_SIZE = 10;
 
 export default new Hono<RouterEnv>()
 	.post(
@@ -313,4 +317,131 @@ export default new Hono<RouterEnv>()
 				200,
 			);
 		},
-	);
+	)
+
+	.get("/leaderboard/weekly", authenticated, async (ctx) => {
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
+
+		const [user] = await db
+			.select()
+			.from(db.schema.users)
+			.where(eq(db.schema.users.walletAddress, userWallet));
+		if (!user) {
+			console.error("User not found in database", userWallet);
+			return respond.err(ctx, "User not found", 404);
+		}
+
+		const now = DateTime.now().setZone(user.timezone);
+
+		const userWeekStart = now.startOf("week");
+		const userWeekStartsAt = userWeekStart.toUTC().toJSDate();
+
+		const weeklyLeaderboard = await tryCatch(
+			db
+				.select({
+					userWallet: db.schema.userXpLog.userWallet,
+					totalXp: sql<number>`cast(${sum(db.schema.userXpLog.xpGained)} as integer)`,
+					rank: sql<number>`rank() over (order by ${sum(db.schema.userXpLog.xpGained)} desc)`,
+				})
+				.from(db.schema.userXpLog)
+				.where(gte(db.schema.userXpLog.createdAt, userWeekStartsAt))
+				.limit(WEEKLY_LEADERBOARD_SIZE)
+				.groupBy(db.schema.userXpLog.userWallet)
+				.orderBy((fields) => desc(fields.totalXp)),
+		);
+
+		if (weeklyLeaderboard.error) {
+			console.error(
+				"Failed to fetch weekly leaderboard from database",
+				weeklyLeaderboard.error,
+			);
+			return respond.err(ctx, "Failed to fetch weekly leaderboard", 500);
+		}
+
+		const leaderboard = weeklyLeaderboard.data;
+		const userInLeaderboard = leaderboard.some(
+			(e) => e.userWallet === userWallet,
+		);
+
+		if (!userInLeaderboard) {
+			const rankedSubq = db
+				.select({
+					userWallet: db.schema.userXpLog.userWallet,
+					totalXp:
+						sql<number>`cast(${sum(db.schema.userXpLog.xpGained)} as integer)`.as(
+							"totalXp",
+						),
+					rank: sql<number>`rank() over (order by ${sum(db.schema.userXpLog.xpGained)} desc)`.as(
+						"rank",
+					),
+				})
+				.from(db.schema.userXpLog)
+				.where(gte(db.schema.userXpLog.createdAt, userWeekStartsAt))
+				.groupBy(db.schema.userXpLog.userWallet)
+				.as("ranked");
+
+			const userRank = await tryCatch(
+				db
+					.select()
+					.from(rankedSubq)
+					.where(eq(rankedSubq.userWallet, userWallet)),
+			);
+
+			if (!userRank.error && userRank.data[0]) {
+				leaderboard.push(userRank.data[0]);
+			}
+		}
+
+		return respond.ok(
+			ctx,
+			{ leaderboard },
+			"Weekly leaderboard fetched successfully",
+			200,
+		);
+	})
+
+	.get("/leaderboard/friends", authenticated, async (ctx) => {
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
+
+		const friends = await db.userFriends({
+			userWallet,
+		});
+
+		if (friends.length === 0) {
+			return respond.ok(
+				ctx,
+				{ leaderboard: [] },
+				"Friends leaderboard fetched successfully",
+				200,
+			);
+		}
+
+		const leaderboard = await tryCatch(
+			db
+				.select({
+					userWallet: db.schema.userXpLog.userWallet,
+					totalXp: sql<number>`cast(${sum(db.schema.userXpLog.xpGained)} as integer)`,
+				})
+				.from(db.schema.userXpLog)
+				.where(inArray(db.schema.userXpLog.userWallet, friends))
+				.groupBy(db.schema.userXpLog.userWallet)
+				.orderBy((fields) => desc(fields.totalXp)),
+		);
+
+		if (leaderboard.error) {
+			console.error(
+				"Failed to fetch friends leaderboard from database",
+				leaderboard.error,
+			);
+			return respond.err(ctx, "Failed to fetch friends leaderboard", 500);
+		}
+
+		return respond.ok(
+			ctx,
+			{ leaderboard: leaderboard.data },
+			"Friends leaderboard fetched successfully",
+			200,
+		);
+	});
