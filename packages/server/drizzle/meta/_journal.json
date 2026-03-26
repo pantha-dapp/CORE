@@ -78,6 +78,13 @@
 			"when": 1742774400000,
 			"tag": "0010_learning_group_chats",
 			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "6",
+			"when": 1742860800000,
+			"tag": "0011_fix_feedpost_schema",
+			"breakpoints": true
 		}
 	]
 }
