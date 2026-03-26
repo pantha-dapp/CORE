@@ -1,5 +1,6 @@
 import * as t from "drizzle-orm/sqlite-core";
 import { tEvmAddress, timestamps } from "../helpers.base";
+import { tFeedPostPayload } from "../helpers.custom";
 
 export const followings = t.sqliteTable(
 	"followings",
@@ -14,7 +15,8 @@ export const followings = t.sqliteTable(
 
 export const feedpost = t.sqliteTable("feedpost", {
 	id: t.integer("id").primaryKey({ autoIncrement: true }),
-	type: t.text("type", { enum: [""] }).notNull(),
+	userWallet: tEvmAddress().notNull(),
+	payload: tFeedPostPayload("payload").notNull(),
 
 	...timestamps,
 });
