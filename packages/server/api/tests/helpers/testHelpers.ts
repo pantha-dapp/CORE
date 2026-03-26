@@ -186,8 +186,8 @@ export async function testCompleteChapter(
 	};
 
 	// Returns { content, pageId } for the current page
-	// biome-ignore lint/suspicious/noExplicitAny: its just a test
 	const getCurrentPage = async (): Promise<{
+		// biome-ignore lint/suspicious/noExplicitAny: its just a test
 		content: any;
 		pageId: string;
 	}> => {
