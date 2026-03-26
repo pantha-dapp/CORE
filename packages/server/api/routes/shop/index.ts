@@ -32,13 +32,6 @@ export default new Hono<RouterEnv>()
 			const { contracts, db, policyManager } = ctx.var.appState;
 			const { itemId, signature, deadline } = ctx.req.valid("query");
 
-			if (processingPurchases[ctx.var.userWallet]) {
-				return respond.err(
-					ctx,
-					"A purchase is already being processed for this wallet. Please wait.",
-					429,
-				);
-			}
 			if (panthaTokenDecimals === -1) {
 				const decimals = await tryCatch(contracts.PanthaToken.read.decimals());
 				if (decimals.error) {
@@ -50,6 +43,14 @@ export default new Hono<RouterEnv>()
 			await policyManager.assertCan(ctx.var.userWallet, "shop.purchase", {
 				itemId,
 			});
+
+			if (processingPurchases[ctx.var.userWallet]) {
+				return respond.err(
+					ctx,
+					"A purchase is already being processed for this wallet. Please wait.",
+					429,
+				);
+			}
 
 			const shopVersion = await getContractVersionId({
 				db,
