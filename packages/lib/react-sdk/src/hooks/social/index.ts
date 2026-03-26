@@ -1,3 +1,4 @@
+export * from "./useFeedPost";
 export * from "./useFollowUser";
 export * from "./useFriendsLeaderboard";
 export * from "./useLearningGroupMembers";
