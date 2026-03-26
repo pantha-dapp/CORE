@@ -271,10 +271,8 @@ export default new Hono<RouterEnv>()
 			}
 
 			if (session.currentPage >= session.pages.length) {
-				// Session is done — remove it so currentPage cannot drift further
 				gameSessions.delete(userWallet);
 
-				// Check if user has previously completed this chapter
 				const { db } = ctx.var.appState;
 				const chapter = await db.chapterById({ chapterId: session.chapterId });
 				if (!chapter) {
