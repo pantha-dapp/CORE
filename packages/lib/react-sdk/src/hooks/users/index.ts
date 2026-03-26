@@ -1,5 +1,6 @@
 export * from "./useFriendProfileView";
 export * from "./useSearchUsers";
+export * from "./useSelfActionHash";
 export * from "./useSelfFriends";
 export * from "./useUserCourses";
 export * from "./useUserFollowers";
