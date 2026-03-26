@@ -49,8 +49,13 @@ export function Matching({
 	const allMatched = Object.keys(matches).length === pairs.length;
 
 	function handleLeftClick(index: number) {
-		if (showResult || matches[index] !== undefined) return;
+		if (showResult) return;
 		hapticFeedback.tap();
+		if (matches[index] !== undefined) {
+			clearMatch(index);
+			setSelectedLeft(null);
+			return;
+		}
 		setSelectedLeft(index);
 	}
 
@@ -68,7 +73,7 @@ export function Matching({
 		setSelectedLeft(null);
 	}
 
-	function _clearMatch(leftIndex: number) {
+	function clearMatch(leftIndex: number) {
 		const newMatches = { ...matches };
 		delete newMatches[leftIndex];
 		setMatches(newMatches);
@@ -124,17 +129,24 @@ export function Matching({
 									key={`left-${idx}-${pair.left}`}
 									type="button"
 									onClick={() => handleLeftClick(idx)}
-									disabled={showResult || isMatched}
+									disabled={showResult}
 									className={`w-full text-left p-3 rounded-lg border transition-all font-titillium text-sm ${
 										isSelected
 											? "border-2 border-dark-accent bg-dark-surface"
-											: "border-dark-border hover:border-dark-muted bg-dark-card"
-									} ${isMatched ? "opacity-50 cursor-not-allowed" : ""}`}
+											: isMatched
+												? "border-dark-success/50 bg-dark-success/10 hover:border-red-400/60 hover:bg-red-900/10"
+												: "border-dark-border hover:border-dark-muted bg-dark-card"
+									}`}
 								>
-									<div className="flex items-center gap-2">
+									<div className="flex items-center justify-between gap-2">
 										<MathText className="text-dark-text text-sm">
 											{pair.left}
 										</MathText>
+										{isMatched && (
+											<span className="text-dark-muted text-xs shrink-0">
+												✕
+											</span>
+										)}
 									</div>
 								</button>
 							);
