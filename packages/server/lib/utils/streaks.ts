@@ -134,6 +134,27 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 						currentStreak: 1,
 					},
 				});
+
+				if (Math.random() < 1 / 3) {
+					await db.insert(db.schema.feedpost).values([
+						{
+							userWallet: userWallet,
+							payload: {
+								type: "friend-streak-extension",
+								friendWallet,
+								newStreak: 1,
+							},
+						},
+						{
+							userWallet: friendWallet,
+							payload: {
+								type: "friend-streak-extension",
+								friendWallet: userWallet,
+								newStreak: 1,
+							},
+						},
+					]);
+				}
 				continue;
 			}
 
@@ -174,6 +195,27 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 						currentStreak: newStreak,
 					},
 				});
+
+				if (Math.random() < 1 / 3) {
+					await db.insert(db.schema.feedpost).values([
+						{
+							userWallet: userWallet,
+							payload: {
+								type: "friend-streak-extension",
+								friendWallet,
+								newStreak,
+							},
+						},
+						{
+							userWallet: friendWallet,
+							payload: {
+								type: "friend-streak-extension",
+								friendWallet: userWallet,
+								newStreak,
+							},
+						},
+					]);
+				}
 			} else {
 				// streak broken, reset
 				await tx
