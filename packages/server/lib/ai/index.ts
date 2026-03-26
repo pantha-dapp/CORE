@@ -153,8 +153,6 @@ export function createAi(args: {
 				}
 			}
 
-			console.log("deleted ", deleted);
-
 			const parsed = generateChapterPageOutputTypedSchema
 				.array()
 				.safeParse(result.pages.filter((p) => !!p));
