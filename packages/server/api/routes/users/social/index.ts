@@ -9,10 +9,14 @@ import { sse } from "../../../../lib/utils/sse";
 import { authenticated } from "../../../middleware/auth";
 import { validator } from "../../../middleware/validator";
 import type { RouterEnv } from "../../types";
+import feed from "./feed";
 
 const WEEKLY_LEADERBOARD_SIZE = 10;
 
 export default new Hono<RouterEnv>()
+
+	.route("/feed", feed)
+
 	.post(
 		"/keygen",
 		authenticated,
