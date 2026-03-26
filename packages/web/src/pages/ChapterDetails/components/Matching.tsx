@@ -68,7 +68,7 @@ export function Matching({
 		setSelectedLeft(null);
 	}
 
-	function clearMatch(leftIndex: number) {
+	function _clearMatch(leftIndex: number) {
 		const newMatches = { ...matches };
 		delete newMatches[leftIndex];
 		setMatches(newMatches);
