@@ -34,3 +34,30 @@ export const tImageParts = customType<{
 			.parse(jsonParse(value));
 	},
 });
+
+const zFeedPostPayload = z
+	.object({ type: z.literal("chapter-completion"), chapterId: z.string() })
+	.or(z.object({ type: z.literal("streak-extension"), newStreak: z.number() }))
+	.or(
+		z.object({
+			type: z.literal("friend-streak-extension"),
+			friendWallet: z.string(),
+			newStreak: z.number(),
+		}),
+	)
+	.or(z.object({ type: z.literal("leaderboard-ranking"), rank: z.number() }));
+
+export const tFeedPostPayload = customType<{
+	data: z.infer<typeof zFeedPostPayload>;
+	driverData: string;
+}>({
+	dataType() {
+		return "text";
+	},
+	toDriver(value) {
+		return jsonStringify(value);
+	},
+	fromDriver(value) {
+		return zFeedPostPayload.parse(jsonParse(value));
+	},
+});
