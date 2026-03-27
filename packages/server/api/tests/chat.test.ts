@@ -283,13 +283,17 @@ describe("Learning Group Chats", () => {
 		]);
 
 		// Create two learning group chats representing different categories
+		// Use unique category names to avoid UNIQUE constraint violations across test runs
+		const progCategoryId = crypto.randomUUID().slice(0, 8);
+		const artCategoryId = crypto.randomUUID().slice(0, 8);
+
 		const [progGroup] = await db
 			.insert(db.schema.learningGroupChats)
-			.values({ category: "Programming" })
+			.values({ category: `Programming-${progCategoryId}` })
 			.returning();
 		const [artGroup] = await db
 			.insert(db.schema.learningGroupChats)
-			.values({ category: "Art" })
+			.values({ category: `Art-${artCategoryId}` })
 			.returning();
 
 		if (!progGroup || !artGroup)
@@ -510,5 +514,173 @@ describe("Learning Group Chats", () => {
 			: [];
 
 		expect(groupEvents).toHaveLength(0);
+	});
+
+	it("emits learning-group:tag SSE event when a user is tagged by username", async () => {
+		const { api1, api2, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		// Get user2's username
+		const user2InfoRes = await api2.users[":wallet"].$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const user2Data = await user2InfoRes.json();
+		if (!user2Data.success) throw new Error("Failed to fetch user2 info");
+		const user2Username = user2Data.data.user.username;
+
+		// Drain stream before sending tagged message
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// User1 sends a message tagging user2
+		await api1.users.social.groups[":chatId"].messages.$post({
+			param: { chatId: String(programmingGroupId) },
+			json: { content: `Hey @${user2Username}, check this out!` },
+		});
+
+		// User2 should receive a learning-group:tag SSE event
+		const evt = await expectSseEvent(redis, {
+			userWallet: userWallet2.account.address,
+			type: "learning-group:tag",
+			lastId,
+		});
+
+		expect(evt.type).toBe("learning-group:tag");
+		expect(evt.payload).toEqual({
+			learningGroupChatId: programmingGroupId,
+			from: userWallet1.account.address,
+		});
+	});
+
+	it("does not emit learning-group:tag SSE event if user is not tagged", async () => {
+		const { api1, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// User1 sends a message without tagging anyone
+		await api1.users.social.groups[":chatId"].messages.$post({
+			param: { chatId: String(programmingGroupId) },
+			json: { content: "Just a regular message with no tags" },
+		});
+
+		// User2 should not receive a learning-group:tag SSE event
+		const events = await appState.db.redis.send("XREAD", [
+			"COUNT",
+			"50",
+			"BLOCK",
+			"300",
+			"STREAMS",
+			`sse:${userWallet2.account.address}`,
+			lastId,
+		]);
+
+		const tagEvents =
+			events && Array.isArray(events)
+				? (events as [string, [string, string[]][]][])
+						.flatMap(([, msgs]) => msgs)
+						.filter(([, fields]) => {
+							for (let i = 0; i < fields.length; i += 2) {
+								if (
+									fields[i] === "type" &&
+									fields[i + 1] === "learning-group:tag"
+								)
+									return true;
+							}
+							return false;
+						})
+				: [];
+
+		expect(tagEvents).toHaveLength(0);
+	});
+
+	it("emits learning-group:tag SSE event to multiple tagged users", async () => {
+		const { api1, api2, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		// Get user2's username
+		const user2InfoRes = await api2.users[":wallet"].$get({
+			param: { wallet: userWallet2.account.address },
+		});
+		const user2Data = await user2InfoRes.json();
+		if (!user2Data.success) throw new Error("Failed to fetch user2 info");
+		const user2Username = user2Data.data.user.username;
+
+		// Drain stream before sending tagged message
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// User1 sends a message tagging user2 twice
+		await api1.users.social.groups[":chatId"].messages.$post({
+			param: { chatId: String(programmingGroupId) },
+			json: { content: `@${user2Username} look at this @${user2Username}!` },
+		});
+
+		// User2 should receive a learning-group:tag SSE event
+		const evt = await expectSseEvent(redis, {
+			userWallet: userWallet2.account.address,
+			type: "learning-group:tag",
+			lastId,
+		});
+
+		expect(evt.type).toBe("learning-group:tag");
+		expect(evt.payload.from).toBe(userWallet1.account.address);
+	});
+
+	it("triggers AI response when @pantha is mentioned", async () => {
+		const { api1, api2, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// User1 sends a message mentioning @pantha
+		await api1.users.social.groups[":chatId"].messages.$post({
+			param: { chatId: String(programmingGroupId) },
+			json: { content: "Hey @pantha, what is JavaScript?" },
+		});
+
+		// Give the AI some time to process and emit the response
+		await new Promise((r) => setTimeout(r, 500));
+
+		// User2 should receive a learning-group:message SSE event from AI response
+		const evt = await expectSseEvent(redis, {
+			userWallet: userWallet2.account.address,
+			type: "learning-group:message",
+			lastId,
+			timeoutMs: 3000, // Give AI more time to respond
+		});
+
+		expect(evt.type).toBe("learning-group:message");
+		// The SSE event from is set to the original sender (user1), not the AI itself
+		expect(evt.payload).toEqual({
+			learningGroupChatId: programmingGroupId,
+			from: userWallet1.account.address,
+		});
+	});
+
+	it("triggers AI response when @ai is mentioned", async () => {
+		const { api1, api2, appState } = testGlobals;
+		const redis = appState.db.redis;
+
+		const lastId = await drainSseStream(redis, userWallet2.account.address);
+
+		// User1 sends a message mentioning @ai
+		await api1.users.social.groups[":chatId"].messages.$post({
+			param: { chatId: String(programmingGroupId) },
+			json: { content: "Hey @ai, help me understand TypeScript" },
+		});
+
+		// Give the AI some time to process and emit the response
+		await new Promise((r) => setTimeout(r, 500));
+
+		// User2 should receive a learning-group:message SSE event from AI response
+		const evt = await expectSseEvent(redis, {
+			userWallet: userWallet2.account.address,
+			type: "learning-group:message",
+			lastId,
+			timeoutMs: 3000,
+		});
+
+		expect(evt.type).toBe("learning-group:message");
+		// The SSE event from is set to the original sender (user1), not the AI itself
+		expect(evt.payload.from).toBe(userWallet1.account.address);
 	});
 });
