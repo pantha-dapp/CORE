@@ -4,6 +4,7 @@ import type { AiClient } from "../../../lib/ai/client";
 import clarificationQuestionGenerator from "../../../lib/ai/tasks/clarificationQuestionGenerator";
 import courseSelectionEvaluator from "../../../lib/ai/tasks/courseSelectionEvaluator";
 import generateChapterPagesLegacy from "../../../lib/ai/tasks/generateChapterPages.legacy";
+import generateChatAiResponse from "../../../lib/ai/tasks/generateChatAiResponse";
 import generateIdealCourseDescriptor from "../../../lib/ai/tasks/generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "../../../lib/ai/tasks/generateNewCourseSkeleton";
 import generateSimilarCourses from "../../../lib/ai/tasks/generateSimilarCourses";
@@ -194,6 +195,11 @@ registerMockResponse(generateSimilarCourses, {
 				icon: "MOCK_ICON_2",
 			},
 		],
+	},
+});
+registerMockResponse(generateChatAiResponse, {
+	response: {
+		response: "MOCK_AI_RESPONSE",
 	},
 });
 export const testChapterGenerationPages = [
