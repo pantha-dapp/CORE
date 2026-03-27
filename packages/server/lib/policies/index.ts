@@ -43,9 +43,6 @@ type PolicyBaseDefs = {
 	user: {
 		userWallet: Address;
 	};
-	chat: {
-		chatId: string;
-	};
 };
 type PolicyResource<
 	T extends keyof PolicyBaseDefs,
@@ -61,6 +58,7 @@ export interface PolicyResourceDefs {
 	"user.unfollow": PolicyResource<"user">;
 
 	"chat.dm": { userWallet: Address };
+	"chat.group_access": { learningGroupChatId: number };
 
 	"shop.purchase": { itemId: ShopItemId };
 }
