@@ -10,6 +10,7 @@ import courseSelectionEvaluator from "./tasks/courseSelectionEvaluator";
 import generateAnswerExplanation from "./tasks/generateAnswerExplanation";
 import { generateChapterPageOutputTypedSchema } from "./tasks/generateChapterPage.schemas";
 import generateChapterPages from "./tasks/generateChapterPages.legacy";
+import generateChatAiResponse from "./tasks/generateChatAiResponse";
 import generateIconImage from "./tasks/generateIconImage";
 import generateIdealCourseDescriptor from "./tasks/generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "./tasks/generateNewCourseSkeleton";
@@ -189,6 +190,13 @@ export function createAi(args: {
 				output: intentClarification.outputSchema,
 			},
 			intentClarification.prompt,
+		),
+		generateChatAiResponse: createLlmGenerateFunction(
+			{
+				input: generateChatAiResponse.inputSchema,
+				output: generateChatAiResponse.outputSchema,
+			},
+			generateChatAiResponse.prompt,
 		),
 		learningIntentSummarizer: createLlmGenerateFunction(
 			{
