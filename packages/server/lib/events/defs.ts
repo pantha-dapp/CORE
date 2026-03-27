@@ -28,4 +28,10 @@ export const eventPayloadDefs = {
 		walletAddress: zEvmAddress(),
 		courseId: z.string(),
 	}),
+
+	"chat:group:message": z.object({
+		chatId: z.number(),
+		senderWallet: zEvmAddress(),
+		message: z.string(),
+	}),
 };
