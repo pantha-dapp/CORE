@@ -1,0 +1,8 @@
+# Default owner for everything
+* @marsian83
+
+# Package owners
+packages/server/   @marsian83
+packages/contracts/ @marsian83
+packages/lib/      @marsian83
+packages/web/      @abhishekzod007 @jriyyya

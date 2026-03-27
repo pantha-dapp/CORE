@@ -1,0 +1,60 @@
+version: 2
+
+updates:
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Root + all workspaces — batched into one PR so CI catches cross-package conflicts
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /packages/server
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /packages/lib/shared
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /packages/lib/react-sdk
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /packages/web
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /packages/contracts
+    schedule:
+      interval: weekly
+    groups:
+      all-deps:
+        patterns: ["*"]
