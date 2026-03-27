@@ -229,10 +229,14 @@ export default new Hono<RouterEnv>()
 			}),
 		),
 		async (ctx) => {
-			const { db } = ctx.var.appState;
+			const { db, policyManager, eventBus } = ctx.var.appState;
 			const { userWallet } = ctx.var;
 			const { chatId } = ctx.req.valid("param");
 			const { content } = ctx.req.valid("json");
+
+			await policyManager.assertCan(userWallet, "chat.group_access", {
+				learningGroupChatId: chatId,
+			});
 
 			const message = await tryCatch(
 				db
@@ -253,37 +257,11 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Failed to save learning group message", 500);
 			}
 
-			const members = await tryCatch(
-				db.getLearningGroupChatMembers({ chatId }),
-			);
-
-			if (!members.error) {
-				const recipientWallets = members.data
-					.map((m) => m.walletAddress)
-					.filter((w) => w !== userWallet);
-
-				await sse.emitToUsers(
-					db.redis,
-					recipientWallets,
-					"learning-group:message",
-					{
-						learningGroupChatId: chatId,
-						from: userWallet,
-					},
-				);
-
-				const taggedPeople =
-					content.match(/@\w+/g)?.map((mention) => mention.slice(1)) || [];
-
-				const taggedWallets = members.data
-					.filter((m) => taggedPeople.includes(m.username))
-					.map((m) => m.walletAddress);
-
-				await sse.emitToUsers(db.redis, taggedWallets, "learning-group:tag", {
-					learningGroupChatId: chatId,
-					from: userWallet,
-				});
-			}
+			eventBus.emit("chat:group:message", {
+				chatId,
+				senderWallet: userWallet,
+				message: content,
+			});
 
 			return respond.ok(
 				ctx,
