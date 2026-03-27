@@ -30,6 +30,24 @@ const enforcers: Enforcers<"chat"> = {
 			"You do not have permission to message this user.",
 		);
 	},
+
+	"chat.group_access": async (user, resource, app) => {
+		const { db } = app;
+		const { learningGroupChatId } = resource;
+
+		const groups = await db.getLearningGroupMembershipsOfUser({
+			userWallet: user,
+		});
+		if (!groups) throw new NotFoundError("Chat group not found.");
+
+		const isMember = groups.some(
+			(group) => group.learningGroupChatId === learningGroupChatId,
+		);
+
+		if (isMember) return true;
+
+		throw new UnauthorizedError("You do not have access to this chat group.");
+	},
 };
 
 export default enforcers;
