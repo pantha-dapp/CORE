@@ -2,6 +2,7 @@ import clarificationQuestionGenerator from "./clarificationQuestionGenerator";
 import courseSelectionEvaluator from "./courseSelectionEvaluator";
 import generateAnswerExplanation from "./generateAnswerExplanation";
 import generateChapterPages from "./generateChapterPages.legacy";
+import generateChatAiResponse from "./generateChatAiResponse";
 import generateIdealCourseDescriptor from "./generateIdealCourseDescriptor";
 import generateNewCourseSkeleton from "./generateNewCourseSkeleton";
 import intentClarification from "./intentClarification";
@@ -12,6 +13,7 @@ const tasks = {
 	courseSelectionEvaluator,
 	generateAnswerExplanation,
 	generateChapterPages,
+	generateChatAiResponse,
 	generateIdealCourseDescriptor,
 	generateNewCourseSkeleton,
 	intentClarification,
