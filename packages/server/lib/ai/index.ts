@@ -118,7 +118,7 @@ export function createAi(args: {
 		) => {
 			const result = await generateChapterPagesRaw(args);
 
-			let deleted = 0;
+			let _deleted = 0;
 
 			for (const [i, page] of result.pages.entries()) {
 				const { success: parseSuccess } =
@@ -135,7 +135,7 @@ export function createAi(args: {
 					if (healAttempt.error) {
 						console.log("Error healing page:", page);
 						delete result.pages[i];
-						deleted++;
+						_deleted++;
 						continue;
 					}
 
@@ -145,7 +145,7 @@ export function createAi(args: {
 					if (!parsedHeal.success) {
 						console.log("Error validating healed page:", healAttempt.data);
 						delete result.pages[i];
-						deleted++;
+						_deleted++;
 						continue;
 					}
 

@@ -1,4 +1,9 @@
 import {
+	type SseEventType,
+	type SsePayloadOf,
+	zSsePayloadSchema,
+} from "@pantha/shared/zod";
+import {
 	createContext,
 	type ReactNode,
 	useCallback,
@@ -8,10 +13,18 @@ import {
 } from "react";
 import { usePanthaContext } from "./PanthaProvider";
 
-type EventHandler = (data: unknown) => void;
+type EventType = SseEventType;
+type PayloadOf<T extends EventType> = SsePayloadOf<T>;
+
+type EventHandler<T extends EventType = EventType> = (
+	data: PayloadOf<T>,
+) => void;
 
 type SseContextType = {
-	subscribe: (type: string, handler: EventHandler) => () => void;
+	subscribe: <T extends EventType>(
+		type: T,
+		handler: EventHandler<T>,
+	) => () => void;
 };
 
 const SseContext = createContext<SseContextType | null>(null);
@@ -36,7 +49,7 @@ function parseSseEvent(raw: string) {
 
 export function SseProvider({ children }: { children: ReactNode }) {
 	const { api } = usePanthaContext();
-	const handlers = useRef<Map<string, Set<EventHandler>>>(new Map());
+	const handlers = useRef<Map<string, Set<(data: unknown) => void>>>(new Map());
 
 	useEffect(() => {
 		if (!api.jwtExists) return;
@@ -106,25 +119,37 @@ export function SseProvider({ children }: { children: ReactNode }) {
 		};
 	}, [api]);
 
-	const subscribe = useCallback((type: string, handler: EventHandler) => {
-		let set = handlers.current.get(type);
-		if (!set) {
-			set = new Set();
-			handlers.current.set(type, set);
-		}
-		set.add(handler);
+	const subscribe = useCallback(
+		<T extends EventType>(type: T, handler: EventHandler<T>) => {
+			const schema = zSsePayloadSchema[type];
+			const wrappedHandler = (data: unknown) => {
+				const result = schema.safeParse(data);
+				if (result.success) handler(result.data);
+			};
 
-		return () => {
-			handlers.current.get(type)?.delete(handler);
-		};
-	}, []);
+			let set = handlers.current.get(type);
+			if (!set) {
+				set = new Set();
+				handlers.current.set(type, set);
+			}
+			set.add(wrappedHandler);
+
+			return () => {
+				handlers.current.get(type)?.delete(wrappedHandler);
+			};
+		},
+		[],
+	);
 
 	return (
 		<SseContext.Provider value={{ subscribe }}>{children}</SseContext.Provider>
 	);
 }
 
-export function useEvent(type: string, handler: EventHandler) {
+export function useEvent<T extends EventType>(
+	type: T,
+	handler: EventHandler<T>,
+) {
 	const ctx = useContext(SseContext);
 
 	if (!ctx) {

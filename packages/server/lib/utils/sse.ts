@@ -1,34 +1,12 @@
+import type { zSseEvent } from "@pantha/shared/zod";
 import type { RedisClient } from "bun";
+import type z from "zod";
 
-type EventDefs = {
-	"dm:new": {
-		from: string;
-	};
-	"learning-group:message": {
-		learningGroupChatId: number;
-		from: string;
-	};
-	"streak:extended": {
-		currentStreak: number;
-	};
-	"friend-streak:extended": {
-		friendWallet: string;
-		currentStreak: number;
-	};
-};
+type EmitEvent = z.infer<ReturnType<typeof zSseEvent>>;
+type EventType = EmitEvent["type"];
+type EmitEventByType<T extends EventType> = Extract<EmitEvent, { type: T }>;
 
-type EventType = keyof EventDefs;
-
-type EmitEvent<T extends EventType = EventType> = {
-	userWallet: string;
-	type: T;
-	payload: EventDefs[T];
-};
-
-async function emitToUser<T extends EventType>(
-	redis: RedisClient,
-	evt: EmitEvent<T>,
-) {
+async function emitToUser(redis: RedisClient, evt: EmitEvent) {
 	const key = `sse:${evt.userWallet}`;
 
 	await redis.send("XADD", [
@@ -42,11 +20,11 @@ async function emitToUser<T extends EventType>(
 	await trimUserStream(redis, evt.userWallet);
 }
 
-async function emitToUsers(
+async function emitToUsers<T extends EventType>(
 	redis: RedisClient,
 	userWallets: string[],
-	type: string,
-	payload: unknown,
+	type: T,
+	payload: EmitEventByType<T>["payload"],
 ) {
 	const serialized = JSON.stringify(payload);
 

@@ -271,6 +271,18 @@ export default new Hono<RouterEnv>()
 						from: userWallet,
 					},
 				);
+
+				const taggedPeople =
+					content.match(/@\w+/g)?.map((mention) => mention.slice(1)) || [];
+
+				const taggedWallets = members.data
+					.filter((m) => taggedPeople.includes(m.username))
+					.map((m) => m.walletAddress);
+
+				await sse.emitToUsers(db.redis, taggedWallets, "learning-group:tag", {
+					learningGroupChatId: chatId,
+					from: userWallet,
+				});
 			}
 
 			return respond.ok(
