@@ -7,6 +7,15 @@ export const shopItems = [
 		warning: "Must own before use • Won't restore lost streaks",
 		priceHuman: 50,
 	},
+	{
+		id: "CERTIFCT",
+		name: "Course Certificate",
+		description:
+			"Redeem to receive an on-chain NFT certificate for a course you have made progress in.",
+		warning:
+			"Must complete at least 10 chapters before requesting • Single use",
+		priceHuman: 100,
+	},
 ] as const satisfies ShopItem[];
 
 type ShopItem = {
