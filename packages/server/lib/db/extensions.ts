@@ -1,7 +1,7 @@
 // import type { Address } from "viem";
 
 import { jsonStringify } from "@pantha/shared";
-import { and, desc, eq, gte, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, max, or, sql } from "drizzle-orm";
 import { type Address, type Hex, keccak256, toHex, verifyMessage } from "viem";
 import { InvalidStateError } from "../errors";
 import type { DbClient } from "./client";
@@ -319,6 +319,13 @@ export function dbExtensionHelpers(db: DbClient) {
 			throw new InvalidStateError("Invalid signature for user action.");
 		}
 
+		const [seqRow] = await db
+			.select({ maxSeq: max(schema.userActions.seq) })
+			.from(schema.userActions)
+			.where(and(eq(schema.userActions.userWallet, userWallet)));
+
+		const nextSeq = (seqRow?.maxSeq ?? -1) + 1;
+
 		const [action] = await db
 			.insert(schema.userActions)
 			.values({
@@ -328,6 +335,7 @@ export function dbExtensionHelpers(db: DbClient) {
 				prevHash,
 				data,
 				signature,
+				seq: nextSeq,
 			})
 			.returning();
 
