@@ -83,6 +83,7 @@ export const userActions = t.sqliteTable(
 		label: t.text("label").notNull(),
 		data: tJsonString("data").notNull(),
 		signature: tHex("signature").notNull(),
+		seq: t.integer("seq").notNull().default(0),
 
 		...timestamps,
 	},
