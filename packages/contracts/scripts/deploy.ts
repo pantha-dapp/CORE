@@ -128,7 +128,7 @@ async function main() {
 	console.log("Definitions written to definitions.ts");
 	if (chainId === 545) {
 		try {
-			await $`bunx --bun hardhat verify --network flowTestnet ${orchestrator.address} --force`;
+			await $`bunx --bun hardhat verify --network flowTestnet ${orchestrator.address} "${panthaToken.address}" --force`;
 			await sleep(1000);
 			await $`bunx --bun hardhat verify --network flowTestnet ${certificate.address} --force`;
 			await sleep(1500);

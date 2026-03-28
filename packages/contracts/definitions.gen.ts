@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x221": {
 		PanthaOrchestrator: {
-			address: "0xeedcfde8dbe7a2936e9e308afdfe8865377c4c8b",
+			address: "0xb44fc6e54f84cac21196e94bf684fd6b0d0c5919",
 			abi: [
 				{
 					inputs: [
@@ -145,8 +145,44 @@ export const definitions = {
 					type: "function",
 				},
 				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
+						{
+							internalType: "string",
+							name: "metadataURI_",
+							type: "string",
+						},
+					],
+					name: "certify",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
 					inputs: [],
 					name: "claim",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
+						{
+							internalType: "bytes32",
+							name: "actionChainRoot_",
+							type: "bytes32",
+						},
+					],
+					name: "commitActionChainRoot",
 					outputs: [],
 					stateMutability: "nonpayable",
 					type: "function",
@@ -356,7 +392,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificate: {
-			address: "0x66B622Be7917A399530CD6284E3C2fAF8328e89d",
+			address: "0x5ca27463cb4A0BA26b59fA7f1f26FB1c96Ac0dF8",
 			abi: [
 				{
 					inputs: [],
@@ -880,7 +916,7 @@ export const definitions = {
 			],
 		},
 		PanthaKeyStore: {
-			address: "0xA0b8555EDDbEB76EB2fCC37b524e7BD46e7cDFD6",
+			address: "0xC8f89C6a1B683E4058Af073198D2C3e05A43fF75",
 			abi: [
 				{
 					inputs: [],
@@ -1158,7 +1194,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificationAuthority: {
-			address: "0x551903cDA5f004A54057EE26ecAE661A31E60936",
+			address: "0x35Ce81cF5F38A8948AaDd9A37aC703A754e18609",
 			abi: [
 				{
 					inputs: [],
@@ -1189,6 +1225,44 @@ export const definitions = {
 					inputs: [],
 					name: "OnlyOrchestrator",
 					type: "error",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "user",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "bytes32",
+							name: "actionChainRoot",
+							type: "bytes32",
+						},
+					],
+					name: "ActionChainRootCommitted",
+					type: "event",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "user",
+							type: "address",
+						},
+						{
+							indexed: false,
+							internalType: "string",
+							name: "metadataURI",
+							type: "string",
+						},
+					],
+					name: "UserCertified",
+					type: "event",
 				},
 				{
 					inputs: [
@@ -1228,6 +1302,11 @@ export const definitions = {
 							internalType: "address",
 							name: "user_",
 							type: "address",
+						},
+						{
+							internalType: "string",
+							name: "metadataURI_",
+							type: "string",
 						},
 					],
 					name: "certify",
@@ -1288,7 +1367,7 @@ export const definitions = {
 			],
 		},
 		PanthaToken: {
-			address: "0x045ee98e47233fae7674b60deb7932ae403ba20d",
+			address: "0xa183608e323677d98b02a16a34df318e263a191a",
 			abi: [
 				{
 					inputs: [
@@ -1896,7 +1975,7 @@ export const definitions = {
 			],
 		},
 		PXP: {
-			address: "0xe7254081C84728787dDf3251CE0f80a88de6c01e",
+			address: "0xF9FdCbd0ecee3115CB56a548325478C5483678C8",
 			abi: [
 				{
 					inputs: [],
@@ -2311,7 +2390,7 @@ export const definitions = {
 			],
 		},
 		PanthaTreasury: {
-			address: "0x712B4913D26Aeb6b558F24A106E0bE0f9C3c986A",
+			address: "0x5C1731bDcA43A7e15e66937740f2B39EBF4307dB",
 			abi: [
 				{
 					inputs: [
@@ -2432,7 +2511,7 @@ export const definitions = {
 			],
 		},
 		PanthaShop: {
-			address: "0x7aa380AfB3998FCd64C81f2814b8396F5a10891F",
+			address: "0x6f691F98beF38E3DA1B83F825cA8B995636d7a86",
 			abi: [
 				{
 					inputs: [],
@@ -2669,8 +2748,44 @@ export const definitions = {
 					type: "function",
 				},
 				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
+						{
+							internalType: "string",
+							name: "metadataURI_",
+							type: "string",
+						},
+					],
+					name: "certify",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
 					inputs: [],
 					name: "claim",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{
+							internalType: "address",
+							name: "user_",
+							type: "address",
+						},
+						{
+							internalType: "bytes32",
+							name: "actionChainRoot_",
+							type: "bytes32",
+						},
+					],
+					name: "commitActionChainRoot",
 					outputs: [],
 					stateMutability: "nonpayable",
 					type: "function",
@@ -3715,6 +3830,44 @@ export const definitions = {
 					type: "error",
 				},
 				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "user",
+							type: "address",
+						},
+						{
+							indexed: true,
+							internalType: "bytes32",
+							name: "actionChainRoot",
+							type: "bytes32",
+						},
+					],
+					name: "ActionChainRootCommitted",
+					type: "event",
+				},
+				{
+					anonymous: false,
+					inputs: [
+						{
+							indexed: true,
+							internalType: "address",
+							name: "user",
+							type: "address",
+						},
+						{
+							indexed: false,
+							internalType: "string",
+							name: "metadataURI",
+							type: "string",
+						},
+					],
+					name: "UserCertified",
+					type: "event",
+				},
+				{
 					inputs: [
 						{
 							internalType: "address",
@@ -3752,6 +3905,11 @@ export const definitions = {
 							internalType: "address",
 							name: "user_",
 							type: "address",
+						},
+						{
+							internalType: "string",
+							name: "metadataURI_",
+							type: "string",
 						},
 					],
 					name: "certify",
