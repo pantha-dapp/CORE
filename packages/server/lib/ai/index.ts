@@ -8,6 +8,7 @@ import type { AiClient } from "./client";
 import clarificationQuestionGenerator from "./tasks/clarificationQuestionGenerator";
 import courseSelectionEvaluator from "./tasks/courseSelectionEvaluator";
 import generateAnswerExplanation from "./tasks/generateAnswerExplanation";
+import generateCertificationDetails from "./tasks/generateCertificationDetails";
 import { generateChapterPageOutputTypedSchema } from "./tasks/generateChapterPage.schemas";
 import generateChapterPages from "./tasks/generateChapterPages.legacy";
 import generateChatAiResponse from "./tasks/generateChatAiResponse";
@@ -197,6 +198,13 @@ export function createAi(args: {
 				output: generateChatAiResponse.outputSchema,
 			},
 			generateChatAiResponse.prompt,
+		),
+		generateCertificationDetails: createLlmGenerateFunction(
+			{
+				input: generateCertificationDetails.inputSchema,
+				output: generateCertificationDetails.outputSchema,
+			},
+			generateCertificationDetails.prompt,
 		),
 		learningIntentSummarizer: createLlmGenerateFunction(
 			{
