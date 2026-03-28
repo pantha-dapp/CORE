@@ -5,7 +5,7 @@ import type { Enforcers } from ".";
 const enforcers: Enforcers<"shop"> = {
 	"shop.purchase": async (user, resource, app) => {
 		const { db } = app;
-		const activePurchase = db
+		const activePurchases = await db
 			.select()
 			.from(db.schema.userPurchases)
 			.where(
@@ -14,13 +14,21 @@ const enforcers: Enforcers<"shop"> = {
 					eq(db.schema.userPurchases.itemId, resource.itemId),
 					eq(db.schema.userPurchases.consumed, 0),
 				),
-			)
-			.get();
+			);
 
 		switch (resource.itemId) {
 			case "STRKFRZ0": {
-				if (activePurchase) {
+				if (activePurchases?.length) {
 					throw new ConflictError("You have already purchased this item.");
+				}
+
+				return true;
+			}
+			case "CERTIFCT": {
+				if (activePurchases?.length) {
+					throw new ConflictError(
+						"You already have an unused certificate. Use it before purchasing another.",
+					);
 				}
 
 				return true;
