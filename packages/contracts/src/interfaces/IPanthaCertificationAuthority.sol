@@ -8,6 +8,8 @@ interface IPanthaCertificationAuthority {
     function certificate() external view returns (address);
     function actionChainMerkleRoots(address key) external view returns (bytes32);
     function usedActionChainRoots(bytes32 key) external view returns (bool);
-    function certify(address user_) external;
+    event ActionChainRootCommitted();
+    event UserCertified();
+    function certify(address user_, string calldata metadataURI_) external;
     function commitActionChainRoot(address user_, bytes32 actionChainRoot_) external;
 }
