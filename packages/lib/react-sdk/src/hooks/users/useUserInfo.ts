@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { parseResponse } from "hono/client";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export function useUserInfo(args: { walletAddress?: string }) {
@@ -12,11 +13,11 @@ export function useUserInfo(args: { walletAddress?: string }) {
 				throw new Error("not connected");
 			}
 
-			const userResponseRaw = await api.rpc.users[":wallet"].$get({
-				param: { wallet: walletAddress },
-			});
-			const userResponse = await userResponseRaw.json();
-
+			const userResponse = await parseResponse(
+				api.rpc.users[":wallet"].$get({
+					param: { wallet: walletAddress },
+				}),
+			);
 			if (!userResponse.success) {
 				throw new Error("Failed to retrieve user information");
 			}
