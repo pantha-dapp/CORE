@@ -73,6 +73,7 @@ describe("Shop behavir", async () => {
 		const items = await getItems();
 		const item = items[0];
 
+		await Bun.sleep(500);
 		const res = await api1.shop.buy.$post({
 			query: {
 				itemId: item.id,
