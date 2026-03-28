@@ -13,6 +13,12 @@ contract PanthaCertificationAuthority {
     mapping(address => bytes32) public actionChainMerkleRoots;
     mapping(bytes32 => bool) public usedActionChainRoots;
 
+    event ActionChainRootCommitted(
+        address indexed user,
+        bytes32 indexed actionChainRoot
+    );
+    event UserCertified(address indexed user, string metadataURI);
+
     constructor() {
         orchestrator = IPanthaOrchestrator(msg.sender); // expect orcestaror to be the deployer
 
@@ -29,7 +35,10 @@ contract PanthaCertificationAuthority {
         _;
     }
 
-    function certify(address user_) external onlyOrchestrator {
+    function certify(
+        address user_,
+        string calldata metadataURI_
+    ) external onlyOrchestrator {
         if (user_ == address(0)) revert InvalidUser();
 
         bytes32 actionChainRoot = actionChainMerkleRoots[user_];
@@ -38,6 +47,10 @@ contract PanthaCertificationAuthority {
             revert ActionChainRootAlreadyUsed();
 
         usedActionChainRoots[actionChainRoot] = true;
+
+        certificate.mint(user_, metadataURI_);
+
+        emit UserCertified(user_, metadataURI_);
     }
 
     function commitActionChainRoot(
@@ -51,5 +64,7 @@ contract PanthaCertificationAuthority {
         if (actionChainRoot_ == bytes32(0)) revert InvalidActionChainRoot();
 
         actionChainMerkleRoots[user_] = actionChainRoot_;
+
+        emit ActionChainRootCommitted(user_, actionChainRoot_);
     }
 }
