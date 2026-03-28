@@ -622,6 +622,7 @@ describe("Learning Group Chats", () => {
 		});
 
 		expect(evt.type).toBe("learning-group:tag");
+		//@ts-expect-error
 		expect(evt.payload.from).toBe(userWallet1.account.address);
 	});
 
@@ -680,7 +681,8 @@ describe("Learning Group Chats", () => {
 		});
 
 		expect(evt.type).toBe("learning-group:message");
-		// The SSE event from is set to the original sender (user1), not the AI itself
+		//@ts-expect-error
 		expect(evt.payload.from).toBe(userWallet1.account.address);
+		// The SSE event from is set to the original sender (user1), not the AI itself
 	});
 });
