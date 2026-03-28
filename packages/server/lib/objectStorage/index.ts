@@ -26,6 +26,18 @@ export const ObjectStorageResourceDefs = [
 		contentType: "image/webp",
 		maxSizeBytes: 10 * 1024 * 1024, // 5MB
 	},
+	{
+		name: "certificationMetadata",
+		key: "certification-metadata",
+		contentType: "application/json",
+		maxSizeBytes: 100 * 1024, // 100KB
+	},
+	{
+		name: "actionHashChain",
+		key: "action-hash-chain",
+		contentType: "application/json",
+		maxSizeBytes: 5 * 1024 * 1024, // 5MB
+	},
 ] as const satisfies readonly ObjectStorageResourceDef[];
 
 export type ObjectStorageResourceKey =
