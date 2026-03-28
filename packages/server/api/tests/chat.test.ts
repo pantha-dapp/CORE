@@ -626,7 +626,7 @@ describe("Learning Group Chats", () => {
 	});
 
 	it("triggers AI response when @pantha is mentioned", async () => {
-		const { api1, api2, appState } = testGlobals;
+		const { api1, appState } = testGlobals;
 		const redis = appState.db.redis;
 
 		const lastId = await drainSseStream(redis, userWallet2.account.address);
@@ -657,7 +657,7 @@ describe("Learning Group Chats", () => {
 	});
 
 	it("triggers AI response when @ai is mentioned", async () => {
-		const { api1, api2, appState } = testGlobals;
+		const { api1, appState } = testGlobals;
 		const redis = appState.db.redis;
 
 		const lastId = await drainSseStream(redis, userWallet2.account.address);
