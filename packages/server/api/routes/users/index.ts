@@ -1,3 +1,4 @@
+import { MINUTE } from "@pantha/shared/constants";
 import { zEvmAddress } from "@pantha/shared/zod";
 import { and, eq, lte, or, sql, sum } from "drizzle-orm";
 import { createUpdateSchema } from "drizzle-zod";
@@ -5,10 +6,12 @@ import { Hono } from "hono";
 import z from "zod";
 import { ianaTimeZones } from "../../../data/timezones";
 import schema from "../../../lib/db/schema";
+import { userActions } from "../../../lib/db/schema/user";
 import { NotFoundError } from "../../../lib/errors";
 import { getContractVersionId } from "../../../lib/utils/contractVersion";
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
+import { rateLimit } from "../../middleware/rateLimit";
 import { validator } from "../../middleware/validator";
 import social from "./social";
 
@@ -27,6 +30,24 @@ export default new Hono()
 			const users = await db.searchUsersByUsername({ query: q });
 
 			return respond.ok(ctx, { users }, "Users search completed", 200);
+		},
+	)
+
+	.get(
+		"/action-chain",
+		authenticated,
+		rateLimit({ windowMs: 15 * MINUTE, maxRequests: 5 }),
+		async (ctx) => {
+			const { db } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+
+			const actionChain = await db
+				.select()
+				.from(userActions)
+				.where(eq(userActions.userWallet, userWallet))
+				.orderBy(userActions.seq);
+
+			return respond.ok(ctx, { actionChain }, "User action chain fetched", 200);
 		},
 	)
 
