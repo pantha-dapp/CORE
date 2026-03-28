@@ -355,6 +355,47 @@ describe("certification", () => {
 	});
 });
 
+describe("GET /users/:wallet/certificates", () => {
+	it("returns 401 for unauthenticated requests", async () => {
+		const { api0 } = testGlobals;
+		const res = await api0.users[":wallet"].certificates.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		expect(res.status).toBe(401);
+	});
+
+	it("returns an array of certificates for the authenticated user", async () => {
+		const { api1 } = testGlobals;
+		const res = await api1.users[":wallet"].certificates.$get({
+			param: { wallet: userWallet1.account.address },
+		});
+		expect(res.status).toBe(200);
+
+		const data = await res.json();
+		expect(data.success).toBe(true);
+		if (!data.success) throw new Error("Request failed");
+
+		expect(data.data.certificates).toBeArray();
+	});
+
+	it("each certificate entry has the expected shape", async () => {
+		const { api1 } = testGlobals;
+		const { certificates } = await unwrap(
+			api1.users[":wallet"].certificates.$get({
+				param: { wallet: userWallet1.account.address },
+			}),
+		);
+
+		for (const cert of certificates) {
+			expect(cert.id).toBeString();
+			expect(cert.userWallet).toBeString();
+			expect(cert.txnHash).toBeString();
+			expect(cert.dataUri).toBeString();
+			expect(cert.tokenId).toBeString();
+		}
+	});
+});
+
 async function awaitJob(
 	jobId: string,
 ): Promise<{ state: string; error?: string }> {
