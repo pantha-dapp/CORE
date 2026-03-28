@@ -5,6 +5,7 @@ import type { Db } from "../db";
 import { ForbiddenError, NotImplementedError } from "../errors";
 import chapterEnforcers from "./chapter";
 import chatEnforcers from "./chat";
+import courseEnforcers from "./course";
 import shopEnforcers from "./shop";
 import userEnforcers from "./user";
 
@@ -40,6 +41,9 @@ type PolicyBaseDefs = {
 	chapter: {
 		chapterId: string;
 	};
+	course: {
+		courseId: string;
+	};
 	user: {
 		userWallet: Address;
 	};
@@ -52,6 +56,7 @@ export interface PolicyResourceDefs {
 	"chapter.view": PolicyResource<"chapter">;
 
 	"course.generate": {};
+	"course.certification.request": PolicyResource<"course">;
 
 	"user.view": PolicyResource<"user">;
 	"user.follow": PolicyResource<"user">;
@@ -86,6 +91,7 @@ export class DefaultPolicyManager implements PolicyManager {
 			...userEnforcers,
 			...chapterEnforcers,
 			...chatEnforcers,
+			...courseEnforcers,
 			...shopEnforcers,
 		};
 	}
