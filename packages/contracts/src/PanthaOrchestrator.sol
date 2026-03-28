@@ -62,6 +62,20 @@ contract PanthaOrchestrator is ReentrancyGuard {
         server = newServer_;
     }
 
+    function commitActionChainRoot(
+        address user_,
+        bytes32 actionChainRoot_
+    ) external onlyServer {
+        certificationAuthority.commitActionChainRoot(user_, actionChainRoot_);
+    }
+
+    function certify(
+        address user_,
+        string calldata metadataURI_
+    ) external onlyServer {
+        certificationAuthority.certify(user_, metadataURI_);
+    }
+
     function distribute(uint256 amount_) external onlyServer {
         if (totalXp == 0) revert NoXpMinted();
 
