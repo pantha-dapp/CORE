@@ -2,6 +2,7 @@ import type { Ai } from "../../lib/ai";
 import type { Db } from "../../lib/db";
 import type { EventBus } from "../../lib/events/bus";
 import type { DefaultPolicyManager } from "../../lib/policies";
+import type { ObjectStorageService } from "../../lib/objectStorage/service";
 import type { PanthaContracts } from "@pantha/contracts";
 
 export type RouterEnv = {
