@@ -96,3 +96,13 @@ export const userActions = t.sqliteTable(
 			.on(table.userWallet, table.hash),
 	],
 );
+
+export const userCertificates = t.sqliteTable("user_certificates", {
+	id: tUuid("id").primaryKey(),
+	userWallet: tEvmAddress().notNull(),
+	txnHash: tHex("txn_hash").notNull(),
+	dataUri: t.text("data_uri").notNull(),
+	tokenId: t.text("token_id").notNull(),
+
+	...timestamps,
+});
