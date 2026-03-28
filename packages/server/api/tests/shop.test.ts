@@ -26,6 +26,13 @@ describe("Shop behavir", async () => {
 		expect(items.length).toBeGreaterThan(0);
 	});
 
+	it("shop items list includes CERTIFCT", async () => {
+		const items = await getItems();
+		const cert = items.find((i) => i.id === "CERTIFCT");
+		expect(cert).toBeDefined();
+		expect(cert?.priceHuman).toBeGreaterThan(0);
+	});
+
 	it("Can buy items", async () => {
 		const { api1, contracts1 } = testGlobals;
 		const items = await getItems();
@@ -83,5 +90,56 @@ describe("Shop behavir", async () => {
 		});
 
 		expect(res.status).toBe(409);
+	});
+
+	describe("CERTIFCT item", () => {
+		async function buyCertifct() {
+			const { api1, contracts1 } = testGlobals;
+			const items = await getItems();
+			const item = items.find((i) => i.id === "CERTIFCT");
+			if (!item) throw new Error("CERTIFCT item not found in shop");
+
+			const nonce = await contracts1.PanthaToken.read.nonces([
+				userWallet1.account.address,
+			]);
+			const deadline = Math.floor(Date.now() / 1000) + 3600;
+
+			const signature = await eip712signature(contracts1, "PanthaToken", {
+				types: {
+					Permit: [
+						{ name: "owner", type: "address" },
+						{ name: "spender", type: "address" },
+						{ name: "value", type: "uint256" },
+						{ name: "nonce", type: "uint256" },
+						{ name: "deadline", type: "uint256" },
+					],
+				},
+				primaryType: "Permit",
+				message: {
+					owner: userWallet1.account.address,
+					spender: contracts1.PanthaShop.address,
+					value: item.priceHuman * 10 ** 18,
+					nonce: Number(nonce),
+					deadline,
+				},
+			});
+
+			return api1.shop.buy.$post({
+				query: { itemId: "CERTIFCT", deadline: deadline.toString(), signature },
+			});
+		}
+
+		it("can purchase CERTIFCT when none is owned", async () => {
+			const res = await buyCertifct();
+			// Wait for the on-chain tx to settle so the purchase is recorded
+			await Bun.sleep(1000);
+			expect([200, 201]).toContain(res.status);
+		});
+
+		it("cannot purchase CERTIFCT again while one is unconsumed", async () => {
+			// The previous test already purchased one; try again without consuming it
+			const res = await buyCertifct();
+			expect(res.status).toBe(409);
+		});
 	});
 });
