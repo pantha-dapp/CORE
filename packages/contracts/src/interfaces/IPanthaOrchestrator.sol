@@ -19,6 +19,8 @@ interface IPanthaOrchestrator {
     event RewardsDistributed();
     event RewardClaimed();
     function cycleServer(address newServer_) external;
+    function commitActionChainRoot(address user_, bytes32 actionChainRoot_) external;
+    function certify(address user_, string calldata metadataURI_) external;
     function distribute(uint256 amount_) external;
     function claim() external;
     function mintXp(address recipient_, uint256 amount_, bytes8 reason_, bytes8 reasonResourceIdentifier_) external;
