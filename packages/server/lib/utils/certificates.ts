@@ -1,7 +1,7 @@
 import { createNFTMetadata, metadataToBuffer } from "@pantha/contracts";
 import { tryCatch } from "@pantha/shared";
 import { and, eq, sql } from "drizzle-orm";
-import type { Address } from "viem";
+import { type Address, parseEventLogs, zeroAddress } from "viem";
 import type { AppState } from "../../api/routes/types";
 import { computeMerkleRoot } from "./merkle";
 
@@ -145,6 +145,17 @@ export async function issueCertificate({
 		throw new Error(`Certification transaction failed: ${certifyHash}`);
 	}
 
+	const transferLogs = parseEventLogs({
+		abi: contracts.PanthaCertificate.abi,
+		logs: certifyReceipt.logs,
+		eventName: "Transfer",
+	});
+	const mintLog = transferLogs.find((log) => log.args.from === zeroAddress);
+	if (!mintLog) {
+		throw new Error("Transfer event not found in certify receipt");
+	}
+	const tokenId = mintLog.args.tokenId;
+
 	await db
 		.update(db.schema.userPurchases)
 		.set({ consumed: 1 })
@@ -155,4 +166,11 @@ export async function issueCertificate({
 				eq(db.schema.userPurchases.consumed, 0),
 			),
 		);
+
+	await db.insert(db.schema.userCertificates).values({
+		userWallet,
+		txnHash: certifyHash,
+		dataUri: metadataUri,
+		tokenId: tokenId.toString(),
+	});
 }
