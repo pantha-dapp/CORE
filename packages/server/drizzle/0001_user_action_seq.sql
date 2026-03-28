@@ -1,0 +1,1 @@
+ALTER TABLE `user_actions` ADD `seq` integer DEFAULT 0 NOT NULL;

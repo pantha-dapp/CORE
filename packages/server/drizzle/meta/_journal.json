@@ -8,6 +8,13 @@
 			"when": 1774536104645,
 			"tag": "0000_ambiguous_wrecking_crew",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1774682640515,
+			"tag": "0001_user_action_seq",
+			"breakpoints": true
 		}
 	]
 }
