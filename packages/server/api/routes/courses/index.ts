@@ -1,10 +1,11 @@
 import { tryCatch } from "@pantha/shared";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { UMAP } from "umap-js";
 import z from "zod";
 import { generateCanonicalCourseDescriptor } from "../../../lib/ai/tasks/utils";
 import { createVectorDb } from "../../../lib/db/vec/client";
+import { issueCertificate } from "../../../lib/utils/certificates";
 import {
 	prepareCourseChapters,
 	prepareCourseIcons,
@@ -12,6 +13,7 @@ import {
 import { respond } from "../../../lib/utils/respond";
 import { authenticated } from "../../middleware/auth";
 import { validator } from "../../middleware/validator";
+import { createJob } from "../jobs";
 import chapters from "./chapters";
 import gen from "./gen";
 
@@ -221,45 +223,50 @@ export default new Hono()
 		},
 	)
 
-	.get("/:id/chapters", authenticated, async (ctx) => {
-		const { db, ai } = ctx.var.appState;
+	.get(
+		"/:id/chapters",
+		authenticated,
+		validator("param", z.object({ id: z.uuid() })),
+		async (ctx) => {
+			const { db, ai } = ctx.var.appState;
 
-		const courseId = ctx.req.param("id");
-		const chapters = await db.courseChaptersById({ courseId });
+			const { id: courseId } = ctx.req.valid("param");
+			const chapters = await db.courseChaptersById({ courseId });
 
-		if (courseId && chapters.length === 0) {
-			prepareCourseChapters(ctx.req.param("id"), { db, ai });
-			return respond.err(
+			if (courseId && chapters.length === 0) {
+				prepareCourseChapters(courseId, { db, ai });
+				return respond.err(
+					ctx,
+					"Course chapters are being prepared. Please check back later.",
+					503,
+				);
+			}
+
+			const icons: Record<string, string> = {};
+			await Promise.race([
+				Promise.all(
+					chapters.map(async (chapter) => {
+						try {
+							const { url } = await ai.image.generateIconImage({
+								prompt: chapter.icon.prompt,
+							});
+							icons[chapter.id] = url;
+						} catch {
+							/* skip failed icons */
+						}
+					}),
+				),
+				Bun.sleep(5000),
+			]);
+
+			return respond.ok(
 				ctx,
-				"Course chapters are being prepared. Please check back later.",
-				503,
+				{ chapters, icons },
+				"Chapters fetched successfully.",
+				200,
 			);
-		}
-
-		const icons: Record<string, string> = {};
-		await Promise.race([
-			Promise.all(
-				chapters.map(async (chapter) => {
-					try {
-						const { url } = await ai.image.generateIconImage({
-							prompt: chapter.icon.prompt,
-						});
-						icons[chapter.id] = url;
-					} catch {
-						/* skip failed icons */
-					}
-				}),
-			),
-			Bun.sleep(5000),
-		]);
-
-		return respond.ok(
-			ctx,
-			{ chapters, icons },
-			"Chapters fetched successfully.",
-			200,
-		);
-	})
+		},
+	)
 
 	.get("/:id", authenticated, async (ctx) => {
 		const { db, ai } = ctx.var.appState;
@@ -288,4 +295,54 @@ export default new Hono()
 			"Course fetched successfully.",
 			200,
 		);
-	});
+	})
+
+	.post(
+		"/:id/certification",
+		validator("param", z.object({ id: z.uuid() })),
+		authenticated,
+		async (ctx) => {
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { id: courseId } = ctx.req.valid("param");
+
+			await policyManager.assertCan(
+				userWallet,
+				"course.certification.request",
+				{ courseId },
+			);
+
+			const [user, course, chapters] = await Promise.all([
+				db.userByWallet({ userWallet }),
+				db.courseById({ courseId }),
+				db.courseChaptersById({ courseId }),
+			]);
+			if (!course || !user || chapters.length === 0) {
+				return respond.err(ctx, "Course not found.", 404);
+			}
+
+			const [enrollment] = await db
+				.select()
+				.from(db.schema.userCourses)
+				.where(
+					and(
+						eq(db.schema.userCourses.userWallet, userWallet),
+						eq(db.schema.userCourses.courseId, courseId),
+					),
+				);
+			if (!enrollment) {
+				return respond.err(ctx, "Enrollment not found.", 404);
+			}
+
+			const jobId = createJob(db.redis, () =>
+				issueCertificate({ userWallet, courseId, appState: ctx.var.appState }),
+			);
+
+			return respond.ok(
+				ctx,
+				{ jobId },
+				"Certification issuance requested.",
+				201,
+			);
+		},
+	);
