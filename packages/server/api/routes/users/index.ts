@@ -150,6 +150,33 @@ export default new Hono()
 		},
 	)
 
+	.get(
+		"/:wallet/certificates",
+		authenticated,
+		validator("param", z.object({ wallet: zEvmAddress() })),
+		async (ctx) => {
+			const { db, policyManager } = ctx.var.appState;
+			const { userWallet } = ctx.var;
+			const { wallet } = ctx.req.valid("param");
+
+			await policyManager.assertCan(userWallet, "user.view", {
+				userWallet: wallet,
+			});
+
+			const certificates = await db
+				.select()
+				.from(db.schema.userCertificates)
+				.where(eq(db.schema.userCertificates.userWallet, wallet));
+
+			return respond.ok(
+				ctx,
+				{ certificates },
+				"User's certificates fetched successfully",
+				200,
+			);
+		},
+	)
+
 	.post(
 		"/follow",
 		authenticated,
