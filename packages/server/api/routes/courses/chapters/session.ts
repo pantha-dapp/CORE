@@ -258,7 +258,7 @@ export default new Hono<RouterEnv>()
 					correct: correct,
 				});
 
-				await db.registerAction({
+				db.registerAction({
 					userWallet,
 					label: "page:answer",
 					data: {
@@ -267,6 +267,9 @@ export default new Hono<RouterEnv>()
 						correct,
 					},
 					signature,
+				}).catch((err) => {
+					gameSessions.delete(userWallet);
+					console.error("Failed to log user action:", err);
 				});
 			}
 
