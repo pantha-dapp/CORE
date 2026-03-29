@@ -141,59 +141,53 @@ function UserSearchBar() {
 						</div>
 					) : (
 						<div className="max-h-80 overflow-y-auto">
-							{users.map(
-								(user: {
-									walletAddress: string;
-									username?: string;
-									name?: string;
-								}) => {
-									const isFollowing = followingSet.has(user.walletAddress);
-									const isSelf = wallet?.account.address === user.walletAddress;
+							{users.map((user) => {
+								const isFollowing = followingSet.has(user.walletAddress);
+								const isSelf = wallet?.account.address === user.walletAddress;
 
-									return (
-										<div
-											key={user.walletAddress}
-											className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition"
-										>
-											<div className="w-10 h-10 rounded-full bg-dark-accent flex items-center justify-center font-bold text-sm shrink-0 text-dark-bg">
-												{(user.username ?? "?").charAt(0).toUpperCase()}
-											</div>
-											<div className="flex-1 min-w-0">
-												<p className="font-semibold text-dark-text truncate font-montserrat">
-													{user.username}
-												</p>
-												{user.name && (
-													<p className="text-xs text-dark-muted truncate font-montserrat">
-														{user.name}
-													</p>
-												)}
-											</div>
-											{!isSelf &&
-												(isFollowing ? (
-													<button
-														type="button"
-														onClick={() =>
-															handleUnfollow(user.walletAddress as Address)
-														}
-														className="bg-dark-border hover:bg-dark-border/80 text-dark-text px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
-													>
-														Unfollow
-													</button>
-												) : (
-													<button
-														type="button"
-														onClick={() =>
-															handleFollow(user.walletAddress as Address)
-														}
-														className="bg-dark-accent hover:bg-dark-accent/90 text-dark-bg px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
-													>
-														Follow
-													</button>
-												))}
+								return (
+									<div
+										key={user.walletAddress}
+										className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition"
+									>
+										<div className="w-10 h-10 rounded-full bg-dark-accent flex items-center justify-center font-bold text-sm shrink-0 text-dark-bg">
+											{(user.username ?? "?").charAt(0).toUpperCase()}
 										</div>
-									);
-								},
-							)}
+										<div className="flex-1 min-w-0">
+											<p className="font-semibold text-dark-text truncate font-montserrat">
+												{user.username}
+											</p>
+											{user.name && (
+												<p className="text-xs text-dark-muted truncate font-montserrat">
+													{user.name}
+												</p>
+											)}
+										</div>
+										{!isSelf &&
+											(isFollowing ? (
+												<button
+													type="button"
+													onClick={() =>
+														handleUnfollow(user.walletAddress as Address)
+													}
+													className="bg-dark-border hover:bg-dark-border/80 text-dark-text px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
+												>
+													Unfollow
+												</button>
+											) : (
+												<button
+													type="button"
+													onClick={() =>
+														handleFollow(user.walletAddress as Address)
+													}
+													className="bg-dark-accent hover:bg-dark-accent/90 text-dark-bg px-4 py-2 rounded-xl text-sm font-semibold transition font-montserrat"
+												>
+													Follow
+												</button>
+											))}
+									</div>
+								);
+							})}
 						</div>
 					)}
 				</div>
