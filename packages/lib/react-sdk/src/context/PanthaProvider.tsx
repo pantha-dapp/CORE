@@ -1,4 +1,5 @@
 import { getContracts, type PanthaContracts } from "@pantha/contracts";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
 	type ReactNode,
@@ -12,7 +13,7 @@ import { flowTestnet } from "viem/chains";
 import type { UseWalletClientReturnType } from "wagmi";
 import { idb } from "../utils/idb";
 import ApiClient from "../utils/rpc";
-import { SseProvider } from "./SseProvider";
+import { SseProvider, useEvent } from "./SseProvider";
 
 type Wallet = UseWalletClientReturnType["data"];
 
@@ -81,9 +82,24 @@ export function PanthaProvider(props: PanthaConfig) {
 
 	return (
 		<PanthaContext.Provider value={value}>
-			<SseProvider>{children}</SseProvider>
+			<SseProvider>
+				<Wrapper>{children}</Wrapper>
+			</SseProvider>
 		</PanthaContext.Provider>
 	);
+}
+
+function Wrapper({ children }: { children: ReactNode }) {
+	const queryClient = useQueryClient();
+
+	useEvent("dm:new", ({ from }) => {
+		queryClient.invalidateQueries({
+			queryKey: ["personal-messages", from],
+			refetchType: "active",
+		});
+	});
+
+	return <>{children}</>;
 }
 
 export function usePanthaContext() {
