@@ -1,6 +1,7 @@
 export * from "./useFeedPost";
 export * from "./useFollowUser";
 export * from "./useFriendsLeaderboard";
+export * from "./useGetFeed";
 export * from "./useLearningGroupMembers";
 export * from "./useLearningGroupMessages";
 export * from "./usePersonalMessages";
