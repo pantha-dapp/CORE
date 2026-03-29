@@ -10,7 +10,8 @@ import { idb } from "../../utils/idb";
 import { useGetKeygenData } from "./useGetKeygenData";
 import { useSetKeygenData } from "./useSetKeygenData";
 
-const pubKeyCache = idb({ db: "pantha", store: "pubkey-cache" });
+// Use a dedicated DB so it doesn't conflict with the "pantha" auth DB
+const pubKeyCache = idb({ db: "pantha-pubkey-cache", store: "pubkey-cache" });
 
 export function useEncryptionService() {
 	const { wallet, contracts } = usePanthaContext();
@@ -19,10 +20,13 @@ export function useEncryptionService() {
 	const storedKeygenData = useGetKeygenData();
 
 	useEffect(() => {
-		if (storedKeygenData.data?.registered === false) {
+		if (
+			storedKeygenData.data?.registered === false &&
+			!setKeygenData.isPending
+		) {
 			setKeygenData.mutate();
 		}
-	}, [storedKeygenData.data]);
+	}, [storedKeygenData.data, setKeygenData.isPending]);
 
 	async function getPublicKey(walletAddress: Address) {
 		const cached = await pubKeyCache.get<`0x${string}`>(walletAddress);
@@ -36,7 +40,9 @@ export function useEncryptionService() {
 			walletAddress,
 		]);
 		if (!isRegistered) {
-			throw new Error("recipient public key not found");
+			throw new Error(
+				"This user hasn't set up their encryption keys yet and cannot receive messages.",
+			);
 		}
 
 		const keygenData = await contracts.PanthaKeyStore.read.keygenData([
@@ -96,8 +102,35 @@ export function useEncryptionService() {
 		return new TextDecoder().decode(plaintext);
 	}
 
+	// True only while actively fetching from the chain
+	const queryFetching = storedKeygenData.fetchStatus === "fetching";
+	// True while the registration mutation is in-flight, or query returned
+	// not-registered and mutation hasn't started/failed yet
+	const registrationInFlight =
+		setKeygenData.isPending ||
+		(storedKeygenData.data?.registered === false &&
+			!setKeygenData.isPending &&
+			!setKeygenData.isError);
+
+	const queryErrorMsg = storedKeygenData.isError
+		? ((storedKeygenData.error as Error)?.message ??
+			"Failed to check encryption key status")
+		: null;
+	const mutationErrorMsg = setKeygenData.isError
+		? ((setKeygenData.error as Error)?.message ?? "Keygen registration failed")
+		: null;
+
 	return {
 		encrypt,
 		decrypt,
+		/** true once the user's keypair is registered on-chain and ready */
+		isKeygenReady: storedKeygenData.data?.registered === true,
+		/**
+		 * true ONLY while actively fetching/registering — NOT true when disabled
+		 * (no wallet/contracts) or when in error state
+		 */
+		isKeygenPending: queryFetching || registrationInFlight,
+		/** non-null if either the query or the mutation errored */
+		keygenError: queryErrorMsg ?? mutationErrorMsg,
 	};
 }
