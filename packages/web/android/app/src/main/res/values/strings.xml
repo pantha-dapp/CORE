@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pantha</string>
+    <string name="title_activity_main">Pantha</string>
+    <string name="package_name">com.hetairoi.pantha</string>
+    <string name="custom_url_scheme">com.hetairoi.pantha</string>
+</resources>
