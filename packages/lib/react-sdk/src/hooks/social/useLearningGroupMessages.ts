@@ -22,7 +22,7 @@ export function useLearningGroupMessages(chatId?: number) {
 				":chatId"
 			].messages.$get({
 				param: { chatId: String(chatId) },
-				query: { offset },
+				query: { offset: String(offset) },
 			});
 			const result = await response.json();
 
