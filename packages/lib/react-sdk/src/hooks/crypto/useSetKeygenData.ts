@@ -57,6 +57,18 @@ export function useSetKeygenData() {
 				throw new Error("Failed to set keygen data");
 			}
 
+			if (!response.data.txHash || response.data.alreadyRegistered) {
+				// Data already registered on-chain — refresh from contract
+				queryclient.invalidateQueries({
+					queryKey: [
+						"keygenData",
+						contracts.PanthaKeyStore.address,
+						wallet.account.address,
+					],
+				});
+				return response.data;
+			}
+
 			const receipt = await contracts.$publicClient.waitForTransactionReceipt({
 				hash: response.data.txHash,
 			});
