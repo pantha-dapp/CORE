@@ -1,3 +1,4 @@
+import { getEffectiveStreak } from "@pantha/shared";
 import { HOUR } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
@@ -32,5 +33,24 @@ export function useFriendProfileView(args: { walletAddress?: Address }) {
 		},
 		staleTime: 1 * HOUR,
 		enabled: !!wallet?.account.address && !!walletAddress,
+		select: (data) => ({
+			...data,
+			profile: {
+				...data.profile,
+				streak: data.profile.streak
+					? {
+							...data.profile.streak,
+							currentStreak: getEffectiveStreak(data.profile.streak),
+						}
+					: data.profile.streak,
+				friends: data.profile.friends?.map((f) => ({
+					...f,
+					streak: {
+						...f.streak,
+						currentStreak: getEffectiveStreak(f.streak),
+					},
+				})),
+			},
+		}),
 	});
 }
