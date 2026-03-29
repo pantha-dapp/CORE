@@ -1,6 +1,6 @@
 import { zEvmAddress } from "@pantha/shared/zod";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import type { Address } from "viem";
 import { hexToBytes } from "viem";
 import z from "zod";
@@ -14,7 +14,6 @@ export function usePersonalMessages(participantWallet?: Address) {
 	const { wallet, api } = usePanthaContext();
 	const { decrypt } = useEncryptionService();
 	const queryClient = useQueryClient();
-	const latestMessageIdRef = useRef<number | null>(null);
 
 	const enabled = !!wallet && !!participantWallet;
 
@@ -24,17 +23,13 @@ export function usePersonalMessages(participantWallet?: Address) {
 		enabled,
 		queryFn: async ({ pageParam: offset }) => {
 			if (!enabled) {
-				throw new Error(" not connected.");
+				throw new Error("not connected.");
 			}
 
 			const response = await api.rpc.users.social.dm.$get({
 				query: {
 					participantWallet,
 					offset,
-					...(offset === 0 &&
-						latestMessageIdRef.current !== null && {
-							after: latestMessageIdRef.current,
-						}),
 				},
 			});
 			const result = await response.json();
@@ -53,14 +48,6 @@ export function usePersonalMessages(participantWallet?: Address) {
 				}),
 			);
 
-			// Track the latest message ID from first page for next refetch
-			if (offset === 0 && messages.length > 0) {
-				const firstMsg = messages[0] as { id?: number };
-				if (firstMsg.id) {
-					latestMessageIdRef.current = firstMsg.id;
-				}
-			}
-
 			return { messages, offset };
 		},
 		getNextPageParam: (lastPage) => {
@@ -69,6 +56,7 @@ export function usePersonalMessages(participantWallet?: Address) {
 		},
 	});
 
+	// SSE: immediately refetch when a new DM arrives from the conversation partner
 	useEvent(
 		"dm:new",
 		useCallback(
@@ -83,7 +71,6 @@ export function usePersonalMessages(participantWallet?: Address) {
 				if (
 					result.data.from.toLowerCase() === participantWallet.toLowerCase()
 				) {
-					// Refetch only the first page with 'after' param to get only new messages
 					queryClient.invalidateQueries({
 						queryKey: ["personal-messages", participantWallet],
 						refetchType: "active",
