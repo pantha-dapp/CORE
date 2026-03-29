@@ -56,15 +56,19 @@ export async function hkdfExtractExpand(
 	length: number,
 ): Promise<Uint8Array> {
 	const subtle = crypto.subtle;
-	const hkdfKey = await subtle.importKey("raw", source, "HKDF", false, [
-		"deriveBits",
-	]);
+	const hkdfKey = await subtle.importKey(
+		"raw",
+		source as unknown as BufferSource,
+		"HKDF",
+		false,
+		["deriveBits"],
+	);
 	const derivedBits = await subtle.deriveBits(
 		{
 			name: "HKDF",
 			hash: "SHA-256",
-			salt: salt ?? new Uint8Array([]),
-			info: info ?? new Uint8Array([]),
+			salt: (salt ?? new Uint8Array([])) as unknown as BufferSource,
+			info: (info ?? new Uint8Array([])) as unknown as BufferSource,
 		},
 		hkdfKey,
 		length * 8,
