@@ -1,4 +1,5 @@
 export * from "./useFriendProfileView";
+export * from "./useRequestCertificate";
 export * from "./useSearchUsers";
 export * from "./useSelfActionHash";
 export * from "./useSelfFriends";
