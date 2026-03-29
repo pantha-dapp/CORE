@@ -33,8 +33,8 @@ export function useGetKeygenData() {
 			//@ts-expect-error - types are wrong
 			const keygen = await walletKeyGen(wallet, {
 				salts: {
-					challenge: keygenData[0],
-					seed: keygenData[1],
+					challenge: keygenData[1], // challengeSalt (bytes20) — index 1 in struct
+					seed: keygenData[0], // seedSalt (bytes32) — index 0 in struct
 				},
 			});
 
