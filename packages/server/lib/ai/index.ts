@@ -27,7 +27,7 @@ export function createAi(args: {
 }) {
 	const { aiClient, vectorDbClient, objectStorage } = args;
 	const llmCache = createAiCache(vectorDbClient);
-	const imageProcessing: Record<string, Promise<{ url: string }>> = {};
+	const imageProcessing: Partial<Record<string, Promise<{ url: string }>>> = {};
 	let _activeImageCount = 0;
 	const _imageQueue: Array<() => void> = [];
 	function acquireImageSlot(): Promise<void> {
