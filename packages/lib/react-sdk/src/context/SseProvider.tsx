@@ -48,20 +48,24 @@ function parseSseEvent(raw: string) {
 }
 
 export function SseProvider({ children }: { children: ReactNode }) {
-	const { api } = usePanthaContext();
+	const { api, ready } = usePanthaContext();
 	const handlers = useRef<Map<string, Set<(data: unknown) => void>>>(new Map());
 
 	useEffect(() => {
 		if (!api.jwtExists) return;
 
+		const SSE_CURSOR_KEY = "pantha:sse:lastEventId";
 		let alive = true;
-		let lastEventId = "";
+		let lastEventId = localStorage.getItem(SSE_CURSOR_KEY) ?? "";
 		const ctrl = new AbortController();
 
 		async function connect() {
 			while (alive) {
 				try {
-					const url = api.rpc.sse.events.$url();
+					const base = api.baseUrl
+						? new URL(api.baseUrl, window.location.origin).href
+						: window.location.origin;
+					const url = new URL("/api/sse/events", base);
 					const headers: Record<string, string> = {
 						Accept: "text/event-stream",
 						...api.authHeaders,
@@ -93,8 +97,13 @@ export function SseProvider({ children }: { children: ReactNode }) {
 
 						for (const part of parts) {
 							const evt = parseSseEvent(part);
+							console.log("Received SSE event:", evt);
+
 							if (!evt || evt.event === "ping") continue;
-							if (evt.id) lastEventId = evt.id;
+							if (evt.id) {
+								lastEventId = evt.id;
+								localStorage.setItem(SSE_CURSOR_KEY, lastEventId);
+							}
 
 							const set = handlers.current.get(evt.event);
 							if (set) {
@@ -103,9 +112,9 @@ export function SseProvider({ children }: { children: ReactNode }) {
 							}
 						}
 					}
-				} catch {
+				} catch (err) {
 					if (!alive) return;
-					console.warn("SSE disconnected, reconnecting...");
+					console.warn("SSE disconnected, reconnecting...", err);
 					await new Promise((r) => setTimeout(r, 3000));
 				}
 			}
@@ -117,7 +126,7 @@ export function SseProvider({ children }: { children: ReactNode }) {
 			alive = false;
 			ctrl.abort();
 		};
-	}, [api]);
+	}, [api, ready]);
 
 	const subscribe = useCallback(
 		<T extends EventType>(type: T, handler: EventHandler<T>) => {
