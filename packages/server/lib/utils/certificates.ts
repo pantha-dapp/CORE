@@ -87,6 +87,9 @@ export async function issueCertificate({
 	});
 
 	const hashchainPathProps = [userWallet, `${Date.now()}`];
+
+	console.log(JSON.stringify(actionChain));
+
 	const hashchainUpload = objectStorage.upload({
 		path: ["action-hash-chain", ...hashchainPathProps],
 		data: Buffer.from(JSON.stringify(actionChain)),
