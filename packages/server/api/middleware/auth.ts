@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
-import { type Address, isAddress } from "viem";
+import { type Address, getAddress, isAddress } from "viem";
 import { verifyJwt } from "../../lib/utils/jwt";
 import { respond } from "../../lib/utils/respond";
 import type { RouterEnv } from "../routes/types";
@@ -41,7 +41,7 @@ export const authenticated = createMiddleware<{
 	);
 	if (cachedSessionWallet) {
 		if (isAddress(cachedSessionWallet)) {
-			ctx.set("userWallet", cachedSessionWallet);
+			ctx.set("userWallet", getAddress(cachedSessionWallet));
 		} else {
 			await cache.del(`user_session:wallet:${payload.sub}`);
 			return respond.err(ctx, "Invalid or expired session", 401);
@@ -57,7 +57,7 @@ export const authenticated = createMiddleware<{
 			return respond.err(ctx, "Session not found", 401);
 		}
 
-		ctx.set("userWallet", session.userWallet);
+		ctx.set("userWallet", getAddress(session.userWallet));
 
 		const ttl = payload.exp - Math.floor(Date.now() / 1000);
 
