@@ -50,6 +50,10 @@ export default class ApiClient {
 		return this._client.api;
 	}
 
+	get baseUrl() {
+		return this._baseUrl;
+	}
+
 	get authHeaders() {
 		return { Authorization: this._authHeader.Authorization };
 	}
