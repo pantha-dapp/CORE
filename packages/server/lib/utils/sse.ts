@@ -69,6 +69,10 @@ async function readUserEvents(redis: RedisClient, opts: ReadOptions) {
 			: ["COUNT", count, "STREAMS", key, opts.lastId ?? "0"];
 
 	const res = await redis.send("XREAD", args);
+	console.log(
+		`[SSE] XREAD key=${key} lastId=${opts.lastId ?? "$"} raw=`,
+		JSON.stringify(res),
+	);
 
 	if (!res) return [];
 
