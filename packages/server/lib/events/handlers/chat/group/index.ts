@@ -22,15 +22,10 @@ export default function (appState: AppState) {
 			.map((m) => m.walletAddress)
 			.filter((w) => w !== senderWallet);
 
-		await sse.emitToUsers(
-			db.redis,
-			recipientWallets,
-			"learning-group:message",
-			{
-				learningGroupChatId: chatId,
-				from: senderWallet,
-			},
-		);
+		sse.emitToUsers(recipientWallets, "learning-group:message", {
+			learningGroupChatId: chatId,
+			from: senderWallet,
+		});
 	});
 
 	event.on("chat:group:message", async ({ chatId, senderWallet, message }) => {
@@ -50,7 +45,7 @@ export default function (appState: AppState) {
 			.filter((m) => taggedPeople.includes(m.username))
 			.map((m) => m.walletAddress);
 
-		await sse.emitToUsers(db.redis, taggedWallets, "learning-group:tag", {
+		sse.emitToUsers(taggedWallets, "learning-group:tag", {
 			learningGroupChatId: chatId,
 			from: senderWallet,
 		});
@@ -121,8 +116,7 @@ export default function (appState: AppState) {
 				return;
 			}
 
-			await sse.emitToUsers(
-				db.redis,
+			sse.emitToUsers(
 				members.data
 					.map((m) => m.walletAddress)
 					.filter((w) => w !== senderWallet),
