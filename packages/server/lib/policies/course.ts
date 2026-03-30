@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { NotFoundError, UnauthorizedError } from "../errors";
+import { ForbiddenError, NotFoundError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"course"> = {
@@ -20,11 +20,11 @@ const enforcers: Enforcers<"course"> = {
 		const enrollment = enrollments.find((e) => e.courseId === courseId);
 
 		if (!enrollment) {
-			throw new UnauthorizedError("You are not enrolled in this course.");
+			throw new ForbiddenError("You are not enrolled in this course.");
 		}
 
 		if (enrollment.progress <= 10) {
-			throw new UnauthorizedError(
+			throw new ForbiddenError(
 				"You have not made enough progress in the course.",
 			);
 		}
@@ -40,9 +40,9 @@ const enforcers: Enforcers<"course"> = {
 				),
 			)
 			.get();
-
+		console.log(certPurchase);
 		if (!certPurchase) {
-			throw new UnauthorizedError(
+			throw new ForbiddenError(
 				"You need to purchase a Course Certificate from the shop before requesting certification.",
 			);
 		}
