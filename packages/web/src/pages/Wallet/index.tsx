@@ -1,7 +1,8 @@
 import { usePanthaContext } from "@pantha/react";
-import { useUserInfo } from "@pantha/react/hooks";
+import { useUserCertificates, useUserInfo } from "@pantha/react/hooks";
 import { useState } from "react";
 import PageHeaderWithStats from "../../shared/components/PageHeaderWithStats";
+import CertificateCard from "./CertificateCard";
 import ClaimModal from "./ClaimModal";
 
 export default function Wallet() {
@@ -16,6 +17,12 @@ export default function Wallet() {
 
 	// Get XP balance
 	const xpBalance = userInfo?.user?.xpCount ?? 0;
+
+	// Fetch certificates
+	const { data: certsData, isLoading: certsLoading } = useUserCertificates({
+		walletAddress,
+	});
+	const certificates = certsData?.certificates ?? [];
 
 	return (
 		<div className="dark min-h-screen bg-linear-to-br from-dark-bg via-dark-surface/50 to-dark-bg">
@@ -83,6 +90,64 @@ export default function Wallet() {
 						</div>
 					</div>
 				</div>
+			</div>
+
+			{/* Certificates Section */}
+			<div className="mt-8 rounded-2xl bg-dark-card/95 backdrop-blur-xl border border-dark-border shadow-xl p-6 sm:p-8">
+				<div className="flex items-center gap-3 mb-6">
+					<span className="text-2xl">🎓</span>
+					<h3 className="text-xl font-bold text-dark-text font-titillium">
+						My Certificates
+					</h3>
+				</div>
+
+				<div className="mb-4 rounded-xl border border-dark-border bg-dark-surface/40 p-4 text-sm text-dark-muted font-montserrat">
+					<p className="font-semibold text-dark-text mb-1">
+						How to earn a certificate
+					</p>
+					<ul className="list-disc list-inside space-y-1">
+						<li>
+							Complete{" "}
+							<span className="text-dark-accent font-semibold">
+								more than 10 chapters
+							</span>{" "}
+							in a course
+						</li>
+						<li>
+							Purchase a{" "}
+							<span className="text-dark-accent font-semibold">
+								Course Certificate
+							</span>{" "}
+							from the Shop
+						</li>
+						<li>
+							Request certification from the course page — the more chapters you
+							finish, the better the certificate grade
+						</li>
+					</ul>
+				</div>
+
+				{certsLoading ? (
+					<div className="flex items-center justify-center py-10">
+						<div className="w-6 h-6 border-2 border-dark-accent border-t-transparent rounded-full animate-spin" />
+					</div>
+				) : certificates.length === 0 ? (
+					<div className="text-center py-10 text-dark-muted font-montserrat">
+						<p className="text-4xl mb-3">📜</p>
+						<p className="text-sm">No certificates yet. Keep learning!</p>
+					</div>
+				) : (
+					<div className="grid gap-4 sm:grid-cols-2">
+						{certificates.map((cert) => (
+							<CertificateCard
+								key={cert.tokenId}
+								tokenId={cert.tokenId}
+								txnHash={cert.txnHash}
+								dataUri={cert.dataUri}
+							/>
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Claim Modal */}
