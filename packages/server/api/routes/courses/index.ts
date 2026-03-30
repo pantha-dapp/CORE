@@ -280,7 +280,9 @@ export default new Hono()
 		}
 
 		const iconResult = await Promise.race([
-			ai.image.generateIconImage({ prompt: course.icon.prompt }),
+			ai.image
+				.generateIconImage({ prompt: course.icon.prompt })
+				.catch(() => null),
 			Bun.sleep(5000).then(() => null),
 		]);
 
