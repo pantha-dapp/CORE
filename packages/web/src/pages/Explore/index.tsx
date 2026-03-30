@@ -5,7 +5,7 @@ import {
 	useEnrollForCourse,
 	useUserCourses,
 } from "@pantha/react/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PageHeader from "../../shared/components/PageHeader";
 
 interface CourseDetails {
@@ -24,8 +24,6 @@ export default function Explore() {
 		id: "explore",
 	});
 
-	console.log("Course Exploration Data:", courseExplorationQuery.data);
-
 	const enrollForCourseMutation = useEnrollForCourse();
 	const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -33,21 +31,96 @@ export default function Explore() {
 		id: selectedCourseId || undefined,
 	});
 
-	const [courseDetailsMap, setCourseDetailsMap] = useState<CourseDetails>({});
+	/* 🌌 PARTICLE SYSTEM */
+	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		const particles: {
+			x: number;
+			y: number;
+			vx: number;
+			vy: number;
+			radius: number;
+		}[] = [];
+		const numParticles = 40;
+
+		const resize = () => {
+			canvas.width = canvas.offsetWidth;
+			canvas.height = canvas.offsetHeight;
+		};
+
+		resize();
+		window.addEventListener("resize", resize);
+
+		for (let i = 0; i < numParticles; i++) {
+			particles.push({
+				x: Math.random() * canvas.width,
+				y: Math.random() * canvas.height,
+				vx: (Math.random() - 0.5) * 0.5,
+				vy: (Math.random() - 0.5) * 0.5,
+				radius: Math.random() * 2 + 1,
+			});
+		}
+
+		const draw = () => {
+			if (!ctx) return;
+
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			particles.forEach((p) => {
+				p.x += p.vx;
+				p.y += p.vy;
+
+				if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+				if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(150,150,150,0.4)";
+				ctx.fill();
+			});
+
+			for (let i = 0; i < particles.length; i++) {
+				for (let j = i + 1; j < particles.length; j++) {
+					const dx = particles[i].x - particles[j].x;
+					const dy = particles[i].y - particles[j].y;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+
+					if (dist < 100) {
+						ctx.beginPath();
+						ctx.moveTo(particles[i].x, particles[i].y);
+						ctx.lineTo(particles[j].x, particles[j].y);
+						ctx.strokeStyle = "rgba(150,150,150,0.1)";
+						ctx.stroke();
+					}
+				}
+			}
+
+			requestAnimationFrame(draw);
+		};
+
+		draw();
+
+		return () => {
+			window.removeEventListener("resize", resize);
+		};
+	}, []);
 
 	useEffect(() => {
 		const detailsMap: CourseDetails = {};
 
-		// For suggestions, they already have title property
 		if (courseExplorationQuery.data?.suggestions) {
 			courseExplorationQuery.data.suggestions.forEach((c) => {
 				detailsMap[c.id] = c.title || "Untitled";
 			});
 		}
 
-		setCourseDetailsMap(detailsMap);
-
-		// Fetch titles for enrolled courses if needed
 		if (
 			userCoursesQuery.data?.courses &&
 			userCoursesQuery.data.courses.length > 0
@@ -66,8 +139,6 @@ export default function Explore() {
 						console.error(`Failed to fetch course ${course.courseId}:`, error);
 					}
 				}
-
-				setCourseDetailsMap(updatedMap);
 			};
 
 			fetchEnrolledTitles();
@@ -76,6 +147,10 @@ export default function Explore() {
 		userCoursesQuery.data?.courses,
 		courseExplorationQuery.data?.suggestions,
 	]);
+
+	const enrolledCourseIds = new Set(
+		userCoursesQuery.data?.courses?.map((c) => c.courseId) ?? [],
+	);
 
 	const handleEnroll = async (courseId: string) => {
 		try {
@@ -102,55 +177,35 @@ export default function Explore() {
 						</p>
 					</div>
 				) : (
-					<div className="space-y-8">
-						{/* User's Enrolled Courses */}
-						{userCoursesQuery.data?.courses &&
-							userCoursesQuery.data.courses.length > 0 && (
-								<div className="space-y-4">
-									<h2 className="text-2xl font-bold text-dark-text font-titillium">
-										Your Courses
-									</h2>
-									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-										{userCoursesQuery.data.courses.map((course) => (
-											<button
-												key={course.courseId}
-												type="button"
-												className="rounded-xl bg-dark-surface border border-dark-border/50 p-4 hover:border-dark-accent transition-colors text-left"
-												onClick={() => setSelectedCourseId(course.courseId)}
-											>
-												<h3 className="font-semibold text-dark-text font-titillium truncate">
-													{courseDetailsMap[course.courseId] || "Loading..."}
-												</h3>
-												<p className="text-sm text-dark-muted mt-2">
-													Progress: {course.progress}%
-												</p>
-											</button>
-										))}
-									</div>
-								</div>
-							)}
+					<div className="space-y-10">
+						{/* 🔥 HORIZONTAL COURSES */}
+						{courseExplorationQuery.data?.suggestions && (
+							<div className="space-y-4">
+								<h2 className="text-2xl font-bold font-titillium">
+									Recommended Courses
+								</h2>
 
-						{/* Similar/Suggested Courses */}
-						{courseExplorationQuery.data?.suggestions &&
-							courseExplorationQuery.data.suggestions.length > 0 && (
-								<div className="space-y-4">
-									<h2 className="text-2xl font-bold text-dark-text font-titillium">
-										Recommended Courses
-									</h2>
-									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-										{courseExplorationQuery.data.suggestions.map((course) => (
-											<button
-												key={course.id}
-												type="button"
-												className="rounded-xl bg-dark-surface border border-dark-border/50 p-4 hover:border-dark-accent transition-colors text-left"
-												onClick={() => setSelectedCourseId(course.id)}
-											>
-												<h3 className="font-semibold text-dark-text font-titillium mb-2 truncate">
-													{course.title || "Untitled"}
-												</h3>
-												<p className="text-sm text-dark-muted text-xs line-clamp-2">
-													{course.description || "No description"}
-												</p>
+								<div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+									{courseExplorationQuery.data.suggestions.map((course) => (
+										<button
+											type="button"
+											key={course.id}
+											className="min-w-[280px] max-w-[300px] flex-shrink-0 rounded-2xl bg-dark-surface border border-dark-border/50 p-5 hover:border-dark-accent transition-all duration-300 hover:scale-[1.02]"
+											onClick={() => setSelectedCourseId(course.id)}
+										>
+											<h3 className="font-semibold mb-2 truncate text-lg">
+												{course.title || "Untitled"}
+											</h3>
+
+											<p className="text-dark-muted text-sm line-clamp-3 mb-3">
+												{course.description || "No description"}
+											</p>
+
+											{enrolledCourseIds.has(course.id) ? (
+												<span className="w-full block rounded-lg bg-dark-border/50 px-3 py-2 text-sm font-semibold text-dark-muted text-center">
+													Enrolled
+												</span>
+											) : (
 												<button
 													type="button"
 													onClick={(e) => {
@@ -158,80 +213,117 @@ export default function Explore() {
 														handleEnroll(course.id);
 													}}
 													disabled={enrollForCourseMutation.isPending}
-													className="mt-3 w-full rounded-lg bg-dark-accent px-3 py-2 text-sm font-semibold text-dark-bg hover:opacity-90 disabled:opacity-50 transition-opacity"
+													className="w-full rounded-lg bg-dark-accent px-3 py-2 text-sm font-semibold text-dark-bg disabled:opacity-50"
 												>
 													{enrollForCourseMutation.isPending
 														? "Enrolling..."
 														: "Enroll"}
 												</button>
-											</button>
-										))}
-									</div>
+											)}
+										</button>
+									))}
 								</div>
-							)}
-						{/* Course Details Modal */}
+							</div>
+						)}
+
+						{/* 🌌 AI GRAPH + PARTICLES */}
+						<div className="relative h-[350px] rounded-2xl bg-dark-surface border border-dark-border/50 overflow-hidden flex items-center justify-center">
+							{/* 🌌 PARTICLES */}
+							<canvas
+								ref={canvasRef}
+								className="absolute inset-0 w-full h-full"
+							/>
+
+							{/* CENTER NODE */}
+							<div className="absolute z-10 w-32 h-16 rounded-xl bg-dark-accent text-dark-bg flex items-center justify-center text-sm font-semibold animate-pulse shadow-lg">
+								Explore
+							</div>
+
+							{/* RADIAL NODES */}
+							<div className="absolute inset-0 flex items-center justify-center z-10">
+								{/* TOP */}
+								<div className="absolute -translate-y-[130px] w-28 h-14 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs animate-float">
+									Web Dev
+								</div>
+
+								{/* RIGHT */}
+								<div className="absolute translate-x-[180px] w-28 h-14 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs animate-float delay-200">
+									AI/ML
+								</div>
+
+								{/* BOTTOM */}
+								<div className="absolute translate-y-[130px] w-28 h-14 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs animate-float delay-300">
+									Data
+								</div>
+
+								{/* LEFT */}
+								<div className="absolute -translate-x-[180px] w-28 h-14 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs animate-float delay-500">
+									Blockchain
+								</div>
+							</div>
+
+							{/* 🔗 CLEAN CENTER CONNECTION LINES */}
+							<svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+								<title>Connection lines</title>
+								{/* TOP */}
+								<line
+									className="animate-line"
+									x1="50%"
+									y1="50%"
+									x2="50%"
+									y2="15%"
+									stroke="gray"
+									strokeWidth="1"
+								/>
+
+								{/* RIGHT */}
+								<line
+									className="animate-line delay-200"
+									x1="50%"
+									y1="50%"
+									x2="85%"
+									y2="50%"
+									stroke="gray"
+									strokeWidth="1"
+								/>
+
+								{/* BOTTOM */}
+								<line
+									className="animate-line delay-300"
+									x1="50%"
+									y1="50%"
+									x2="50%"
+									y2="85%"
+									stroke="gray"
+									strokeWidth="1"
+								/>
+
+								{/* LEFT */}
+								<line
+									className="animate-line delay-500"
+									x1="50%"
+									y1="50%"
+									x2="15%"
+									y2="50%"
+									stroke="gray"
+									strokeWidth="1"
+								/>
+							</svg>
+						</div>
+
+						{/* MODAL */}
 						{selectedCourseId && selectedCourseQuery.data && (
 							<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-								<div className="bg-dark-surface rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-dark-border">
-									<div className="flex items-start justify-between mb-4">
-										<h2 className="text-2xl font-bold text-dark-text font-titillium">
-											{selectedCourseQuery.data.title}
-										</h2>
-										<button
-											type="button"
-											onClick={() => setSelectedCourseId(null)}
-											className="text-dark-muted hover:text-dark-text"
-										>
-											✕
-										</button>
-									</div>
-
-									<div className="space-y-4">
-										<div>
-											<h3 className="font-semibold text-dark-text mb-2">
-												Description
-											</h3>
-											<p className="text-dark-muted text-sm leading-relaxed">
-												{selectedCourseQuery.data.description}
-											</p>
-										</div>
-
-										<button
-											type="button"
-											onClick={() => handleEnroll(selectedCourseId)}
-											disabled={enrollForCourseMutation.isPending}
-											className="w-full mt-6 rounded-lg bg-dark-accent px-4 py-3 font-semibold text-dark-bg hover:opacity-90 disabled:opacity-50 transition-opacity"
-										>
-											{enrollForCourseMutation.isPending
-												? "Enrolling..."
-												: "Enroll in Course"}
-										</button>
-									</div>
-								</div>
-							</div>
-						)}
-
-						{/* Loading States */}
-						{(userCoursesQuery.isLoading ||
-							courseExplorationQuery.isLoading) && (
-							<div className="text-center py-12">
-								<p className="text-dark-muted">Loading courses...</p>
-							</div>
-						)}
-
-						{/* Empty State */}
-						{!userCoursesQuery.isLoading &&
-							!courseExplorationQuery.isLoading &&
-							(!userCoursesQuery.data?.courses ||
-								userCoursesQuery.data.courses.length === 0) &&
-							(!courseExplorationQuery.data?.suggestions ||
-								courseExplorationQuery.data.suggestions.length === 0) && (
-								<div className="text-center py-16">
-									<p className="text-dark-muted text-lg font-montserrat">
-										No courses available yet. Start by enrolling in a course!
+								<div className="bg-dark-surface rounded-xl p-6 max-w-2xl w-full mx-4">
+									<h2 className="text-2xl font-bold mb-4">
+										{selectedCourseQuery.data.title}
+									</h2>
+									<p className="text-dark-muted">
+										{selectedCourseQuery.data.description}
 									</p>
 								</div>
-							)}
+							</div>
+						)}
 					</div>
 				)}
 			</div>
