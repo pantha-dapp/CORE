@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { parseResponse } from "hono/client";
 import { usePanthaContext } from "../../context/PanthaProvider";
 
 export type FeedPost = {
@@ -24,11 +25,9 @@ export function useGetFeed() {
 		enabled: !!wallet,
 		staleTime: 30_000,
 		queryFn: async () => {
-			const response = await api.rpc.users.social.feed.$get();
-			const result = await response.json();
-			if (!result.success)
-				throw new Error(result.error ?? "Failed to fetch feed");
-			return result.data.posts as FeedPost[];
+			const response = await parseResponse(api.rpc.users.social.feed.$get());
+			if (!response.success) throw new Error("Failed to fetch feed");
+			return response.data.posts as FeedPost[];
 		},
 	});
 }

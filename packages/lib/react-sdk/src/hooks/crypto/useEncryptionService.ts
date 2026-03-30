@@ -10,8 +10,7 @@ import { idb } from "../../utils/idb";
 import { useGetKeygenData } from "./useGetKeygenData";
 import { useSetKeygenData } from "./useSetKeygenData";
 
-// Use a dedicated DB so it doesn't conflict with the "pantha" auth DB
-const pubKeyCache = idb({ db: "pantha-pubkey-cache", store: "pubkey-cache" });
+const pubKeyCache = idb({ db: "pantha", store: "pubkey-cache" });
 
 export function useEncryptionService() {
 	const { wallet, contracts } = usePanthaContext();
