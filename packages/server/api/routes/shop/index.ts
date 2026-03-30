@@ -83,22 +83,30 @@ export default new Hono<RouterEnv>()
 				identifierB8(item.id),
 			]);
 
+			// Insert optimistically so the purchase is available immediately.
+			// If the transaction reverts on-chain, the record is deleted.
+			const insertion = await tryCatch(
+				db.insert(db.schema.userPurchases).values({
+					itemId,
+					txHash,
+					userWallet: ctx.var.userWallet,
+					contractVersion: shopVersion,
+					consumed: 0,
+				}),
+			);
+			if (insertion.error) {
+				console.error("Failed to record purchase:", insertion.error);
+			}
+
 			contracts.$publicClient
 				.waitForTransactionReceipt({ hash: txHash })
 				.then(async (receipt) => {
-					if (receipt.status === "success") {
-						const insertion = await tryCatch(
-							db.insert(db.schema.userPurchases).values({
-								itemId,
-								txHash,
-								userWallet: ctx.var.userWallet,
-								contractVersion: shopVersion,
-								consumed: 0,
-							}),
+					if (receipt.status !== "success") {
+						await tryCatch(
+							db
+								.delete(db.schema.userPurchases)
+								.where(eq(db.schema.userPurchases.txHash, txHash)),
 						);
-						if (insertion.error) {
-							console.error("Failed to record purchase:", insertion.error);
-						}
 					}
 				})
 				.finally(() => {
