@@ -77,7 +77,10 @@ const App = () => {
 	return (
 		<StrictMode>
 			<ErrorBoundary>
-				<PrivyProvider appId="cmkhe9jzt0126l70diykb112q" config={privyConfig}>
+				<PrivyProvider
+					appId={import.meta.env.VITE_PRIVY_APP_ID}
+					config={privyConfig}
+				>
 					<QueryClientProvider client={queryClient}>
 						<WagmiProvider config={wagmiConfig}>
 							<PanthaProvider>
