@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { NotFoundError } from "../../../../../lib/errors";
@@ -8,6 +8,33 @@ import { validator } from "../../../../middleware/validator";
 import type { RouterEnv } from "../../../types";
 
 export default new Hono<RouterEnv>()
+	.get("/", authenticated, async (ctx) => {
+		const { db } = ctx.var.appState;
+		const { userWallet } = ctx.var;
+
+		const following = await db.userFollowing({ userWallet });
+		const feedWallets = [userWallet, ...following.map((f) => f.following)];
+
+		const posts = await db
+			.select({
+				id: db.schema.feedpost.id,
+				userWallet: db.schema.feedpost.userWallet,
+				username: db.schema.users.username,
+				payload: db.schema.feedpost.payload,
+				createdAt: db.schema.feedpost.createdAt,
+			})
+			.from(db.schema.feedpost)
+			.leftJoin(
+				db.schema.users,
+				eq(db.schema.feedpost.userWallet, db.schema.users.walletAddress),
+			)
+			.where(inArray(db.schema.feedpost.userWallet, feedWallets))
+			.orderBy(desc(db.schema.feedpost.createdAt))
+			.limit(50);
+
+		return respond.ok(ctx, { posts }, "Feed fetched", 200);
+	})
+
 	.post("/share-streak-extension", authenticated, async (ctx) => {
 		const { db } = ctx.var.appState;
 		const { userWallet } = ctx.var;
