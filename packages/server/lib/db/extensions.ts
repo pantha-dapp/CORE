@@ -355,16 +355,20 @@ export function dbExtensionHelpers(db: DbClient) {
 			.select()
 			.from(schema.personalMessages)
 			.where(
-				or(
-					and(
-						eq(schema.personalMessages.senderWallet, userWallet1),
-						eq(schema.personalMessages.recipientWallet, userWallet2),
+				and(
+					or(
+						and(
+							eq(schema.personalMessages.senderWallet, userWallet1),
+							eq(schema.personalMessages.recipientWallet, userWallet2),
+						),
+						and(
+							eq(schema.personalMessages.senderWallet, userWallet2),
+							eq(schema.personalMessages.recipientWallet, userWallet1),
+						),
 					),
-					and(
-						eq(schema.personalMessages.senderWallet, userWallet2),
-						eq(schema.personalMessages.recipientWallet, userWallet1),
-					),
-					and(gte(schema.personalMessages.id, args.after ?? 0)),
+					args.after !== undefined
+						? gte(schema.personalMessages.id, args.after)
+						: undefined,
 				),
 			)
 			.orderBy(desc(schema.personalMessages.id))
