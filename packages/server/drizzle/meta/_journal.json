@@ -85,20 +85,6 @@
 			"when": 1774704462671,
 			"tag": "0011_acoustic_red_shift",
 			"breakpoints": true
-		},
-		{
-			"idx": 12,
-			"version": "6",
-			"when": 1774800000000,
-			"tag": "0012_feedpost_restore_columns",
-			"breakpoints": true
-		},
-		{
-			"idx": 13,
-			"version": "6",
-			"when": 1774948060254,
-			"tag": "0013_zippy_kree",
-			"breakpoints": true
 		}
 	]
 }

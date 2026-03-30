@@ -78,7 +78,7 @@ const App = () => {
 		<StrictMode>
 			<ErrorBoundary>
 				<PrivyProvider
-					appId={import.meta.env.VITE_PRIVY_APP_ID}
+					appId={import.meta.env.VITE_PRIVY_APP_ID ?? ""}
 					config={privyConfig}
 				>
 					<QueryClientProvider client={queryClient}>

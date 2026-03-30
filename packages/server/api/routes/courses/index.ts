@@ -32,8 +32,23 @@ export default new Hono()
 
 		const enrolledCourses = await db.userEnrollments({ userWallet });
 
+		const suggestions = await db
+			.select()
+			.from(db.schema.courses)
+			.where(sql`${db.schema.courses.deletedAt} IS NULL`)
+			.orderBy(sql`RANDOM()`)
+			.limit(N);
+
 		if (!enrolledCourses || enrolledCourses.length === 0) {
-			return respond.err(ctx, "User is not enrolled in any courses.", 404);
+			return respond.ok(
+				ctx,
+				{
+					courses: [],
+					suggestions,
+				},
+				"Suggested courses fetched successfully.",
+				200,
+			);
 		}
 
 		const coursesVectorDb = createVectorDb(db.vector, "course-embeddings");
@@ -75,14 +90,13 @@ export default new Hono()
 			}
 		}
 
-		const suggestions = await db
-			.select()
-			.from(db.schema.courses)
-			.orderBy(sql`RANDOM()`)
-			.limit(N);
+		// Filter out courses with empty or zero vectors (would cause NaN after normalization)
+		const validCourses = courses.filter(
+			(c) => c.vector.length > 0 && c.vector.some((v) => v !== 0),
+		);
 
 		const cachedPoints = await Promise.all(
-			courses.map((c) => db.redis.get(`umap:course:${c.id}`)),
+			validCourses.map((c) => db.redis.get(`umap:course:${c.id}`)),
 		);
 
 		const allCached = cachedPoints.every((p) => p !== null);
@@ -90,27 +104,39 @@ export default new Hono()
 		let coursesWithPoints: { id: string; point: { x: number; y: number } }[];
 
 		if (allCached) {
-			coursesWithPoints = courses.map((c, i) => {
+			coursesWithPoints = validCourses.map((c, i) => {
 				const point = JSON.parse(cachedPoints[i] as string);
 				return { id: c.id, point };
 			});
 		} else {
-			const vectors = courses.map((c) => {
+			const vectors = validCourses.map((c) => {
 				const norm = Math.sqrt(c.vector.reduce((sum, x) => sum + x * x, 0));
-				return c.vector.map((x) => x / norm + (Math.random() - 0.5) * 1e-10);
+				return c.vector.map((x) => x / norm + (Math.random() - 0.5) * 1e-6);
 			});
 
-			let points2D: number[][] = vectors.map(() => [0, 0]);
+			let points2D: number[][] = vectors.map(() => [
+				Math.random() * 2 - 1,
+				Math.random() * 2 - 1,
+			]);
+
 			if (vectors.length >= 2) {
-				const umap = new UMAP({
-					nNeighbors: Math.min(5, vectors.length - 1),
-					minDist: 0.1,
-					nComponents: 2,
-				});
-				points2D = umap.fit(vectors);
+				try {
+					const umap = new UMAP({
+						nNeighbors: Math.min(5, Math.max(2, vectors.length - 1)),
+						minDist: 0.1,
+						nComponents: 2,
+					});
+					points2D = umap.fit(vectors);
+				} catch {
+					// Fallback: spread points randomly if UMAP fails (e.g. too-similar vectors)
+					points2D = vectors.map(() => [
+						Math.random() * 2 - 1,
+						Math.random() * 2 - 1,
+					]);
+				}
 			}
 
-			coursesWithPoints = courses.map((c, i) => ({
+			coursesWithPoints = validCourses.map((c, i) => ({
 				id: c.id,
 				point: { x: points2D[i]?.[0] ?? 0, y: points2D[i]?.[1] ?? 0 },
 			}));
