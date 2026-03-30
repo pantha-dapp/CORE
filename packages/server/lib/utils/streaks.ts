@@ -44,7 +44,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 				lastActiveDate: today,
 			});
 
-			sse.emitToUser(db.redis, {
+			sse.emitToUser({
 				userWallet: userWallet,
 				type: "streak:extended",
 				payload: {
@@ -62,7 +62,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 				})
 				.where(eq(db.schema.userStreaks.userId, userWallet));
 
-			sse.emitToUser(db.redis, {
+			sse.emitToUser({
 				userWallet: userWallet,
 				type: "streak:extended",
 				payload: {
@@ -118,7 +118,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 					lastActiveDate: today,
 				});
 
-				sse.emitToUser(db.redis, {
+				sse.emitToUser({
 					userWallet: userWallet,
 					type: "friend-streak:extended",
 					payload: {
@@ -126,7 +126,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 						currentStreak: 1,
 					},
 				});
-				sse.emitToUser(db.redis, {
+				sse.emitToUser({
 					userWallet: friendWallet,
 					type: "friend-streak:extended",
 					payload: {
@@ -179,7 +179,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 						),
 					);
 
-				sse.emitToUser(db.redis, {
+				sse.emitToUser({
 					userWallet: userWallet,
 					type: "friend-streak:extended",
 					payload: {
@@ -187,7 +187,7 @@ export async function registerActivityForStreaks(db: Db, userWallet: Address) {
 						currentStreak: newStreak,
 					},
 				});
-				sse.emitToUser(db.redis, {
+				sse.emitToUser({
 					userWallet: friendWallet,
 					type: "friend-streak:extended",
 					payload: {
