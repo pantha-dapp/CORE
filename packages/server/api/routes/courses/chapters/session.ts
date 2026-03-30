@@ -293,6 +293,7 @@ export default new Hono<RouterEnv>()
 					})
 					.catch((err) => {
 						console.error("Failed to log user answer:", err);
+						gameSessions.delete(userWallet);
 					});
 
 				void db
