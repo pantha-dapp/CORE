@@ -1,3 +1,4 @@
+import { getEffectiveStreak } from "@pantha/shared";
 import { HOUR } from "@pantha/shared/constants";
 import { useQuery } from "@tanstack/react-query";
 import { usePanthaContext } from "../../context/PanthaProvider";
@@ -27,5 +28,15 @@ export function useSelfFriends() {
 		},
 		staleTime: 1 * HOUR,
 		enabled: !!wallet?.account.address,
+		select: (data) => ({
+			...data,
+			friends: data.friends.map((friend) => ({
+				...friend,
+				streak: {
+					...friend.streak,
+					currentStreak: getEffectiveStreak(friend.streak),
+				},
+			})),
+		}),
 	});
 }
