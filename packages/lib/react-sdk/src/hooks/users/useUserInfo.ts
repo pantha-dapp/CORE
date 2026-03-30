@@ -1,3 +1,4 @@
+import { getEffectiveStreak } from "@pantha/shared";
 import { useQuery } from "@tanstack/react-query";
 import { parseResponse } from "hono/client";
 import { usePanthaContext } from "../../context/PanthaProvider";
@@ -26,5 +27,15 @@ export function useUserInfo(args: { walletAddress?: string }) {
 		},
 		staleTime: 5 * 60 * 1000, // 5 minutes
 		enabled: !!wallet?.account.address,
+		select: (data) => ({
+			...data,
+			user: {
+				...data.user,
+				streak: {
+					...data.user.streak,
+					currentStreak: getEffectiveStreak(data.user.streak),
+				},
+			},
+		}),
 	});
 }
