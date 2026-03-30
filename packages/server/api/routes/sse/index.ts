@@ -7,11 +7,18 @@ import type { RouterEnv } from "../types";
 const app = new Hono<RouterEnv>().get("/events", authenticated, async (ctx) => {
 	const { appState, userWallet } = ctx.var;
 	const { redis } = appState.db;
-	const lastEventId = ctx.req.header("Last-Event-ID") ?? "$";
+	// Use client's last-seen ID for resumption, or a fixed timestamp anchor for new connections.
+	// Never use "$" — it re-evaluates to the stream's current tail on every XREAD call,
+	// causing a race where events written between two XREAD cycles are permanently missed.
+	const clientLastId = ctx.req.header("Last-Event-ID");
+	const lastEventId = clientLastId ?? `${Date.now()}-0`;
 
 	return streamSSE(ctx, async (stream) => {
 		let lastId = lastEventId;
 		let aborted = false;
+		console.log(
+			`[SSE] client connected wallet=${userWallet} lastEventId=${lastEventId}`,
+		);
 
 		stream.onAbort(() => {
 			aborted = true;
@@ -30,6 +37,12 @@ const app = new Hono<RouterEnv>().get("/events", authenticated, async (ctx) => {
 					blockMs: 5000,
 					count: 50,
 				});
+				if (messages.length > 0) {
+					console.log(
+						`[SSE] sending ${messages.length} message(s) to wallet=${userWallet}`,
+						messages,
+					);
+				}
 
 				for (const msg of messages) {
 					await stream.writeSSE({
