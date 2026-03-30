@@ -114,13 +114,13 @@ describe("certification", () => {
 			courseId = await testCreateCourse(testGlobals.api1);
 		});
 
-		it("returns 401 when the user has not completed enough of the course", async () => {
+		it("returns 403 when the user has not completed enough of the course", async () => {
 			const { api1 } = testGlobals;
 			const res = await api1.courses[":id"].certification.$post({
 				param: { id: courseId },
 			});
-			// Policy enforcer throws UnauthorizedError (401) when progress <= 10
-			expect(res.status).toBe(401);
+			// Policy enforcer throws ForbiddenError (403) when progress <= 10
+			expect(res.status).toBe(403);
 		});
 	});
 
@@ -312,8 +312,8 @@ describe("certification", () => {
 				const res = await api1.courses[":id"].certification.$post({
 					param: { id: courseId },
 				});
-				// No unconsumed CERTIFCT left → policy blocks with 401
-				expect(res.status).toBe(401);
+				// No unconsumed CERTIFCT left → policy blocks with 403
+				expect(res.status).toBe(403);
 			});
 		});
 
@@ -334,13 +334,13 @@ describe("certification", () => {
 			courseId = await testCreateCourse(testGlobals.api1);
 		});
 
-		it("returns 401 when the requesting user is not enrolled", async () => {
+		it("returns 403 when the requesting user is not enrolled", async () => {
 			const { api2 } = testGlobals;
 			const res = await api2.courses[":id"].certification.$post({
 				param: { id: courseId },
 			});
-			// Policy enforcer throws UnauthorizedError (401) for non-enrolled user
-			expect(res.status).toBe(401);
+			// Policy enforcer throws ForbiddenError (403) for non-enrolled user
+			expect(res.status).toBe(403);
 		});
 	});
 
