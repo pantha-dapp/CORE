@@ -234,8 +234,13 @@ export function createAi(args: {
 		"image-prompt-outputs",
 	);
 	async function findSimilarPregeneratedImage(embedding: number[]) {
-		const results = await imagePromptOutputs.querySimilar(embedding, 1);
-		return results[0];
+		try {
+			const results = await imagePromptOutputs.querySimilar(embedding, 1);
+			return results[0];
+		} catch {
+			// Vector DB unavailable — fall through to fresh generation
+			return undefined;
+		}
 	}
 	async function generateOrFindImage(args: {
 		prompt: string;
