@@ -3,15 +3,34 @@ export function idb(args: { db: string; store: string }) {
 
 	function idbOpen() {
 		return new Promise<IDBDatabase>((resolve, reject) => {
-			const req = indexedDB.open(DB_NAME, 1);
-			req.onupgradeneeded = () => {
-				const db = req.result;
-				if (!db.objectStoreNames.contains(STORE_NAME)) {
-					db.createObjectStore(STORE_NAME);
+			// First probe the current version
+			const probe = indexedDB.open(DB_NAME);
+			probe.onerror = () => reject(probe.error);
+			probe.onsuccess = () => {
+				const db = probe.result;
+				if (db.objectStoreNames.contains(STORE_NAME)) {
+					// Store already exists — use the open connection
+					resolve(db);
+				} else {
+					// Store missing — bump version to trigger onupgradeneeded
+					const newVersion = db.version + 1;
+					db.close();
+					const req = indexedDB.open(DB_NAME, newVersion);
+					req.onupgradeneeded = () => {
+						if (!req.result.objectStoreNames.contains(STORE_NAME)) {
+							req.result.createObjectStore(STORE_NAME);
+						}
+					};
+					req.onsuccess = () => resolve(req.result);
+					req.onerror = () => reject(req.error);
 				}
 			};
-			req.onsuccess = () => resolve(req.result);
-			req.onerror = () => reject(req.error);
+			// onupgradeneeded fires on brand-new DB (version 0 → 1)
+			probe.onupgradeneeded = () => {
+				if (!probe.result.objectStoreNames.contains(STORE_NAME)) {
+					probe.result.createObjectStore(STORE_NAME);
+				}
+			};
 		});
 	}
 
