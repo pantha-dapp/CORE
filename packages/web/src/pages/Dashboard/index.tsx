@@ -1,13 +1,16 @@
-import { usePanthaContext } from "@pantha/react";
+import { useEvent, usePanthaContext } from "@pantha/react";
 import {
 	useCourseById,
 	useCourseChaptersByCourseId,
+	useFeedPost,
+	useRequestCertificate,
 	useUserCourses,
 	useUserInfo,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
 import { Check, Lock, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ShareToFeedModal } from "../../shared/components/ShareToFeedModal";
 import { useHapticFeedback } from "../../shared/utils/haptics";
 
 function ChapterRow({
@@ -289,6 +292,15 @@ export default function Dashboard() {
 			: 0;
 	const remainingChapters = Math.max(totalChapters - completedChapters, 0);
 	const currentStreak = userInfo.data?.user.streak.currentStreak ?? 0;
+	const feedPost = useFeedPost();
+	const requestCertificate = useRequestCertificate();
+	const [certRequested, setCertRequested] = useState(false);
+	const [pendingFeedStreak, setPendingFeedStreak] = useState<number | null>(
+		null,
+	);
+	useEvent("streak:extended", (payload) => {
+		setPendingFeedStreak(payload.currentStreak);
+	});
 	const fallbackChapter =
 		chapters[Math.min(completedChapters, Math.max(chapters.length - 1, 0))];
 	const selectedChapter =
@@ -466,375 +478,417 @@ export default function Dashboard() {
 	}
 
 	return (
-		<div className="dark min-h-screen relative overflow-hidden bg-dark-bg">
-			{/* Gradient background - animated pulse */}
-			<div
-				className="fixed inset-0 pointer-events-none animate-gradient-bg"
-				aria-hidden
-				style={{
-					background:
-						"radial-gradient(ellipse 80% 50% at 50% 15%, rgba(30, 44, 72, 0.4) 0%, transparent 50%), radial-gradient(ellipse 60% 80% at 80% 55%, rgba(129, 140, 248, 0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 60% at 20% 90%, rgba(129, 140, 248, 0.06) 0%, transparent 50%)",
-				}}
-			/>
-			<div
-				ref={setScrollRef}
-				className="relative h-screen overflow-y-auto overflow-x-hidden px-4 pb-40"
-			>
-				{/* ───────── HEADER ───────── */}
-				<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
-					<div className="rounded-2xl bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl p-3 font-titillium">
-						<div className="flex items-center justify-between gap-3">
-							<button
-								type="button"
-								onClick={() => setShowCourseDrawer(!showCourseDrawer)}
-								className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-xl bg-dark-surface px-3 text-left transition-colors hover:bg-dark-border/50"
-								aria-label="Courses"
-							>
-								<span className="text-lg shrink-0">📚</span>
-								<span className="truncate text-sm font-semibold text-dark-text">
-									{selectedCourseDetails.data?.title ?? "Select course"}
-								</span>
-								<span className="ml-auto shrink-0 text-dark-muted">▼</span>
-							</button>
+		<>
+			<div className="dark min-h-screen relative overflow-hidden bg-dark-bg">
+				{/* Gradient background - animated pulse */}
+				<div
+					className="fixed inset-0 pointer-events-none animate-gradient-bg"
+					aria-hidden
+					style={{
+						background:
+							"radial-gradient(ellipse 80% 50% at 50% 15%, rgba(30, 44, 72, 0.4) 0%, transparent 50%), radial-gradient(ellipse 60% 80% at 80% 55%, rgba(129, 140, 248, 0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 60% at 20% 90%, rgba(129, 140, 248, 0.06) 0%, transparent 50%)",
+					}}
+				/>
+				<div
+					ref={setScrollRef}
+					className="relative h-screen overflow-y-auto overflow-x-hidden px-4 pb-40"
+				>
+					{/* ───────── HEADER ───────── */}
+					<div className="sticky top-0 z-50 pt-4 pb-3 -mx-4 px-4">
+						<div className="rounded-2xl bg-dark-card/95 backdrop-blur-xl border-0 shadow-xl p-3 font-titillium">
+							<div className="flex items-center justify-between gap-3">
+								<button
+									type="button"
+									onClick={() => setShowCourseDrawer(!showCourseDrawer)}
+									className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-xl bg-dark-surface px-3 text-left transition-colors hover:bg-dark-border/50"
+									aria-label="Courses"
+								>
+									<span className="text-lg shrink-0">📚</span>
+									<span className="truncate text-sm font-semibold text-dark-text">
+										{selectedCourseDetails.data?.title ?? "Select course"}
+									</span>
+									<span className="ml-auto shrink-0 text-dark-muted">▼</span>
+								</button>
 
-							<div className="flex items-center gap-1">
-								<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
-									<span className="text-sm">🔥</span>
-									<span className="text-xs font-semibold text-dark-accent tabular-nums">
-										{currentStreak}
-									</span>
+								<div className="flex items-center gap-1">
+									<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
+										<span className="text-sm">🔥</span>
+										<span className="text-xs font-semibold text-dark-accent tabular-nums">
+											{currentStreak}
+										</span>
+									</div>
+									<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
+										<span className="text-sm">💎</span>
+										<span className="text-xs font-semibold text-dark-accent tabular-nums">
+											{userInfo.data?.user.xpCount ?? 0}
+										</span>
+									</div>
+									<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
+										<span className="text-sm">⚡</span>
+										<span className="text-xs font-semibold text-dark-accent tabular-nums">
+											{userInfo.data?.user.xp ?? 0}
+										</span>
+									</div>
 								</div>
-								<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
-									<span className="text-sm">💎</span>
-									<span className="text-xs font-semibold text-dark-accent tabular-nums">
-										{userInfo.data?.user.xpCount ?? 0}
-									</span>
-								</div>
-								<div className="flex items-center gap-1 rounded-full px-2 py-1 bg-dark-surface">
-									<span className="text-sm">⚡</span>
-									<span className="text-xs font-semibold text-dark-accent tabular-nums">
-										{userInfo.data?.user.xp ?? 0}
-									</span>
+							</div>
+
+							{/* COURSE DRAWER */}
+							<div
+								className={`overflow-hidden transition-all duration-300 ease-in-out ${
+									showCourseDrawer
+										? "mt-3 max-h-100 opacity-100"
+										: "max-h-0 opacity-0"
+								}`}
+							>
+								<div className="space-y-1.5 border-t border-dark-border pt-3 mt-3">
+									{enrolledCourses.data?.courses.map((course) => (
+										<CourseNameItem
+											key={course.courseId}
+											courseId={course.courseId}
+											isActive={selectedCourseId === course.courseId}
+											onClick={() => {
+												hapticFeedback.tap();
+												setSelectedCourseId(course.courseId);
+												setShowCourseDrawer(false);
+											}}
+										/>
+									))}
+									<button
+										type="button"
+										onClick={() => {
+											router.navigate({ to: "/onboarding" });
+											setShowCourseDrawer(false);
+										}}
+										className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-dark-border bg-dark-surface/50 py-3 text-sm font-medium text-dark-muted transition-colors hover:bg-dark-surface hover:text-dark-text"
+									>
+										<span className="text-lg">+</span>
+										Add course
+									</button>
 								</div>
 							</div>
 						</div>
+					</div>
 
-						{/* COURSE DRAWER */}
-						<div
-							className={`overflow-hidden transition-all duration-300 ease-in-out ${
-								showCourseDrawer
-									? "mt-3 max-h-100 opacity-100"
-									: "max-h-0 opacity-0"
-							}`}
-						>
-							<div className="space-y-1.5 border-t border-dark-border pt-3 mt-3">
-								{enrolledCourses.data?.courses.map((course) => (
-									<CourseNameItem
-										key={course.courseId}
-										courseId={course.courseId}
-										isActive={selectedCourseId === course.courseId}
-										onClick={() => {
-											hapticFeedback.tap();
-											setSelectedCourseId(course.courseId);
-											setShowCourseDrawer(false);
-										}}
+					{/* ───────── COURSE DETAILS (when selected) ───────── */}
+					<div
+						className={`transition-all duration-300 ease-in-out overflow-hidden ${
+							showCourseCard
+								? "max-h-60 opacity-100 translate-y-0"
+								: "max-h-0 opacity-0 -translate-y-4"
+						}`}
+					>
+						{selectedCourseId && (
+							<div className="my-2 w-full flex flex-col items-center justify-center gap-4 rounded-2xl backdrop-blur-sm border-0 p-4 text-left transition-colors hover:bg-dark-surface/60 active:bg-dark-border/30 font-titillium">
+								<div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-dark-surface text-center">
+									{selectedCourseDetails.data?.icon ? (
+										<img
+											src={selectedCourseDetails.data.icon}
+											alt={selectedCourseDetails.data?.title ?? "Course"}
+											className="h-12 w-12 object-contain"
+										/>
+									) : courseChapters.data?.chapters?.[0] &&
+										courseChapters.data?.icons?.[
+											courseChapters.data.chapters[0].id
+										] ? (
+										<img
+											src={
+												courseChapters.data.icons[
+													courseChapters.data.chapters[0].id
+												]
+											}
+											alt={selectedCourseDetails.data?.title ?? "Course"}
+											className="h-12 w-12 object-contain"
+										/>
+									) : (
+										<span className="text-2xl">📚</span>
+									)}
+								</div>
+								<div className="min-w-0 flex-1 text-center">
+									<h3 className="text-xl font-bold text-dark-text line-clamp-2">
+										{selectedCourseDetails.data?.title ?? "Course"}
+									</h3>
+									<p className="mt-0.5 text-sm text-dark-muted line-clamp-3">
+										{selectedCourseDetails.data?.description ?? heroMessage}
+									</p>
+								</div>
+							</div>
+						)}
+					</div>
+
+					{/* ───────── LEARNING PATH (straight line, alternating) ───────── */}
+					<div className="pb-4 px-0">
+						<div className="relative w-full max-w-md mx-auto">
+							{courseChapters.isLoading ? (
+								<div className="flex flex-col items-center gap-6 py-8">
+									{[1, 2, 3].map((i) => (
+										<div
+											key={i}
+											className="h-20 w-3/4 max-w-xs rounded-xl bg-dark-surface animate-pulse"
+										/>
+									))}
+								</div>
+							) : chapters.length > 0 ? (
+								<>
+									{/* Central vertical line - full height, all locks visible */}
+									<div
+										className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-0.5 bg-dark-border/60 z-0 pointer-events-none"
+										aria-hidden
 									/>
-								))}
+									{chapters.map((chapter, index) => (
+										<ChapterRow
+											key={chapter.id}
+											chapter={chapter}
+											index={index}
+											alignRight={index % 2 === 1}
+											isCompleted={index < completedChapters}
+											isCurrent={index === completedChapters}
+											isLocked={index > completedChapters}
+											iconUrl={courseChapters.data?.icons?.[chapter.id]}
+											isInView={chaptersInView.has(index)}
+											onClick={() => {
+												hapticFeedback.tap();
+												setSelectedChapterId(chapter.id);
+												setChapterPopupId(chapter.id);
+											}}
+											onPointerDown={() => {
+												setPressedCardId(chapter.id);
+												setReleasedCardId(undefined);
+											}}
+											onPointerUp={() => {
+												setPressedCardId(undefined);
+												setReleasedCardId(chapter.id);
+											}}
+											onPointerLeave={() => setPressedCardId(undefined)}
+											onAnimationEnd={() => {
+												if (releasedCardId === chapter.id) {
+													setReleasedCardId(undefined);
+												}
+											}}
+											pressedCardId={pressedCardId}
+											rowRef={(el) => {
+												rowRefs.current[index] = el;
+											}}
+										/>
+									))}
+								</>
+							) : selectedEnrollment ? (
+								<p className="text-dark-muted font-titillium py-12 text-center">
+									No chapters available yet for this course.
+								</p>
+							) : (
+								<p className="text-dark-muted font-titillium py-12 text-center">
+									Select a course to see chapters
+								</p>
+							)}
+						</div>
+					</div>
+				</div>
+
+				{popupChapter && (
+					<div
+						className={`fixed inset-0 z-70 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 sm:px-6 ${popupClosing ? "animate-popup-backdrop-out" : "animate-popup-backdrop-in"}`}
+					>
+						<button
+							type="button"
+							className="absolute inset-0"
+							onClick={handleClosePopup}
+							aria-label="Close chapter popup"
+						/>
+						<div
+							className={`relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-dark-card/95 backdrop-blur-xl shadow-2xl p-4 font-titillium border border-dark-border/50 ${
+								popupChapterIndex % 2 === 0
+									? popupClosing
+										? "animate-popup-content-out-left"
+										: "animate-popup-content-in-left"
+									: popupClosing
+										? "animate-popup-content-out-right"
+										: "animate-popup-content-in-right"
+							}`}
+							onAnimationEnd={handlePopupAnimationEnd}
+						>
+							<div className="mb-3 flex items-start justify-between gap-3">
+								<div className="min-w-0 flex-1">
+									<div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+										<span className="rounded-lg bg-dark-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-dark-accent">
+											Chapter {popupChapterIndex + 1}
+										</span>
+										<span
+											className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+												popupChapterCompleted
+													? "bg-dark-success/20 text-dark-success"
+													: popupChapterCurrent
+														? "bg-dark-accent/20 text-dark-accent"
+														: "bg-dark-surface text-dark-muted"
+											}`}
+										>
+											{popupChapterCompleted
+												? "Completed"
+												: popupChapterCurrent
+													? "Ready"
+													: "Locked"}
+										</span>
+									</div>
+									<h4 className="text-lg font-bold leading-tight text-dark-text mt-2">
+										{popupChapter.title}
+									</h4>
+								</div>
 								<button
 									type="button"
-									onClick={() => {
-										router.navigate({ to: "/onboarding" });
-										setShowCourseDrawer(false);
-									}}
-									className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-dark-border bg-dark-surface/50 py-3 text-sm font-medium text-dark-muted transition-colors hover:bg-dark-surface hover:text-dark-text"
+									onClick={handleClosePopup}
+									className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dark-surface text-dark-muted hover:bg-dark-border transition-colors"
+									aria-label="Close chapter popup"
 								>
-									<span className="text-lg">+</span>
-									Add course
+									<X className="h-4 w-4" />
+								</button>
+							</div>
+
+							{popupChapter.description && (
+								<p className="text-sm leading-relaxed text-dark-muted">
+									{popupChapter.description}
+								</p>
+							)}
+
+							<div className="mt-3 flex flex-wrap items-center gap-1.5">
+								{popupChapterCurrent && (
+									<span className="rounded-lg bg-dark-accent/20 px-2 py-0.5 text-[11px] font-semibold text-dark-accent">
+										Your next lesson
+									</span>
+								)}
+								{popupChapterCompleted && (
+									<span className="rounded-lg bg-dark-success/20 px-2 py-0.5 text-[11px] font-semibold text-dark-success">
+										Ready to review
+									</span>
+								)}
+							</div>
+
+							<div className="mt-4 flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => handleChapterStart(popupChapter.id)}
+									disabled={popupChapterLocked}
+									className="min-w-28 rounded-lg px-4 py-2 text-sm font-semibold bg-dark-accent text-white hover:bg-dark-accent/90 disabled:bg-dark-surface disabled:text-dark-muted disabled:cursor-not-allowed transition-colors"
+								>
+									{popupChapterLocked
+										? "Locked"
+										: popupChapterCompleted
+											? "Review"
+											: "Start"}
+								</button>
+								<button
+									type="button"
+									onClick={handleClosePopup}
+									className="rounded-lg bg-dark-surface px-3 py-2 text-sm font-semibold text-dark-muted hover:bg-dark-border transition-colors"
+								>
+									Later
 								</button>
 							</div>
 						</div>
 					</div>
-				</div>
+				)}
 
-				{/* ───────── COURSE DETAILS (when selected) ───────── */}
-				<div
-					className={`transition-all duration-300 ease-in-out overflow-hidden ${
-						showCourseCard
-							? "max-h-60 opacity-100 translate-y-0"
-							: "max-h-0 opacity-0 -translate-y-4"
-					}`}
-				>
-					{selectedCourseId && (
-						<div className="my-2 w-full flex flex-col items-center justify-center gap-4 rounded-2xl backdrop-blur-sm border-0 p-4 text-left transition-colors hover:bg-dark-surface/60 active:bg-dark-border/30 font-titillium">
-							<div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-dark-surface text-center">
-								{selectedCourseDetails.data?.icon ? (
-									<img
-										src={selectedCourseDetails.data.icon}
-										alt={selectedCourseDetails.data?.title ?? "Course"}
-										className="h-12 w-12 object-contain"
-									/>
-								) : courseChapters.data?.chapters?.[0] &&
-									courseChapters.data?.icons?.[
-										courseChapters.data.chapters[0].id
-									] ? (
-									<img
-										src={
-											courseChapters.data.icons[
-												courseChapters.data.chapters[0].id
-											]
-										}
-										alt={selectedCourseDetails.data?.title ?? "Course"}
-										className="h-12 w-12 object-contain"
-									/>
-								) : (
-									<span className="text-2xl">📚</span>
-								)}
-							</div>
-							<div className="min-w-0 flex-1 text-center">
-								<h3 className="text-xl font-bold text-dark-text line-clamp-2">
-									{selectedCourseDetails.data?.title ?? "Course"}
-								</h3>
-								<p className="mt-0.5 text-sm text-dark-muted line-clamp-3">
-									{selectedCourseDetails.data?.description ?? heroMessage}
-								</p>
-							</div>
-						</div>
-					)}
-				</div>
-
-				{/* ───────── LEARNING PATH (straight line, alternating) ───────── */}
-				<div className="pb-4 px-0">
-					<div className="relative w-full max-w-md mx-auto">
-						{courseChapters.isLoading ? (
-							<div className="flex flex-col items-center gap-6 py-8">
-								{[1, 2, 3].map((i) => (
+				{/* ───────── FIXED BOTTOM PROGRESS (above nav) ───────── */}
+				{selectedCourseId && totalChapters > 0 && (
+					<div className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto">
+						{showProgressCard ? (
+							<button
+								type="button"
+								onClick={() => {
+									hapticFeedback.tap();
+									setProgressCardClosing(true);
+								}}
+								className={`rounded-2xl bg-dark-card/95 w-full backdrop-blur-xl shadow-xl px-5 py-4 font-titillium border-0 ${
+									progressCardClosing
+										? "animate-progress-card-out"
+										: "animate-progress-card-in"
+								}`}
+								onAnimationEnd={() => {
+									if (progressCardClosing) {
+										setShowProgressCard(false);
+										setProgressCardClosing(false);
+									}
+								}}
+							>
+								<div className="flex items-center justify-between gap-3 mb-3">
+									<div className="flex items-center justify-between flex-1">
+										<div className="flex flex-col items-start justify-center">
+											<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted">
+												Your progress
+											</p>
+											<p className="text-2xl font-bold text-dark-text tabular-nums">
+												{progressPercent}%
+											</p>
+										</div>
+										<div className="text-right">
+											<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted">
+												Chapters
+											</p>
+											<p className="text-2xl font-bold text-dark-text tabular-nums">
+												{completedChapters} / {totalChapters}
+											</p>
+										</div>
+									</div>
+								</div>
+								<div className="h-2 w-full overflow-hidden rounded-full bg-dark-surface">
 									<div
-										key={i}
-										className="h-20 w-3/4 max-w-xs rounded-xl bg-dark-surface animate-pulse"
+										className="h-full rounded-full bg-dark-accent transition-all duration-500"
+										style={{ width: `${progressPercent}%` }}
 									/>
-								))}
-							</div>
-						) : chapters.length > 0 ? (
-							<>
-								{/* Central vertical line - full height, all locks visible */}
-								<div
-									className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-0.5 bg-dark-border/60 z-0 pointer-events-none"
-									aria-hidden
-								/>
-								{chapters.map((chapter, index) => (
-									<ChapterRow
-										key={chapter.id}
-										chapter={chapter}
-										index={index}
-										alignRight={index % 2 === 1}
-										isCompleted={index < completedChapters}
-										isCurrent={index === completedChapters}
-										isLocked={index > completedChapters}
-										iconUrl={courseChapters.data?.icons?.[chapter.id]}
-										isInView={chaptersInView.has(index)}
-										onClick={() => {
-											hapticFeedback.tap();
-											setSelectedChapterId(chapter.id);
-											setChapterPopupId(chapter.id);
+								</div>
+								{completedChapters > 10 && selectedCourseId && (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											if (certRequested || requestCertificate.isPending) return;
+											requestCertificate.mutate(selectedCourseId, {
+												onSuccess: () => setCertRequested(true),
+											});
 										}}
-										onPointerDown={() => {
-											setPressedCardId(chapter.id);
-											setReleasedCardId(undefined);
-										}}
-										onPointerUp={() => {
-											setPressedCardId(undefined);
-											setReleasedCardId(chapter.id);
-										}}
-										onPointerLeave={() => setPressedCardId(undefined)}
-										onAnimationEnd={() => {
-											if (releasedCardId === chapter.id) {
-												setReleasedCardId(undefined);
-											}
-										}}
-										pressedCardId={pressedCardId}
-										rowRef={(el) => {
-											rowRefs.current[index] = el;
-										}}
-									/>
-								))}
-							</>
-						) : selectedEnrollment ? (
-							<p className="text-dark-muted font-titillium py-12 text-center">
-								No chapters available yet for this course.
-							</p>
+										disabled={certRequested || requestCertificate.isPending}
+										className="mt-3 w-full rounded-xl bg-dark-accent px-4 py-2.5 text-sm font-semibold text-dark-bg font-montserrat transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
+									>
+										{requestCertificate.isPending
+											? "Requesting…"
+											: certRequested
+												? "✓ Certificate Requested!"
+												: `🎓 Request Certificate (${progressPercent}%)`}
+									</button>
+								)}
+								{requestCertificate.isError && (
+									<p className="mt-2 text-xs text-red-400 font-montserrat text-center">
+										{(requestCertificate.error as Error)?.message ??
+											"Failed to request certificate"}
+									</p>
+								)}
+							</button>
 						) : (
-							<p className="text-dark-muted font-titillium py-12 text-center">
-								Select a course to see chapters
-							</p>
+							<div className="flex justify-center">
+								<button
+									type="button"
+									onClick={() => setShowProgressCard(true)}
+									className="rounded-2xl bg-dark-card/95 backdrop-blur-xl shadow-xl px-5 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-surface/80 transition-colors font-titillium animate-progress-button-in"
+								>
+									Show progress
+								</button>
+							</div>
 						)}
 					</div>
-				</div>
+				)}
 			</div>
 
-			{popupChapter && (
-				<div
-					className={`fixed inset-0 z-70 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 sm:px-6 ${popupClosing ? "animate-popup-backdrop-out" : "animate-popup-backdrop-in"}`}
-				>
-					<button
-						type="button"
-						className="absolute inset-0"
-						onClick={handleClosePopup}
-						aria-label="Close chapter popup"
-					/>
-					<div
-						className={`relative max-h-[calc(100vh-3rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-dark-card/95 backdrop-blur-xl shadow-2xl p-4 font-titillium border border-dark-border/50 ${
-							popupChapterIndex % 2 === 0
-								? popupClosing
-									? "animate-popup-content-out-left"
-									: "animate-popup-content-in-left"
-								: popupClosing
-									? "animate-popup-content-out-right"
-									: "animate-popup-content-in-right"
-						}`}
-						onAnimationEnd={handlePopupAnimationEnd}
-					>
-						<div className="mb-3 flex items-start justify-between gap-3">
-							<div className="min-w-0 flex-1">
-								<div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-									<span className="rounded-lg bg-dark-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-dark-accent">
-										Chapter {popupChapterIndex + 1}
-									</span>
-									<span
-										className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-											popupChapterCompleted
-												? "bg-dark-success/20 text-dark-success"
-												: popupChapterCurrent
-													? "bg-dark-accent/20 text-dark-accent"
-													: "bg-dark-surface text-dark-muted"
-										}`}
-									>
-										{popupChapterCompleted
-											? "Completed"
-											: popupChapterCurrent
-												? "Ready"
-												: "Locked"}
-									</span>
-								</div>
-								<h4 className="text-lg font-bold leading-tight text-dark-text mt-2">
-									{popupChapter.title}
-								</h4>
-							</div>
-							<button
-								type="button"
-								onClick={handleClosePopup}
-								className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dark-surface text-dark-muted hover:bg-dark-border transition-colors"
-								aria-label="Close chapter popup"
-							>
-								<X className="h-4 w-4" />
-							</button>
-						</div>
-
-						{popupChapter.description && (
-							<p className="text-sm leading-relaxed text-dark-muted">
-								{popupChapter.description}
-							</p>
-						)}
-
-						<div className="mt-3 flex flex-wrap items-center gap-1.5">
-							{popupChapterCurrent && (
-								<span className="rounded-lg bg-dark-accent/20 px-2 py-0.5 text-[11px] font-semibold text-dark-accent">
-									Your next lesson
-								</span>
-							)}
-							{popupChapterCompleted && (
-								<span className="rounded-lg bg-dark-success/20 px-2 py-0.5 text-[11px] font-semibold text-dark-success">
-									Ready to review
-								</span>
-							)}
-						</div>
-
-						<div className="mt-4 flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => handleChapterStart(popupChapter.id)}
-								disabled={popupChapterLocked}
-								className="min-w-28 rounded-lg px-4 py-2 text-sm font-semibold bg-dark-accent text-white hover:bg-dark-accent/90 disabled:bg-dark-surface disabled:text-dark-muted disabled:cursor-not-allowed transition-colors"
-							>
-								{popupChapterLocked
-									? "Locked"
-									: popupChapterCompleted
-										? "Review"
-										: "Start"}
-							</button>
-							<button
-								type="button"
-								onClick={handleClosePopup}
-								className="rounded-lg bg-dark-surface px-3 py-2 text-sm font-semibold text-dark-muted hover:bg-dark-border transition-colors"
-							>
-								Later
-							</button>
-						</div>
-					</div>
-				</div>
+			{pendingFeedStreak !== null && (
+				<ShareToFeedModal
+					emoji="🔥"
+					title={`${pendingFeedStreak}-Day Streak!`}
+					description="You extended your learning streak. Share it with your friends?"
+					onConfirm={() => {
+						feedPost.mutate({ type: "streak-extension" });
+						setPendingFeedStreak(null);
+					}}
+					onDismiss={() => setPendingFeedStreak(null)}
+					isLoading={feedPost.isPending}
+				/>
 			)}
-
-			{/* ───────── FIXED BOTTOM PROGRESS (above nav) ───────── */}
-			{selectedCourseId && totalChapters > 0 && (
-				<div className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto">
-					{showProgressCard ? (
-						<button
-							type="button"
-							onClick={() => {
-								hapticFeedback.tap();
-								setProgressCardClosing(true);
-							}}
-							className={`rounded-2xl bg-dark-card/95 w-full backdrop-blur-xl shadow-xl px-5 py-4 font-titillium border-0 ${
-								progressCardClosing
-									? "animate-progress-card-out"
-									: "animate-progress-card-in"
-							}`}
-							onAnimationEnd={() => {
-								if (progressCardClosing) {
-									setShowProgressCard(false);
-									setProgressCardClosing(false);
-								}
-							}}
-						>
-							<div className="flex items-center justify-between gap-3 mb-3">
-								<div className="flex items-center justify-between flex-1">
-									<div className="flex flex-col items-start justify-center">
-										<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted">
-											Your progress
-										</p>
-										<p className="text-2xl font-bold text-dark-text tabular-nums">
-											{progressPercent}%
-										</p>
-									</div>
-									<div className="text-right">
-										<p className="text-[10px] font-semibold uppercase tracking-wider text-dark-muted">
-											Chapters
-										</p>
-										<p className="text-2xl font-bold text-dark-text tabular-nums">
-											{completedChapters} / {totalChapters}
-										</p>
-									</div>
-								</div>
-							</div>
-							<div className="h-2 w-full overflow-hidden rounded-full bg-dark-surface">
-								<div
-									className="h-full rounded-full bg-dark-accent transition-all duration-500"
-									style={{ width: `${progressPercent}%` }}
-								/>
-							</div>
-						</button>
-					) : (
-						<div className="flex justify-center">
-							<button
-								type="button"
-								onClick={() => setShowProgressCard(true)}
-								className="rounded-2xl bg-dark-card/95 backdrop-blur-xl shadow-xl px-5 py-2.5 text-sm font-semibold text-dark-text hover:bg-dark-surface/80 transition-colors font-titillium animate-progress-button-in"
-							>
-								Show progress
-							</button>
-						</div>
-					)}
-				</div>
-			)}
-		</div>
+		</>
 	);
 }
