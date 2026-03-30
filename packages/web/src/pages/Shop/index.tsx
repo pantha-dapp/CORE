@@ -5,7 +5,7 @@ import {
 	useUserPurchases,
 } from "@pantha/react/hooks";
 import { useRouter } from "@tanstack/react-router";
-import { AlertCircle, Gift, Zap } from "lucide-react";
+import { AlertCircle, Gift, Package, ShoppingBag, Zap } from "lucide-react";
 import { useState } from "react";
 import Button from "../../shared/components/Button";
 import PageHeaderWithStats from "../../shared/components/PageHeaderWithStats";
@@ -21,6 +21,13 @@ export default function Shop() {
 	const purchaseMutation = usePurchaseShopItem();
 	const inventoryQuery = useUserPurchases();
 	const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
+	const getPurchaseKey = (purchase: {
+		itemId: string;
+		purchasedAt: string | Date;
+		consumed: number;
+	}) =>
+		`${purchase.itemId}-${String(purchase.purchasedAt)}-${purchase.consumed}`;
 
 	if (!wallet) {
 		return (
@@ -44,7 +51,7 @@ export default function Shop() {
 	}
 
 	return (
-		<div className="dark min-h-screen bg-linear-to-br from-dark-bg via-dark-surface/50 to-dark-bg py-8 px-4 sm:px-6 lg:px-8">
+		<div className="dark min-h-screen bg-linear-to-br from-dark-bg via-dark-surface/50 to-dark-bg py-8 px-4 sm:px-6 lg:px-8 pb-28">
 			<div className="mx-auto max-w-6xl">
 				<PageHeaderWithStats
 					badge="Marketplace"
@@ -134,6 +141,157 @@ export default function Shop() {
 						</p>
 					</div>
 				)}
+
+				{/* Purchase History */}
+				<div className="mt-12">
+					{inventoryQuery.isLoading && (
+						<div className="space-y-3">
+							{[1, 2, 3].map((i) => (
+								<div
+									key={i}
+									className="h-16 rounded-xl animate-pulse bg-dark-surface"
+								/>
+							))}
+						</div>
+					)}
+
+					{inventoryQuery.data &&
+						(() => {
+							const available = inventoryQuery.data.history.filter(
+								(p) => p.consumed === 0,
+							);
+							const used = inventoryQuery.data.history.filter(
+								(p) => p.consumed !== 0,
+							);
+
+							return (
+								<>
+									{/* Your Items — unconsumed */}
+									<h2 className="text-xl font-bold text-dark-text font-titillium mb-4 flex items-center gap-2">
+										<Package size={22} className="text-dark-accent" />
+										Your Items
+									</h2>
+
+									{available.length === 0 ? (
+										<div className="text-center py-8 rounded-2xl bg-dark-surface mb-10">
+											<Package
+												className="mx-auto mb-3 text-dark-muted"
+												size={36}
+											/>
+											<p className="text-dark-muted text-sm">
+												You have no unused items
+											</p>
+										</div>
+									) : (
+										<div className="space-y-3 mb-10">
+											{available.map((purchase) => {
+												const shopItem = shopItemsQuery.data?.items.find(
+													(i) => i.id === purchase.itemId,
+												);
+												return (
+													<div
+														key={getPurchaseKey(purchase)}
+														className="flex items-center justify-between rounded-xl px-5 py-4 bg-dark-card/80 border border-dark-accent/30"
+													>
+														<div className="flex items-center gap-3">
+															<span className="text-2xl">
+																{purchase.itemId === "STRKFRZ0" ? "❄️" : "🎁"}
+															</span>
+															<div>
+																<p className="font-semibold text-dark-text text-sm">
+																	{shopItem?.name ?? purchase.itemId}
+																</p>
+																<p className="text-dark-muted text-xs mt-0.5">
+																	Purchased{" "}
+																	{new Date(
+																		purchase.purchasedAt,
+																	).toLocaleDateString(undefined, {
+																		year: "numeric",
+																		month: "short",
+																		day: "numeric",
+																	})}
+																</p>
+															</div>
+														</div>
+														<span className="text-xs font-semibold px-3 py-1 rounded-full bg-dark-accent/20 text-dark-accent">
+															Available
+														</span>
+													</div>
+												);
+											})}
+										</div>
+									)}
+
+									{/* History — consumed */}
+									<h2 className="text-xl font-bold text-dark-text font-titillium mb-4 flex items-center gap-2">
+										<ShoppingBag size={22} className="text-dark-muted" />
+										History
+									</h2>
+
+									{used.length === 0 ? (
+										<div className="text-center py-8 rounded-2xl bg-dark-surface">
+											<ShoppingBag
+												className="mx-auto mb-3 text-dark-muted"
+												size={36}
+											/>
+											<p className="text-dark-muted text-sm">
+												No used items yet
+											</p>
+										</div>
+									) : (
+										<div className="space-y-3">
+											{used.map((purchase) => {
+												const shopItem = shopItemsQuery.data?.items.find(
+													(i) => i.id === purchase.itemId,
+												);
+												return (
+													<div
+														key={getPurchaseKey(purchase)}
+														className="flex items-center justify-between rounded-xl px-5 py-4 bg-dark-card/60 border border-dark-border opacity-70"
+													>
+														<div className="flex items-center gap-3">
+															<span className="text-2xl grayscale">
+																{purchase.itemId === "STRKFRZ0" ? "❄️" : "🎁"}
+															</span>
+															<div>
+																<p className="font-semibold text-dark-text text-sm">
+																	{shopItem?.name ?? purchase.itemId}
+																</p>
+																<p className="text-dark-muted text-xs mt-0.5">
+																	{shopItem?.description
+																		? shopItem.description
+																		: purchase.itemId}{" "}
+																	· Used on{" "}
+																	{new Date(
+																		purchase.purchasedAt,
+																	).toLocaleDateString(undefined, {
+																		year: "numeric",
+																		month: "short",
+																		day: "numeric",
+																	})}
+																</p>
+															</div>
+														</div>
+														<div className="flex items-center gap-2">
+															<Zap className="text-yellow-500/60" size={14} />
+															<span className="text-sm font-bold text-dark-muted">
+																{shopItem
+																	? (shopItem.priceHuman / 100).toFixed(0)
+																	: "—"}
+															</span>
+															<span className="text-xs font-semibold px-3 py-1 rounded-full bg-gray-700 text-gray-400 ml-2">
+																Used
+															</span>
+														</div>
+													</div>
+												);
+											})}
+										</div>
+									)}
+								</>
+							);
+						})()}
+				</div>
 
 				{/* Purchase Modal */}
 				{selectedItem && shopItemsQuery.data && (
