@@ -4,7 +4,7 @@ module.exports = {
 			name: "pantha-web",
 			script: "bun client:serve",
 			cwd: ".",
-			env_file: "./packages/server/.env",
+			env_file: "./packages/web/.env",
 			env: {
 				NODE_ENV: "production",
 			},
