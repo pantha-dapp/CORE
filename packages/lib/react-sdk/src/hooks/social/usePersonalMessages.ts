@@ -29,7 +29,7 @@ export function usePersonalMessages(participantWallet?: Address) {
 			const response = await api.rpc.users.social.dm.$get({
 				query: {
 					participantWallet,
-					offset,
+					offset: String(offset),
 				},
 			});
 			const result = await response.json();
@@ -40,11 +40,17 @@ export function usePersonalMessages(participantWallet?: Address) {
 
 			const messages = await Promise.all(
 				result.data.messages.map(async (msg) => {
-					const plaintext = await decrypt({
-						senderAddress: participantWallet,
-						ciphertext: hexToBytes(msg.ciphertext),
-					});
-					return { ...msg, plaintext };
+					try {
+						const plaintext = await decrypt({
+							senderAddress: participantWallet,
+							ciphertext: hexToBytes(msg.ciphertext),
+						});
+						return { ...msg, plaintext };
+					} catch {
+						// Decryption can fail for in-flight or corrupted messages;
+						// return the raw message so the rest of the list still renders.
+						return { ...msg, plaintext: null };
+					}
 				}),
 			);
 

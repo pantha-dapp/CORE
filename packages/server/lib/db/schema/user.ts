@@ -77,7 +77,7 @@ export const userAnswerLogs = t.sqliteTable("user_answer_logs", {
 export const userActions = t.sqliteTable(
 	"user_actions",
 	{
-		hash: tHex("id").primaryKey(),
+		hash: tHex("hash").primaryKey(),
 		prevHash: tHex("previous_id").notNull(),
 		userWallet: tEvmAddress().notNull(),
 		label: t.text("label").notNull(),

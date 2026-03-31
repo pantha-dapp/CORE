@@ -1,109 +1,57 @@
 import type { zSseEvent } from "@pantha/shared/zod";
-import type { RedisClient } from "bun";
 import type z from "zod";
 
 type EmitEvent = z.infer<ReturnType<typeof zSseEvent>>;
 type EventType = EmitEvent["type"];
 type EmitEventByType<T extends EventType> = Extract<EmitEvent, { type: T }>;
 
-async function emitToUser(redis: RedisClient, evt: EmitEvent) {
-	const key = `sse:${evt.userWallet}`;
+export type SseQueueEntry = { type: string; payload: unknown };
+type Subscriber = (event: SseQueueEntry) => void;
 
-	await redis.send("XADD", [
-		key,
-		"*",
-		"type",
-		evt.type,
-		"payload",
-		JSON.stringify(evt.payload),
-	]);
-	await trimUserStream(redis, evt.userWallet);
+// Module-level in-memory subscriber registry: normalized wallet → active subscribers
+const subscribers = new Map<string, Set<Subscriber>>();
+
+function normalizeWallet(w: string) {
+	return w.toLowerCase();
 }
 
-async function emitToUsers<T extends EventType>(
-	redis: RedisClient,
+function emitToUser(evt: EmitEvent) {
+	const key = normalizeWallet(evt.userWallet);
+	const subs = subscribers.get(key);
+	if (!subs || subs.size === 0) return;
+	const entry: SseQueueEntry = { type: evt.type, payload: evt.payload };
+	for (const sub of subs) sub(entry);
+}
+
+function emitToUsers<T extends EventType>(
 	userWallets: string[],
 	type: T,
 	payload: EmitEventByType<T>["payload"],
 ) {
-	const serialized = JSON.stringify(payload);
-
-	await Promise.all(
-		userWallets.map(async (userWallet) => {
-			await redis.send("XADD", [
-				`sse:${userWallet}`,
-				"*",
-				"type",
-				type,
-				"payload",
-				serialized,
-			]);
-			await trimUserStream(redis, userWallet);
-		}),
-	);
+	for (const userWallet of userWallets) {
+		emitToUser({ userWallet, type, payload } as EmitEvent);
+	}
 }
 
-type ReadOptions = {
-	userWallet: string;
-	lastId?: string;
-	blockMs?: number;
-	count?: number;
-};
-
-async function readUserEvents(redis: RedisClient, opts: ReadOptions) {
-	const key = `sse:${opts.userWallet}`;
-	const count = String(opts.count ?? 50);
-	const blockMs = opts.blockMs ?? 5000;
-
-	const args =
-		blockMs > 0
-			? [
-					"COUNT",
-					count,
-					"BLOCK",
-					String(blockMs),
-					"STREAMS",
-					key,
-					opts.lastId ?? "$",
-				]
-			: ["COUNT", count, "STREAMS", key, opts.lastId ?? "0"];
-
-	const res = await redis.send("XREAD", args);
-	console.log(
-		`[SSE] XREAD key=${key} lastId=${opts.lastId ?? "$"} raw=`,
-		JSON.stringify(res),
-	);
-
-	if (!res) return [];
-
-	// Bun's RedisClient returns XREAD as a RESP3 map object:
-	// { [streamKey]: [[id, [field, value, ...]], ...] }
-	const messages = Object.values(
-		res as Record<string, [string, string[]][]>,
-	)[0];
-	if (!messages) return [];
-
-	return messages.map(([id, fields]: [string, string[]]) => {
-		const obj: Record<string, string> = {};
-		for (let i = 0; i < fields.length; i += 2) {
-			const key = fields[i];
-			const val = fields[i + 1];
-			if (key !== undefined && val !== undefined) obj[key] = val;
+function subscribe(userWallet: string, callback: Subscriber): () => void {
+	const key = normalizeWallet(userWallet);
+	let set = subscribers.get(key);
+	if (!set) {
+		set = new Set();
+		subscribers.set(key, set);
+	}
+	set.add(callback);
+	return () => {
+		const s = subscribers.get(key);
+		if (s) {
+			s.delete(callback);
+			if (s.size === 0) subscribers.delete(key);
 		}
-		return {
-			id,
-			type: obj.type ?? "",
-			payload: JSON.parse(obj.payload ?? "null"),
-		};
-	});
-}
-
-async function trimUserStream(redis: RedisClient, userWallet: string) {
-	await redis.send("XTRIM", [`sse:${userWallet}`, "MAXLEN", "~", "1000"]);
+	};
 }
 
 export const sse = {
 	emitToUser,
 	emitToUsers,
-	readUserEvents,
+	subscribe,
 };

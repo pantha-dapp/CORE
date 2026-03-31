@@ -82,9 +82,11 @@ export function useSendPersonalMessage() {
 		onSuccess: (result) => {
 			console.log("[useSendPersonalMessage] onSuccess:", result);
 			if (result.success) {
-				queryClient.invalidateQueries({
+				// refetchQueries forces an immediate refetch even if the query is
+				// in error state (which invalidateQueries won't do reliably).
+				queryClient.refetchQueries({
 					queryKey: ["personal-messages", result.recipient],
-					refetchType: "active",
+					type: "active",
 				});
 			}
 		},

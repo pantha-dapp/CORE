@@ -5,58 +5,57 @@ import { authenticated } from "../../middleware/auth";
 import type { RouterEnv } from "../types";
 
 const app = new Hono<RouterEnv>().get("/events", authenticated, async (ctx) => {
-	const { appState, userWallet } = ctx.var;
-	const { redis } = appState.db;
-	// Use client's last-seen ID for resumption, or a fixed timestamp anchor for new connections.
-	// Never use "$" — it re-evaluates to the stream's current tail on every XREAD call,
-	// causing a race where events written between two XREAD cycles are permanently missed.
-	const clientLastId = ctx.req.header("Last-Event-ID");
-	const lastEventId = clientLastId ?? `${Date.now()}-0`;
+	const { userWallet } = ctx.var;
 
 	return streamSSE(ctx, async (stream) => {
-		let lastId = lastEventId;
 		let aborted = false;
-		console.log(
-			`[SSE] client connected wallet=${userWallet} lastEventId=${lastEventId}`,
-		);
+		let pendingResolve: (() => void) | null = null;
 
 		stream.onAbort(() => {
 			aborted = true;
-			clearInterval(heartbeat);
+			pendingResolve?.();
+			pendingResolve = null;
+		});
+
+		const queue: Array<{ type: string; payload: unknown }> = [];
+
+		const unsubscribe = sse.subscribe(userWallet, (event) => {
+			queue.push(event);
+			pendingResolve?.();
+			pendingResolve = null;
 		});
 
 		const heartbeat = setInterval(() => {
-			stream.writeSSE({ event: "ping", data: "1" });
+			if (!aborted) stream.writeSSE({ event: "ping", data: "1" });
 		}, 15000);
+
+		console.log(`[SSE] client connected wallet=${userWallet}`);
 
 		try {
 			while (!aborted) {
-				const messages = await sse.readUserEvents(redis, {
-					userWallet,
-					lastId,
-					blockMs: 5000,
-					count: 50,
-				});
-				if (messages.length > 0) {
-					console.log(
-						`[SSE] sending ${messages.length} message(s) to wallet=${userWallet}`,
-						messages,
-					);
+				if (queue.length === 0) {
+					await new Promise<void>((r) => {
+						pendingResolve = r;
+					});
 				}
 
-				for (const msg of messages) {
+				if (aborted) break;
+
+				const batch = queue.splice(0);
+				for (const msg of batch) {
+					if (aborted) break;
 					await stream.writeSSE({
 						event: msg.type,
 						data: JSON.stringify(msg.payload),
-						id: msg.id,
 					});
-					lastId = msg.id;
 				}
 			}
 		} catch (err) {
-			if (!aborted) console.error("SSE stream error:", err);
+			if (!aborted) console.error("[SSE] stream error:", err);
 		} finally {
 			clearInterval(heartbeat);
+			unsubscribe();
+			console.log(`[SSE] client disconnected wallet=${userWallet}`);
 		}
 	});
 });

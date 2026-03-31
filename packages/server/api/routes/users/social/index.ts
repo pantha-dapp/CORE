@@ -100,7 +100,7 @@ export default new Hono<RouterEnv>()
 				return respond.err(ctx, "Failed to save message", 500);
 			}
 
-			await sse.emitToUser(db.redis, {
+			sse.emitToUser({
 				userWallet: recipientWallet,
 				type: "dm:new",
 				payload: {
@@ -119,8 +119,8 @@ export default new Hono<RouterEnv>()
 			"query",
 			z.object({
 				participantWallet: zEvmAddress(),
-				after: z.number().optional(),
-				offset: z.number().default(0),
+				after: z.coerce.number().optional(),
+				offset: z.coerce.number().default(0),
 			}),
 		),
 		async (ctx) => {

@@ -298,48 +298,57 @@ export function dbExtensionHelpers(db: DbClient) {
 	}) {
 		const { data, label, userWallet, signature } = args;
 
-		const prevHash = await userActionPreviousHash({ userWallet });
+		return db.transaction(async (tx) => {
+			const [prev] = await tx
+				.select()
+				.from(schema.userActions)
+				.where(eq(schema.userActions.userWallet, userWallet))
+				.orderBy(desc(sql`rowid`))
+				.limit(1);
 
-		const message = jsonStringify({
-			prevHash,
-			userWallet,
-			label,
-			data,
-		});
+			const prevHash = prev ? prev.hash : keccak256(toHex("GENESIS"));
 
-		const hash = keccak256(toHex(message));
-
-		const valid = verifyMessage({
-			address: userWallet,
-			message,
-			signature,
-		});
-
-		if (!valid) {
-			throw new InvalidStateError("Invalid signature for user action.");
-		}
-
-		const [seqRow] = await db
-			.select({ maxSeq: max(schema.userActions.seq) })
-			.from(schema.userActions)
-			.where(and(eq(schema.userActions.userWallet, userWallet)));
-
-		const nextSeq = (seqRow?.maxSeq ?? -1) + 1;
-
-		const [action] = await db
-			.insert(schema.userActions)
-			.values({
-				hash,
-				label,
-				userWallet,
+			const message = jsonStringify({
 				prevHash,
+				userWallet,
+				label,
 				data,
-				signature,
-				seq: nextSeq,
-			})
-			.returning();
+			});
 
-		return action;
+			const hash = keccak256(toHex(message));
+
+			const valid = verifyMessage({
+				address: userWallet,
+				message,
+				signature,
+			});
+
+			if (!valid) {
+				throw new InvalidStateError("Invalid signature for user action.");
+			}
+
+			const [seqRow] = await tx
+				.select({ maxSeq: max(schema.userActions.seq) })
+				.from(schema.userActions)
+				.where(eq(schema.userActions.userWallet, userWallet));
+
+			const nextSeq = (seqRow?.maxSeq ?? -1) + 1;
+
+			const [action] = await tx
+				.insert(schema.userActions)
+				.values({
+					hash,
+					label,
+					userWallet,
+					prevHash,
+					data,
+					signature,
+					seq: nextSeq,
+				})
+				.returning();
+
+			return action;
+		});
 	}
 
 	const LIMIT_PER_PAGE_MESSAGES_BY_PARTICIPANTS = 30;

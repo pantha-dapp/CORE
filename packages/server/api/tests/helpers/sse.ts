@@ -1,74 +1,74 @@
-import type { RedisClient } from "bun";
 import { sse } from "../../../lib/utils/sse";
 
-type SseEvent = { id: string; type: string; payload: unknown };
+type SseEvent = { type: string; payload: unknown };
 
-export async function expectSseEvent(
-	redis: RedisClient,
-	opts: {
-		userWallet: string;
-		type: string;
-		lastId?: string;
-		timeoutMs?: number;
-	},
-): Promise<SseEvent> {
-	const deadline = Date.now() + (opts.timeoutMs ?? 5000);
+export function waitForSseEvent(opts: {
+	userWallet: string;
+	type: string;
+	timeoutMs?: number;
+}): Promise<SseEvent> {
+	return new Promise<SseEvent>((resolve, reject) => {
+		const deadline = setTimeout(() => {
+			unsubscribe();
+			reject(
+				new Error(
+					`Timed out waiting for SSE event "${opts.type}" for ${opts.userWallet}`,
+				),
+			);
+		}, opts.timeoutMs ?? 5000);
 
-	let lastId = opts.lastId ?? "0";
+		const unsubscribe = sse.subscribe(opts.userWallet, (event) => {
+			if (event.type === opts.type) {
+				clearTimeout(deadline);
+				unsubscribe();
+				resolve(event);
+			}
+		});
+	});
+}
 
-	while (Date.now() < deadline) {
-		// Non-blocking reads to avoid holding the shared RedisClient connection
-		const events: SseEvent[] = await sse.readUserEvents(redis, {
-			userWallet: opts.userWallet,
-			lastId,
-			blockMs: 0,
-			count: 50,
+/**
+ * Subscribes for `windowMs` and resolves only if no matching event arrives.
+ * Rejects immediately if an unexpected event is received.
+ * Subscribe BEFORE triggering the action under test.
+ */
+export function expectNoSseEvent(opts: {
+	userWallet: string;
+	type: string;
+	windowMs?: number;
+}): Promise<void> {
+	return new Promise<void>((resolve, reject) => {
+		const unsubscribe = sse.subscribe(opts.userWallet, (event) => {
+			if (event.type === opts.type) {
+				unsubscribe();
+				clearTimeout(timer);
+				reject(
+					new Error(
+						`Unexpected SSE event "${opts.type}" received for ${opts.userWallet}`,
+					),
+				);
+			}
 		});
 
-		for (const evt of events) {
-			lastId = evt.id;
-			if (evt.type === opts.type) return evt;
-		}
-
-		await new Promise((r) => setTimeout(r, 50));
-	}
-
-	throw new Error(
-		`Timed out waiting for SSE event "${opts.type}" for ${opts.userWallet}`,
-	);
-}
-
-export async function collectSseEvents(
-	redis: RedisClient,
-	opts: {
-		userWallet: string;
-		type?: string;
-		lastId?: string;
-	},
-): Promise<SseEvent[]> {
-	const events: SseEvent[] = await sse.readUserEvents(redis, {
-		userWallet: opts.userWallet,
-		lastId: opts.lastId ?? "0",
-		blockMs: 0,
-		count: 100,
+		const timer = setTimeout(() => {
+			unsubscribe();
+			resolve();
+		}, opts.windowMs ?? 500);
 	});
-
-	if (opts.type) return events.filter((e) => e.type === opts.type);
-	return events;
 }
 
+// Keep legacy names as aliases so existing imports still compile while tests
+// are progressively migrated.
+/** @deprecated Use waitForSseEvent instead */
+export const expectSseEvent = (
+	_redis: unknown,
+	opts: { userWallet: string; type: string; timeoutMs?: number },
+) => waitForSseEvent(opts);
+
+/** @deprecated No-op — in-memory pub/sub has no stream to drain. */
 export async function drainSseStream(
-	redis: RedisClient,
-	userWallet: string,
+	_redis: unknown,
+	_userWallet: string,
 ): Promise<string> {
-	const events: SseEvent[] = await sse.readUserEvents(redis, {
-		userWallet,
-		lastId: "0",
-		blockMs: 0,
-		count: 1000,
-	});
-
-	if (events.length === 0) return "0";
-	const last = events[events.length - 1];
-	return last?.id ?? "0";
+	return "";
 }
