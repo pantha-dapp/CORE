@@ -27,14 +27,14 @@
 		"@pantha/contracts": "workspace:*",
 		"@pantha/shared": "workspace:^",
 		"@qdrant/js-client-rest": "^1.16.2",
-		"@tanstack/ai": "^0.5.1",
-		"@tanstack/ai-openai": "^0.5.0",
-		"dotenv": "^16.4.7",
+		"@tanstack/ai": "^0.9.2",
+		"@tanstack/ai-openai": "^0.7.2",
+		"dotenv": "^17.3.1",
 		"drizzle-orm": "^0.45.1",
 		"drizzle-zod": "^0.8.3",
 		"hono": "^4.11.5",
 		"umap-js": "^1.4.0",
 		"luxon": "^3.7.2",
-		"viem": "^2.47.4"
+		"viem": "^2.47.6"
 	}
 }
