@@ -22,10 +22,13 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"deploy": "scripts/deploy.sh",
 		"fmt-lint": "biome check --write",
 		"prepare": "husky",
 		"client:dev": "bun run --cwd packages/web dev",
+		"client:serve": "bun run --cwd packages/web serve",
 		"server:dev": "bun run --cwd packages/server dev",
+		"server:start": "bun run --cwd packages/server start",
 		"contracts:migrate": "bun run --cwd packages/contracts migrate",
 		"db:migrate": "bun run --cwd packages/server db:migrate",
 		"hardhat:node": "bun run --cwd packages/contracts localnode",
