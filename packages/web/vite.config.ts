@@ -22,4 +22,12 @@ export default defineConfig({
 			"/ws": "http://localhost:31001",
 		},
 	},
+	preview: {
+		port: 31003,
+		strictPort: true,
+		proxy: {
+			"/api": "http://localhost:31001",
+			"/ws": "http://localhost:31001",
+		},
+	},
 });
