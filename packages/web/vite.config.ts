@@ -23,6 +23,7 @@ export default defineConfig({
 		},
 	},
 	preview: {
+		allowedHosts: ["app.pantha.academy", "www.pantha.academy"],
 		port: 31003,
 		strictPort: true,
 		proxy: {
