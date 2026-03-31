@@ -1,8 +1,8 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "b8455a18-deda-4777-9169-6462625d7f65",
-	"prevId": "5d7b4d3f-ac56-47ae-9538-44af37c64ecf",
+	"id": "813c71cf-88d6-4ac6-bfe7-9cc09ae8ed28",
+	"prevId": "b8455a18-deda-4777-9169-6462625d7f65",
 	"tables": {
 		"vector_cache": {
 			"name": "vector_cache",
@@ -988,8 +988,8 @@
 		"user_actions": {
 			"name": "user_actions",
 			"columns": {
-				"id": {
-					"name": "id",
+				"hash": {
+					"name": "hash",
 					"type": "text",
 					"primaryKey": true,
 					"notNull": true,
@@ -1070,7 +1070,7 @@
 				},
 				"user_action_user_wallet_idx": {
 					"name": "user_action_user_wallet_idx",
-					"columns": ["user_wallet", "id"],
+					"columns": ["user_wallet", "hash"],
 					"isUnique": true
 				}
 			},
@@ -1389,7 +1389,9 @@
 	"_meta": {
 		"schemas": {},
 		"tables": {},
-		"columns": {}
+		"columns": {
+			"\"user_actions\".\"id\"": "\"user_actions\".\"hash\""
+		}
 	},
 	"internal": {
 		"indexes": {}
