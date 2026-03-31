@@ -1,4 +1,5 @@
-import { PanthaProvider as PanthaProviderBase } from "@pantha/react";
+import { PanthaProvider as PanthaProviderBase, useEvent } from "@pantha/react";
+import { toast } from "sonner";
 import { useWalletClient } from "wagmi";
 
 export function PanthaProvider({ children }: { children: React.ReactNode }) {
@@ -6,7 +7,15 @@ export function PanthaProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<PanthaProviderBase apiBaseUrl={"/"} wallet={wallet}>
-			{children}
+			<NotificationsWrapper>{children}</NotificationsWrapper>
 		</PanthaProviderBase>
 	);
+}
+
+function NotificationsWrapper({ children }: { children: React.ReactNode }) {
+	useEvent("dm:new", ({ from }) => {
+		toast(`New message from ${from}`, {});
+	});
+
+	return <>{children}</>;
 }
