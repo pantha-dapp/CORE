@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x221": {
 		PanthaOrchestrator: {
-			address: "0xb44fc6e54f84cac21196e94bf684fd6b0d0c5919",
+			address: "0xc1ebebe95eba5b477a8c14dd28098b25be274e65",
 			abi: [
 				{
 					inputs: [
@@ -392,7 +392,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificate: {
-			address: "0x5ca27463cb4A0BA26b59fA7f1f26FB1c96Ac0dF8",
+			address: "0x3d2E2d4800fb0e80019f0A2356219dA50D944882",
 			abi: [
 				{
 					inputs: [],
@@ -916,7 +916,7 @@ export const definitions = {
 			],
 		},
 		PanthaKeyStore: {
-			address: "0xC8f89C6a1B683E4058Af073198D2C3e05A43fF75",
+			address: "0xfa3530dDadff0d822939760A7F296e804261a89F",
 			abi: [
 				{
 					inputs: [],
@@ -1194,7 +1194,7 @@ export const definitions = {
 			],
 		},
 		PanthaCertificationAuthority: {
-			address: "0x35Ce81cF5F38A8948AaDd9A37aC703A754e18609",
+			address: "0x32498Bf9B6F04058C00FBc81ba2e67622FAC226f",
 			abi: [
 				{
 					inputs: [],
@@ -1367,7 +1367,7 @@ export const definitions = {
 			],
 		},
 		PanthaToken: {
-			address: "0xa183608e323677d98b02a16a34df318e263a191a",
+			address: "0x67156296fd059c23d647abf180e713a85e41f241",
 			abi: [
 				{
 					inputs: [
@@ -1975,7 +1975,7 @@ export const definitions = {
 			],
 		},
 		PXP: {
-			address: "0xF9FdCbd0ecee3115CB56a548325478C5483678C8",
+			address: "0x9e94e91b373242Db40b4ff3335a16e583C044B6E",
 			abi: [
 				{
 					inputs: [],
@@ -2390,7 +2390,7 @@ export const definitions = {
 			],
 		},
 		PanthaTreasury: {
-			address: "0x5C1731bDcA43A7e15e66937740f2B39EBF4307dB",
+			address: "0xB8Ff1243A7F504C974bDE0e930dBbA3C8A4e88B3",
 			abi: [
 				{
 					inputs: [
@@ -2511,7 +2511,7 @@ export const definitions = {
 			],
 		},
 		PanthaShop: {
-			address: "0x6f691F98beF38E3DA1B83F825cA8B995636d7a86",
+			address: "0xcB37A29A21aFCA323E150D1D92111CEC2EF260a8",
 			abi: [
 				{
 					inputs: [],
