@@ -232,6 +232,38 @@ export default new Hono<RouterEnv>()
 						correct = content.correctOptionIndex === parseInt(answer[0], 10);
 						break;
 					case "true_false":
+						if (!skipLogging) {
+							session[correct ? "correct" : "incorrect"].push(
+								session.currentPage,
+							);
+
+							void db
+								.insert(db.schema.userAnswerLogs)
+								.values({
+									pageId: page.id,
+									correct: correct,
+								})
+								.catch((err) => {
+									console.error("Failed to log user answer:", err);
+								});
+
+							void db
+								.registerAction({
+									userWallet,
+									label: "page:answer",
+									data: {
+										chapterId: session.chapterId,
+										pageId: page.id,
+										correct,
+									},
+									signature,
+								})
+								.catch((err) => {
+									gameSessions.delete(userWallet);
+									console.error("Failed to log user action:", err);
+								});
+						}
+
 						correct = content.isTrue === (answer[0].toLowerCase() === "true");
 						break;
 					case "teach_and_explain_content":
@@ -253,24 +285,31 @@ export default new Hono<RouterEnv>()
 			if (!skipLogging) {
 				session[correct ? "correct" : "incorrect"].push(session.currentPage);
 
-				await db.insert(db.schema.userAnswerLogs).values({
-					pageId: page.id,
-					correct: correct,
-				});
-
-				db.registerAction({
-					userWallet,
-					label: "page:answer",
-					data: {
-						chapterId: session.chapterId,
+				void db
+					.insert(db.schema.userAnswerLogs)
+					.values({
 						pageId: page.id,
-						correct,
-					},
-					signature,
-				}).catch((err) => {
-					gameSessions.delete(userWallet);
-					console.error("Failed to log user action:", err);
-				});
+						correct: correct,
+					})
+					.catch((err) => {
+						console.error("Failed to log user answer:", err);
+					});
+
+				void db
+					.registerAction({
+						userWallet,
+						label: "page:answer",
+						data: {
+							chapterId: session.chapterId,
+							pageId: page.id,
+							correct,
+						},
+						signature,
+					})
+					.catch((err) => {
+						gameSessions.delete(userWallet);
+						console.error("Failed to log user action:", err);
+					});
 			}
 
 			if (session.currentPage >= session.pages.length) {
