@@ -57,7 +57,7 @@ export function useSetKeygenData() {
 				throw new Error("Failed to set keygen data");
 			}
 
-			if (!response.data.txHash || response.data.alreadyRegistered) {
+			if (!response.data.txHash) {
 				// Data already registered on-chain — refresh from contract
 				queryclient.invalidateQueries({
 					queryKey: [
