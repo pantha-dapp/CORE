@@ -99,7 +99,7 @@ export default function CertificateCard({
 			: null;
 
 	return (
-		<div className="rounded-xl border border-dark-border bg-linear-to-br from-dark-surface to-dark-surface/30 p-5 flex flex-col gap-3">
+		<div className="rounded-xl border border-dark-border bg-linear-to-br from-dark-surface to-dark-surface/30 p-5 flex flex-col gap-3 ">
 			{/* Header */}
 			<div className="flex items-start gap-3">
 				<span className="text-3xl shrink-0">🎓</span>
