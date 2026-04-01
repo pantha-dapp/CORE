@@ -118,6 +118,4 @@ Pantha suits **text-first** subjects—history, sciences, art history, blockchai
 
 ---
 
-## License
 
-[Add your license here]
