@@ -21,18 +21,22 @@ export async function prepareCourseIcons(
 	}
 	preparingIcon.add(id);
 
-	const courseIconUrl = course.icon.url;
-	if (!courseIconUrl) {
-		ai.image.generateIconImage({ prompt: course.icon.prompt });
-	}
+	try {
+		const courseIconUrl = course.icon.url;
+		if (!courseIconUrl) {
+			ai.image.generateIconImage({ prompt: course.icon.prompt });
+		}
 
-	const chapters = await db.courseChaptersById({ courseId: id });
+		const chapters = await db.courseChaptersById({ courseId: id });
 
-	for (const [_, chapter] of chapters.entries()) {
-		!chapter.icon.url &&
-			ai.image
-				.generateIconImage({ prompt: chapter.icon.prompt })
-				.catch(console.error);
+		for (const [_, chapter] of chapters.entries()) {
+			!chapter.icon.url &&
+				ai.image
+					.generateIconImage({ prompt: chapter.icon.prompt })
+					.catch(console.error);
+		}
+	} finally {
+		preparingIcon.delete(id);
 	}
 }
 
@@ -77,30 +81,34 @@ export async function prepareCourseChapters(
 	}
 	preparingChapters.add(id);
 
-	const { overview } = await ai.llm.generateNewCourseSkeleton({
-		courseTitle: course.title,
-		courseDescription: course.description,
-		assumedPrerequisites: [...course.topics],
-		targetAudience: "Generic learner interested in the course topic",
-		constraints: {
-			focus: "theoretical and practical balance, no follow along tutorials.",
-			granularity: "very fine-grained",
-			minimumChapters: 50,
-		},
-	});
+	try {
+		const { overview } = await ai.llm.generateNewCourseSkeleton({
+			courseTitle: course.title,
+			courseDescription: course.description,
+			assumedPrerequisites: [...course.topics],
+			targetAudience: "Generic learner interested in the course topic",
+			constraints: {
+				focus: "theoretical and practical balance, no follow along tutorials.",
+				granularity: "very fine-grained",
+				minimumChapters: 50,
+			},
+		});
 
-	await db
-		.insert(db.schema.courseChapters)
-		.values(
-			overview.chapters.map((chapter, idx) => ({
-				courseId: course.id,
-				title: chapter.title,
-				description: chapter.description,
-				intent: chapter.intent,
-				order: idx,
-				icon: { prompt: chapter.icon, url: null },
-			})),
-		)
-		.execute();
-	prepareCourseIcons(id, config).catch(console.error);
+		await db
+			.insert(db.schema.courseChapters)
+			.values(
+				overview.chapters.map((chapter, idx) => ({
+					courseId: course.id,
+					title: chapter.title,
+					description: chapter.description,
+					intent: chapter.intent,
+					order: idx,
+					icon: { prompt: chapter.icon, url: null },
+				})),
+			)
+			.execute();
+		prepareCourseIcons(id, config).catch(console.error);
+	} finally {
+		preparingChapters.delete(id);
+	}
 }

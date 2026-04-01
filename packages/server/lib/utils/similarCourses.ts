@@ -32,6 +32,15 @@ export async function prepareSimilarCourses(
 	});
 
 	for (const generatedCourse of similarCourses) {
+		let createdCourseInfo:
+			| {
+					id: string;
+					title: string;
+					description: string;
+					topics: string[];
+			  }
+			| undefined;
+
 		await db.transaction(async (tx) => {
 			const existingCourseWithTitle = tx
 				.select()
@@ -59,16 +68,25 @@ export async function prepareSimilarCourses(
 					topic,
 				});
 			}
-			await insertCourseIntoVectorDb(
-				createdCourse.id,
+			createdCourseInfo = {
+				id: createdCourse.id,
+				title: createdCourse.title,
+				description: createdCourse.description,
+				topics: generatedCourse.topics,
+			};
+		});
+
+		if (createdCourseInfo) {
+			insertCourseIntoVectorDb(
+				createdCourseInfo.id,
 				{
-					title: createdCourse.title,
-					description: createdCourse.description,
-					topics: generatedCourse.topics,
+					title: createdCourseInfo.title,
+					description: createdCourseInfo.description,
+					topics: createdCourseInfo.topics,
 				},
 				{ db, ai },
-			);
-			await prepareCourseIcons(createdCourse.id, { db, ai });
-		});
+			).catch(console.error);
+			prepareCourseIcons(createdCourseInfo.id, { db, ai }).catch(console.error);
+		}
 	}
 }
