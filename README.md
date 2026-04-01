@@ -1,99 +1,120 @@
 # Pantha
 
-> **Learn anything. Your way.** AI-powered personalized courses from beginner to advanced.
+**Learn anything. Your way.**
+
+Pantha is an AI-native learning platform where learners describe what they want to study, answer a few clarifying questions, and receive a structured course from beginner to advanced. Along the way they earn non-transferable experience points, compete for social streaks with friends, chat with end-to-end encryption, buy perks with a tradable token, and—on chain—can anchor verifiable course-completion credentials.
 
 ---
 
-## What is Pantha?
+## What the project does
 
-Pantha is a learning platform where you choose the subject and the AI builds the curriculum. You begin by answering a short set of questions about what you want to learn and why. The AI then asks follow-up questions to clarify your level, interests, and goals, so the course it generates is tailored to you rather than a generic template.
+Many platforms offer fixed curricula or generic “AI courses.” Pantha focuses on **personalization**: the model infers your goal, resolves uncertainty with follow-up questions, and either matches you to an existing course in the vector index or **generates a new course** with a full chapter outline. Each chapter is turned into interactive pages (**quizzes, true/false, matching, fill-in-the-blanks, image-based tasks, teach-and-explain content**, and more). Your answers are scored, explanations can be generated for the last attempt, and progress advances through the course.
 
-Once the AI has enough context, it produces a full course with **50+ chapters**, structured from beginner to advanced. Each chapter includes multiple activity types: **quizzes**, **teach-and-explain** content, **matching** exercises, and **fill-in-the-blanks**. Your answers are scored, and your progress is tracked across the entire course.
+A **social layer** sits on top: follow others, become **friends** when mutual follows exist, see profiles and enrollments (with privacy controls), and maintain **personal learning streaks** and **friend streaks** that depend on both people being active on the same calendar day. Real-time updates (new DMs, streak milestones) reach the client over **Server-Sent Events**.
 
-**What you can learn:** History, chemistry, art, blockchain, and any topic that can be studied from text. Pantha is built for knowledge you gain through reading and practice—not skills that depend on video demos or physical practice (e.g., playing an instrument).
-
-**Social layer:** You can follow other learners, see what they’re studying, add friends, and maintain **learning streaks** together. Learners on the same topic are grouped into **activity groups**, so you can see who else is on a similar path.
-
-**Credentials:** When you finish a course, you receive a **cryptographic certificate**. Your learning actions are recorded as a signed log (a **hash chain**), and the platform derives a **Merkle root** as proof of completion. This gives you a verifiable, on-chain credential.
-
-**Rewards:** Pantha uses two tokens. **$PXP** is earned through activity—completing courses, events, helping others, posting to the social feed—and is not tradable. **$PANTHA** is tradable; weekly rewards are distributed to PXP holders based on their share of total PXP minted that week. Revenue comes from user payments (e.g., course generation, streak freezes) and LP fees. Smart contracts run on **Flow**; data is stored on **Filecoin S3**.
-
----
-
-## How It Works
-
-1. **Answer a few questions** — Tell us what you want to learn.
-2. **AI digs deeper** — Follow-up questions refine your goals.
-3. **Get your course** — A full beginner-to-advanced curriculum with 50+ chapters.
-4. **Learn & earn** — Quizzes, matching, fill-in-the-blanks, and scores. Track progress and earn rewards.
+The economy separates **reputation** from **money**: **$PXP** is soulbound points minted when you learn; **$PANTHA** is an ERC-20 with **permit** support used for purchases and for **reward distribution** to learners proportional to their PXP-weighted share—similar in spirit to **MasterChef-style** staking rewards, but with **XP as the weight** instead of staked LP tokens.
 
 ---
 
 ## Features
 
-### 📚 Custom AI Courses
-- **50+ chapters** per course, structured from beginner to advanced
-- **Multiple question types**: Quizzes, matching, fill-in-the-blanks, teach & explain content
-- **Scores & progress tracking** built in
-- Learn **history, chemistry, art, blockchain**—anything book-based (no video/physical skills like guitar)
+### Courses & AI
 
-### 👥 Social & Community
-- **Follow others** and see what they’re learning
-- **Learning streaks** with friends
-- **Activity groups** — learners on the same topic are grouped together
-- Add friends and stay motivated together
+- **Guided intake**: category, free-text intent, and iterative **clarification questions** with a configurable budget so the course matches skill and interests.
+- **Semantic match or create**: embeddings and a **vector database** find similar existing courses; otherwise the system **authors a new course skeleton** (title, description, topics, ordered chapters).
+- **Rich chapters**: async generation of chapter pages; **AI-generated illustrations** where appropriate; correct answers are not leaked to the client.
+- **Adaptive feedback**: optional **LLM explanations** after answers, tuned for a mobile-friendly learning flow.
+- **Progress**: enrollment, chapter ordering, and completion/revision tracked so first-time completion can mint more XP than practice runs.
 
-### 🏆 Verifiable Achievements
-- **Cryptographic certificates** on course completion
-- Signed action logs as a **hash chain**
-- **Merkle root proof** for verifiable credentials
+### XP (Pantha XP — $PXP)
 
-### 💎 Token Economy
+- **Non-transferable** ERC-20: minted through the orchestrator, **transfers and approvals disabled** so XP stays tied to the wallet that earned it.
+- **Earned by learning** (e.g. completing or revising chapters); amounts scale with **how well you did** on scored activities.
+- **Transparent reasons** on-chain (short-coded “reason” plus a resource id tied to the chapter), so indexing and analytics can attribute mints.
 
-| Token | Purpose |
-|-------|---------|
-| **$PXP** (Pantha XP) | Earned, non-tradable. Earn by completing courses, events, helping others, posting to the social feed. Used for weekly $PANTHA reward distribution. |
-| **$PANTHA** | Tradable. Weekly rewards from user payments (course generation, streak freezes, etc.) and LP fees. |
+### Token rewards ($PANTHA)
 
-**Reward formula:** `Your weekly PXP ÷ Total PXP minted that week` = your share of $PANTHA rewards.
+- **Tradable** token with **EIP-2612 permit** for gas-conscious checkouts in the shop.
+- **Reward vault logic**: the protocol tracks **total XP** and each user’s **XP balance** as shares. When the platform (or treasury workflow) **deposits** PANTHA into the distributor, everyone’s share of the next chunk of rewards is proportional to their **XP relative to the network**—the same mathematical idea as **MasterChef `accRewardPerShare`**, applied here to **minted XP** instead of farm deposits. Users can **claim** accrued rewards; **minting new XP** also updates their bookkeeping so rewards stay fair.
+
+### Shop
+
+- **In-game purchases** priced in **$PANTHA**: e.g. **Streak Freeze** (shield a missed day conceptually; policy prevents abuse like duplicate unconsumed purchases where enforced).
+- **Gas-light UX**: purchases use **permit** so users sign once instead of separate `approve` transactions when supported.
+- **Revenue routing**: payments go to the **treasury** contract; the product can fund weekly or event-driven **reward rounds** from that flow.
+- _Roadmap-friendly:_ an **XP multiplier** or similar boost fits the same shop + `bytes8` item id pattern as streak freeze.
+
+### Streaks
+
+- **Personal streak**: extends when you’re active on consecutive **local days** (respecting your **timezone**); multiple activities the same day do not inflate the count; missing a day resets the pattern.
+- **Friend streak**: only grows when **both** friends record activity on the **same day**; one-sided activity pauses the mutual streak until both show up again.
+
+### Encryption & chat
+
+- **Wallet-derived keys** and **ECDH** to agree on shared secrets; **symmetric encryption** for message bodies.
+- **On-chain key directory**: users can register **salt + public key** material via a **signed EIP-712** message so others can encrypt for them without a centralized key server.
+- **Direct messages** stored as **ciphertext**; recipients decrypt client-side. **Message policy** per user: who can DM (**anyone**, **friends only**, or **no one**).
+- **Live notifications** when a new DM arrives.
+
+### Social
+
+- **Follow / unfollow**, **followers**, **following**, and **mutual friends**.
+- **User search**, **profiles** (name, username, visibility), and gated views for **private** profiles.
+- **Feed & leaderboard (product vision)** — The app includes **Social** experiences such as a community feed and friends leaderboard in the UI; full backend feed posts and a dedicated ranked leaderboard API are still evolving—**XP totals and on-chain pending rewards** already give a fairness signal for “who earned most” style competition.
+
+### Certificates (verifiable credentials)
+
+- **Certification authority** on chain commits a **Merkle root** of a learner’s **action chain** (hashed log of learning actions), enforces **one-time use** of each root, and authorizes minting of **ERC-721 certificates** with metadata URIs.
+- This gives a path to **tamper-evident, verifiable completion** without exposing the entire private learning trail on chain—only the committed root and the NFT proof.
+
+### Auth & developer ergonomics
+
+- **Sign-In with Ethereum**-style flow: nonce challenge, signed message, **JWT** session for the API.
+- **Test faucet** for **$PANTHA** (cooldown-gated) so demos and hackathon judges can try purchases and flows without mainnet funds.
+- **Background jobs** for long AI or content-prep steps, with **job status** polling for a responsive UX.
 
 ---
 
-## Tech Stack
+## Tech stack & tools
 
-- **Smart contracts**: Flow blockchain
-- **Storage**: Filecoin S3
+**Application**
+
+- **Bun** as the JavaScript runtime for the API and tests
+- **Hono** HTTP framework, **Zod** validation
+- **React 19**, **Vite**, **Tailwind CSS**
+- **TanStack Router / Query** (and related client data patterns in the web app)
+- **Privy** authentication SDK and **wagmi** / **viem** for wallets
+
+**Data & infrastructure**
+
+- **SQLite** with **Drizzle ORM** for relational app state
+- **Redis** for caching, sessions, job state, and real-time **event streams** behind SSE
+- **Qdrant** vector database for **course similarity** and retrieval
+- **S3-compatible object storage** and **Synapse / Filecoin**-oriented SDK usage for durable media where configured
+
+**AI**
+
+- **TanStack AI** with pluggable LLM and embedding providers (OpenAI-compatible and others as configured)
+- Embeddings for course matching; LLM tasks for clarification, course authoring, page content, and explanations
+- **Sharp** (and related tooling in the workspace) for image processing where needed
+
+**Blockchain**
+
+- **Solidity** smart contracts (**Hardhat 3**, **OpenZeppelin** contracts)
+- **viem** for reads, writes, and typed ABIs
+- Target chain: **Flow EVM** testnet configuration in the deployed setup
+- Contracts include: **orchestrator** (XP mint + reward math), **$PXP**, **$PANTHA** (permit), **shop**, **treasury**, **key store**, **certification authority**, **ERC-721 certificates**
+
+**Quality**
+
+- **Biome** for formatting and lint in the workspace
+- **Bun test** integration tests covering auth, courses, XP minting, streaks, social graph, encrypted chat, shop, and faucet flows
 
 ---
 
-## Landing Page Reference (Copy & Sections)
+## Who it’s for
 
-Use these sections when building your landing page:
-
-### Hero
-- **Headline**: "Learn Anything. Your Way."
-- **Subheadline**: "AI creates personalized courses for you—from beginner to advanced. Earn rewards as you learn."
-- **CTA**: "Start Learning" / "Create Your Course"
-
-### Value Props (3–4 cards)
-1. **Personalized** — AI designs your course based on your goals
-2. **Comprehensive** — 50+ chapters, quizzes, and progress tracking
-3. **Social** — Learn with friends, streaks, and activity groups
-4. **Verified** — Cryptographic certificates on completion
-
-### How It Works (3–4 steps)
-1. Answer questions → 2. AI refines your goals → 3. Get your course → 4. Learn & earn
-
-### Token Economy (optional section)
-- $PXP: Earn by learning, helping, engaging
-- $PANTHA: Weekly rewards from platform revenue
-
-### Social Proof / Features
-- Follow learners, streaks, activity groups
-- Verifiable on-chain certificates
-
-### Final CTA
-- "Create Your First Course" / "Join Pantha"
+Pantha suits **text-first** subjects—history, sciences, art history, blockchain, languages—where reading, recall, and reasoning matter more than physical demonstration. It pairs that with **crypto-native identity** (wallet login), **fair rewards** tied to learning effort, and **privacy-aware social** features.
 
 ---
 
