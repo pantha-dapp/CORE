@@ -27,7 +27,7 @@ export function createAi(args: {
 }) {
 	const { aiClient, vectorDbClient, objectStorage } = args;
 	const llmCache = createAiCache(vectorDbClient);
-	const imageProcessing: Partial<Record<string, Promise<{ url: string }>>> = {};
+	const imageProcessing: Record<string, Promise<{ url: string }>> = {};
 	let _activeImageCount = 0;
 	const _imageQueue: Array<() => void> = [];
 	function acquireImageSlot(): Promise<void> {
@@ -62,11 +62,11 @@ export function createAi(args: {
 			schemas.input.parse(input);
 			const inputEmbedding = noCache
 				? []
-				: await aiClient.embedding.text(
-						jsonStringify({ systemPrompt, prompt, input }),
-					);
+				: await aiClient.embedding
+						.text(jsonStringify({ systemPrompt, prompt, input }))
+						.catch(() => null);
 
-			if (!noCache) {
+			if (!noCache && inputEmbedding) {
 				const cachedResponse = await llmCache.getCachedResponse<z.infer<R>>(
 					inputEmbedding,
 					schemas.output,
@@ -83,7 +83,7 @@ export function createAi(args: {
 				systemPrompts: [systemPrompt ?? ""],
 			});
 
-			if (!noCache) {
+			if (!noCache && inputEmbedding) {
 				llmCache.setCachedResponse(response, inputEmbedding);
 			}
 
