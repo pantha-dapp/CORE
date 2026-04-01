@@ -10,7 +10,7 @@ import {
 	type StartedTestContainer,
 	Wait,
 } from "testcontainers";
-import { createWalletClient, http } from "viem";
+import { createWalletClient, http, nonceManager } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 import { createAi } from "../../../lib/ai";
@@ -96,6 +96,7 @@ beforeAll(
 				chain: hardhat,
 				account: privateKeyToAccount(
 					"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+					{ nonceManager },
 				),
 			}),
 		});
