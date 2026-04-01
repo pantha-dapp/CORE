@@ -1,4 +1,4 @@
-import { ForbiddenError, NotFoundError } from "../errors";
+import { ForbiddenError, NotFoundError, UnauthorizedError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"chat"> = {
@@ -7,13 +7,13 @@ const enforcers: Enforcers<"chat"> = {
 		const recipientWallet = resource.userWallet;
 
 		if (user === recipientWallet)
-			throw new ForbiddenError("You cannot message yourself.");
+			throw new UnauthorizedError("You cannot message yourself.");
 
 		const target = await db.userByWallet({ userWallet: recipientWallet });
 		if (!target) throw new NotFoundError("User not found.");
 
 		if (target.messagePolicy === "noone") {
-			throw new ForbiddenError("This user does not accept messages.");
+			throw new UnauthorizedError("This user does not accept messages.");
 		}
 
 		const canMessage =
@@ -26,7 +26,7 @@ const enforcers: Enforcers<"chat"> = {
 
 		if (canMessage) return true;
 
-		throw new ForbiddenError(
+		throw new UnauthorizedError(
 			"You do not have permission to message this user.",
 		);
 	},

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { ForbiddenError, NotFoundError } from "../errors";
+import { ForbiddenError, NotFoundError, UnauthorizedError } from "../errors";
 import type { Enforcers } from ".";
 
 const enforcers: Enforcers<"course"> = {
@@ -42,7 +42,19 @@ const enforcers: Enforcers<"course"> = {
 			.get();
 		console.log(certPurchase);
 		if (!certPurchase) {
-			throw new ForbiddenError(
+			const hasCertificate = db
+				.select({ id: db.schema.userCertificates.id })
+				.from(db.schema.userCertificates)
+				.where(eq(db.schema.userCertificates.userWallet, user))
+				.get();
+
+			if (hasCertificate) {
+				throw new ForbiddenError(
+					"You have already completed the certification process.",
+				);
+			}
+
+			throw new UnauthorizedError(
 				"You need to purchase a Course Certificate from the shop before requesting certification.",
 			);
 		}
