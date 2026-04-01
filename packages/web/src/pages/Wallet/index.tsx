@@ -137,7 +137,7 @@ export default function Wallet() {
 						<p className="text-sm">No certificates yet. Keep learning!</p>
 					</div>
 				) : (
-					<div className="grid gap-4 sm:grid-cols-2">
+					<div className="grid gap-4 sm:grid-cols-2 pb-12">
 						{certificates.map((cert) => (
 							<CertificateCard
 								key={cert.tokenId}
