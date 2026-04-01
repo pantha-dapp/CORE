@@ -456,20 +456,6 @@ export default new Hono<RouterEnv>()
 										icon: { prompt: newCourse.overview.icon, url: null },
 									});
 
-									await insertCourseIntoVectorDb(
-										courseId,
-										{
-											title:
-												evaluation.courseGenerationInstructions.courseTitle,
-											description:
-												evaluation.courseGenerationInstructions
-													.courseDescription,
-											topics:
-												evaluation.courseGenerationInstructions
-													.assumedPrerequisites,
-										},
-										{ db, ai },
-									);
 									generatedCourseId = courseId;
 
 									for (const topic of newCourse.overview.topics) {
@@ -519,6 +505,24 @@ export default new Hono<RouterEnv>()
 									}
 									throw err;
 								});
+
+							if (
+								generatedCourseId &&
+								evaluation.courseGenerationInstructions
+							) {
+								insertCourseIntoVectorDb(
+									generatedCourseId,
+									{
+										title: evaluation.courseGenerationInstructions.courseTitle,
+										description:
+											evaluation.courseGenerationInstructions.courseDescription,
+										topics:
+											evaluation.courseGenerationInstructions
+												.assumedPrerequisites,
+									},
+									{ db, ai },
+								).catch(console.error);
+							}
 
 							await db.enrollUserInCourse({
 								userWallet: userWallet,

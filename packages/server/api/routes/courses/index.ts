@@ -260,7 +260,7 @@ export default new Hono()
 			const chapters = await db.courseChaptersById({ courseId });
 
 			if (courseId && chapters.length === 0) {
-				prepareCourseChapters(courseId, { db, ai });
+				prepareCourseChapters(courseId, { db, ai }).catch(console.error);
 				return respond.err(
 					ctx,
 					"Course chapters are being prepared. Please check back later.",
