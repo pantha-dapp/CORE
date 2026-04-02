@@ -40,7 +40,7 @@ export function createJob(redis: RedisClient, fn: () => Promise<void>) {
 	const promise = new Promise<void>((resolve, reject) => {
 		fn()
 			.then(() => {
-				jobStore.update(id, { state: "success" });
+				void jobStore.update(id, { state: "success" });
 				resolve();
 			})
 			.catch(async (err) => {
@@ -50,12 +50,12 @@ export function createJob(redis: RedisClient, fn: () => Promise<void>) {
 
 				fn()
 					.then(() => {
-						jobStore.update(id, { state: "success" });
+						void jobStore.update(id, { state: "success" });
 						resolve();
 					})
 					.catch(async (err) => {
 						console.error("Job failed:", err);
-						jobStore.update(id, { state: "failed", error: String(err) });
+						await jobStore.update(id, { state: "failed", error: String(err) });
 						reject(err);
 					});
 			});
