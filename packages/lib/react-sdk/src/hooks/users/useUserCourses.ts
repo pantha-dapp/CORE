@@ -4,11 +4,12 @@ import { usePanthaContext } from "../../context/PanthaProvider";
 export function useUserCourses(args: { walletAddress?: string }) {
 	const { wallet, api } = usePanthaContext();
 	const { walletAddress } = args;
+	const enabled = !!walletAddress && !!wallet && !!api.jwtExists;
 
 	return useQuery({
 		queryKey: ["userCourses", walletAddress],
 		queryFn: async () => {
-			if (!wallet || !walletAddress) {
+			if (!enabled) {
 				throw new Error("not connected");
 			}
 
@@ -23,6 +24,7 @@ export function useUserCourses(args: { walletAddress?: string }) {
 
 			return enrollmentsResponse.data;
 		},
-		enabled: !!walletAddress,
+		staleTime: 5 * 60 * 1000,
+		enabled,
 	});
 }
