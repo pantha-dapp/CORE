@@ -28,7 +28,16 @@ import { ThemeProvider } from "./shared/contexts/ThemeContext";
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find the root element");
 
-const queryClient = new QueryClient({ defaultOptions: {} });
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 60_000,
+			refetchOnWindowFocus: false,
+			refetchOnReconnect: false,
+			retry: 1,
+		},
+	},
+});
 
 function AppWrapper(props: { children: React.ReactNode }) {
 	const { api, ready } = usePanthaContext();
