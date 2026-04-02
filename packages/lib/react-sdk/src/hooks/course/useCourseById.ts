@@ -5,7 +5,7 @@ export function useCourseById(args: { id?: string }) {
 	const { id } = args;
 	const { wallet, api } = usePanthaContext();
 
-	const enabled = !!wallet && !!id;
+	const enabled = !!wallet && !!api.jwtExists && !!id;
 
 	return useQuery({
 		queryKey: ["courseById", id],
@@ -25,6 +25,7 @@ export function useCourseById(args: { id?: string }) {
 
 			return courseResponse.data;
 		},
+		staleTime: 5 * 60 * 1000,
 		enabled,
 	});
 }
