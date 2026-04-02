@@ -17,6 +17,7 @@ import Dashboard from "./Dashboard";
 import ExplorePage from "./Explore";
 import IndexPage from "./IndexPage";
 import LoginPage from "./LoginPage";
+import Messages from "./Messages";
 import Onboarding from "./Onboarding";
 import Profile from "./Profile";
 import Shop from "./Shop";
@@ -181,6 +182,24 @@ const socialRoute = createRoute({
 	},
 });
 
+const messagesRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/messages",
+	validateSearch: (search: Record<string, unknown>) => ({
+		type: (search.type as "personal" | "group") ?? "personal",
+		address: search.address as string | undefined,
+		chatId: search.chatId !== undefined ? Number(search.chatId) : undefined,
+		name: search.name as string | undefined,
+	}),
+	component: function MessagesRoute() {
+		return (
+			<ProtectedRoute type="loggedInOnly">
+				<Messages />
+			</ProtectedRoute>
+		);
+	},
+});
+
 const testRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/test",
@@ -214,6 +233,7 @@ const routeTree = rootRoute.addChildren([
 	dashboardRoute,
 	ChapterDetailRoute,
 	socialRoute,
+	messagesRoute,
 	profileRoute,
 	testRoute,
 	exploreRoute,
