@@ -362,9 +362,57 @@ export default new Hono()
 				return respond.err(ctx, "Enrollment not found.", 404);
 			}
 
-			const jobId = createJob(db.redis, () =>
+			// Atomically claim the certificate purchase before spawning the job.
+			// This prevents concurrent requests from both passing the policy check
+			// (which only reads consumed=0) and spawning duplicate certify transactions.
+			const [claimed] = await db
+				.update(db.schema.userPurchases)
+				.set({ consumed: 1 })
+				.where(
+					and(
+						eq(db.schema.userPurchases.userWallet, userWallet),
+						eq(db.schema.userPurchases.itemId, "CERTIFCT"),
+						eq(db.schema.userPurchases.consumed, 0),
+					),
+				)
+				.returning();
+
+			if (!claimed) {
+				return respond.err(
+					ctx,
+					"Certificate issuance is already in progress. Please wait.",
+					409,
+				);
+			}
+
+			const { id: jobId, promise: jobPromise } = createJob(db.redis, () =>
 				issueCertificate({ userWallet, courseId, appState: ctx.var.appState }),
 			);
+
+			// Log success/failure so it's visible in server logs
+			jobPromise
+				.then(() =>
+					console.log(
+						`[certification] job ${jobId} succeeded for wallet=${userWallet} course=${courseId}`,
+					),
+				)
+				.catch((err: unknown) => {
+					// Reset consumed so the user can retry after a failure
+					db.update(db.schema.userPurchases)
+						.set({ consumed: 0 })
+						.where(
+							and(
+								eq(db.schema.userPurchases.userWallet, userWallet),
+								eq(db.schema.userPurchases.itemId, "CERTIFCT"),
+								eq(db.schema.userPurchases.consumed, 1),
+							),
+						)
+						.run();
+					console.error(
+						`[certification] job ${jobId} FAILED for wallet=${userWallet} course=${courseId}:`,
+						err,
+					);
+				});
 
 			return respond.ok(
 				ctx,
