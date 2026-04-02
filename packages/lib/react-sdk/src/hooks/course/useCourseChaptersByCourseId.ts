@@ -5,11 +5,12 @@ import { usePanthaContext } from "../../context/PanthaProvider";
 export function useCourseChaptersByCourseId(args: { courseId?: string }) {
 	const { wallet, api } = usePanthaContext();
 	const { courseId } = args;
+	const enabled = !!wallet && !!api.jwtExists && !!courseId;
 
 	return useQuery({
 		queryKey: ["courseChaptersByCourseId", courseId],
 		queryFn: async () => {
-			if (!wallet || !courseId) {
+			if (!enabled) {
 				throw new Error("not connected");
 			}
 
@@ -25,6 +26,6 @@ export function useCourseChaptersByCourseId(args: { courseId?: string }) {
 			return chaptersResponse.data;
 		},
 		staleTime: 7 * DAY,
-		enabled: !!courseId,
+		enabled,
 	});
 }
