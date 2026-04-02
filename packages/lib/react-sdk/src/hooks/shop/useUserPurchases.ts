@@ -5,11 +5,12 @@ import { usePanthaContext } from "../../context/PanthaProvider";
 
 export function useUserPurchases() {
 	const { api, wallet } = usePanthaContext();
+	const enabled = !!wallet && !!api.jwtExists;
 
 	return useQuery({
 		queryKey: ["userPurchases", wallet?.account.address],
 		queryFn: async () => {
-			if (!wallet) {
+			if (!enabled) {
 				throw new Error("not connected");
 			}
 
@@ -18,5 +19,6 @@ export function useUserPurchases() {
 			return response.data;
 		},
 		staleTime: 20 * MINUTE,
+		enabled,
 	});
 }
