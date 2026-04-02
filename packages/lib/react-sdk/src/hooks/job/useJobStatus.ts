@@ -25,15 +25,16 @@ export function useJobStatus(args: { jobId: string | undefined }) {
 
 			return jobStatusResponse.data;
 		},
+		retry: 1,
 
 		refetchInterval: (o) => {
 			const status = o.state.data?.state;
 
-			if (!status) return 1000;
+			if (!status) return false;
 			if (status === "success") return false;
 			if (status === "failed") return false;
 
-			return 1000; // poll
+			return 2000; // poll
 		},
 		refetchIntervalInBackground: true,
 
