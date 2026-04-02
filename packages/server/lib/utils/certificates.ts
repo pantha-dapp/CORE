@@ -52,7 +52,11 @@ export async function issueCertificate({
 		.orderBy(sql`rowid`);
 
 	const merkleRoot = computeMerkleRoot(actionChain.map((a) => a.hash));
+	console.log(
+		`[cert] wallet=${userWallet} course=${courseId} actions=${actionChain.length} merkleRoot=${merkleRoot}`,
+	);
 
+	console.log(`[cert] committing action chain root on-chain...`);
 	const { data: commitHash, error: commitError } = await tryCatch(
 		contracts.PanthaOrchestrator.write.commitActionChainRoot([
 			userWallet,
@@ -66,6 +70,9 @@ export async function issueCertificate({
 		);
 	}
 
+	console.log(
+		`[cert] commitActionChainRoot tx=${commitHash} — awaiting receipt...`,
+	);
 	const commitReceipt = await contracts.$publicClient.waitForTransactionReceipt(
 		{
 			hash: commitHash,
@@ -74,7 +81,9 @@ export async function issueCertificate({
 	if (commitReceipt.status !== "success") {
 		throw new Error(`commitActionChainRoot transaction failed: ${commitHash}`);
 	}
+	console.log(`[cert] commitActionChainRoot confirmed`);
 
+	console.log(`[cert] generating AI metadata...`);
 	const aiMetadata = await ai.llm.generateCertificationDetails({
 		course: {
 			title: course.title,
@@ -85,17 +94,18 @@ export async function issueCertificate({
 			.filter((c) => c.order <= progress)
 			.map((c) => ({ title: c.title, description: c.description })),
 	});
+	console.log(`[cert] AI metadata generated: "${aiMetadata.title}"`);
 
 	const hashchainPathProps = [userWallet, `${Date.now()}`];
 
-	console.log(JSON.stringify(actionChain));
-
+	console.log(`[cert] uploading hashchain to storage...`);
 	const hashchainUpload = objectStorage.upload({
 		path: ["action-hash-chain", ...hashchainPathProps],
 		data: Buffer.from(JSON.stringify(actionChain)),
 	});
 
 	const { url: hashchainUri } = await hashchainUpload.persistentStorage;
+	console.log(`[cert] hashchain uploaded: ${hashchainUri}`);
 	hashchainUpload.hotStorage.then(() =>
 		objectStorage.unloadHot({
 			path: ["action-hash-chain", ...hashchainPathProps],
@@ -124,12 +134,14 @@ export async function issueCertificate({
 	});
 
 	const { url: metadataUri } = await metadataUpload.persistentStorage;
+	console.log(`[cert] NFT metadata uploaded: ${metadataUri}`);
 	metadataUpload.hotStorage.then(() =>
 		objectStorage.unloadHot({
 			path: ["certification-metadata", ...metadataPathProps],
 		}),
 	);
 
+	console.log(`[cert] calling certify on-chain...`);
 	const { data: certifyHash, error: certifyError } = await tryCatch(
 		contracts.PanthaOrchestrator.write.certify([userWallet, metadataUri]),
 	);
@@ -140,6 +152,7 @@ export async function issueCertificate({
 		);
 	}
 
+	console.log(`[cert] certify tx=${certifyHash} — awaiting receipt...`);
 	const certifyReceipt =
 		await contracts.$publicClient.waitForTransactionReceipt({
 			hash: certifyHash,
@@ -147,6 +160,7 @@ export async function issueCertificate({
 	if (certifyReceipt.status !== "success") {
 		throw new Error(`Certification transaction failed: ${certifyHash}`);
 	}
+	console.log(`[cert] certify confirmed`);
 
 	const transferLogs = parseEventLogs({
 		abi: contracts.PanthaCertificate.abi,
@@ -158,17 +172,7 @@ export async function issueCertificate({
 		throw new Error("Transfer event not found in certify receipt");
 	}
 	const tokenId = mintLog.args.tokenId;
-
-	await db
-		.update(db.schema.userPurchases)
-		.set({ consumed: 1 })
-		.where(
-			and(
-				eq(db.schema.userPurchases.userWallet, userWallet),
-				eq(db.schema.userPurchases.itemId, "CERTIFCT"),
-				eq(db.schema.userPurchases.consumed, 0),
-			),
-		);
+	console.log(`[cert] minted tokenId=${tokenId} — updating DB...`);
 
 	await db.insert(db.schema.userCertificates).values({
 		userWallet,
@@ -176,4 +180,7 @@ export async function issueCertificate({
 		dataUri: metadataUri,
 		tokenId: tokenId.toString(),
 	});
+	console.log(
+		`[cert] DONE — certificate issued tokenId=${tokenId} wallet=${userWallet}`,
+	);
 }
