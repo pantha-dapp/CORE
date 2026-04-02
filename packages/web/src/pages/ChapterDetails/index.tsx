@@ -95,7 +95,9 @@ export default function ChapterDetails() {
 		!!pagesData && "pages" in pagesData && !!pagesData.pages?.length;
 
 	const jobStatus = useJobStatus({ jobId: preparingJobId });
-	const isJobPending = !!preparingJobId && jobStatus.data?.state !== "success";
+	const isJobFailed = jobStatus.data?.state === "failed";
+	const isJobPending =
+		!!preparingJobId && !isJobFailed && jobStatus.data?.state !== "success";
 
 	// Once the preparation job succeeds, refetch pages
 	useEffect(() => {
@@ -135,6 +137,41 @@ export default function ChapterDetails() {
 							? "Chapter is being prepared..."
 							: "Loading chapter..."}
 					</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (isJobFailed) {
+		return (
+			<div className="min-h-screen dark:bg-dark-bg px-6 py-8 flex items-center justify-center">
+				<div className="max-w-md mx-auto text-center">
+					<h1 className="text-2xl font-bold text-dark-text font-titillium mb-3">
+						Chapter Preparation Failed
+					</h1>
+					<p className="text-dark-muted font-titillium mb-6">
+						We could not generate chapter content in time. Please retry.
+					</p>
+					<div className="flex items-center justify-center gap-3">
+						<button
+							type="button"
+							onClick={() =>
+								queryClient.invalidateQueries({
+									queryKey: ["chapterPages", chapterId],
+								})
+							}
+							className="rounded-lg bg-dark-accent px-4 py-2 font-semibold text-dark-bg hover:bg-dark-accent/90 transition-colors font-titillium"
+						>
+							Retry
+						</button>
+						<button
+							type="button"
+							onClick={() => router.navigate({ to: "/dashboard" })}
+							className="rounded-lg bg-dark-card border border-dark-border px-4 py-2 font-semibold text-dark-text hover:bg-dark-surface transition-colors font-titillium"
+						>
+							Go Home
+						</button>
+					</div>
 				</div>
 			</div>
 		);
