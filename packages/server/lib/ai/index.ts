@@ -141,11 +141,37 @@ export function createAi(args: {
 						continue;
 					}
 
-					const parsedHeal = generateChapterPageOutputTypedSchema.safeParse(
-						healAttempt.data,
+					const healedJsonAttempt = tryCatch(async () =>
+						JSON.parse(healAttempt.data),
 					);
+					const healedJson = await healedJsonAttempt;
+					if (healedJson.error) {
+						console.log("Error parsing healed page JSON:", healAttempt.data);
+						delete result.pages[i];
+						_deleted++;
+						continue;
+					}
+
+					let parsedHeal = generateChapterPageOutputTypedSchema.safeParse(
+						healedJson.data,
+					);
+
+					// Some models mistakenly return a full { pages: [...] } object while
+					// we only need one repaired page here.
+					if (
+						!parsedHeal.success &&
+						healedJson.data &&
+						typeof healedJson.data === "object" &&
+						"pages" in healedJson.data &&
+						Array.isArray((healedJson.data as { pages?: unknown[] }).pages)
+					) {
+						const firstPage = (healedJson.data as { pages: unknown[] })
+							.pages[0];
+						parsedHeal =
+							generateChapterPageOutputTypedSchema.safeParse(firstPage);
+					}
 					if (!parsedHeal.success) {
-						console.log("Error validating healed page:", healAttempt.data);
+						console.log("Error validating healed page:", healedJson.data);
 						delete result.pages[i];
 						_deleted++;
 						continue;
