@@ -6,6 +6,8 @@ import { usePanthaContext } from "../../context/PanthaProvider";
 export function useUserInfo(args: { walletAddress?: string }) {
 	const { walletAddress } = args;
 	const { wallet, api } = usePanthaContext();
+	const enabled =
+		!!wallet?.account.address && !!walletAddress && !!api.jwtExists;
 
 	return useQuery({
 		queryKey: ["userInfo", walletAddress],
@@ -26,7 +28,7 @@ export function useUserInfo(args: { walletAddress?: string }) {
 			return userResponse.data;
 		},
 		staleTime: 5 * 60 * 1000, // 5 minutes
-		enabled: !!wallet?.account.address,
+		enabled,
 		select: (data) => ({
 			...data,
 			user: {
