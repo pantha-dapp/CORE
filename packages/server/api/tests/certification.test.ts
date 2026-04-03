@@ -275,8 +275,8 @@ describe("certification", () => {
 				expect(data.success).toBe(true);
 				if (!data.success) throw new Error("Unexpected failure");
 				// createJob returns { id, promise }; only `id` is serialised in the JSON response
-				expect(data.data.jobId.id).toBeString();
-				sharedJobId = data.data.jobId.id;
+				expect(data.data.jobId).toBeString();
+				sharedJobId = data.data.jobId;
 			});
 
 			it("the certification job eventually succeeds", async () => {
