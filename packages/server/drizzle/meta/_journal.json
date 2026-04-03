@@ -5,36 +5,8 @@
 		{
 			"idx": 0,
 			"version": "6",
-			"when": 1770720659300,
-			"tag": "0000_ambiguous_wrecking_crew",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1770753003829,
-			"tag": "0001_user_action_seq",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1771116207172,
-			"tag": "0002_dear_alex_power",
-			"breakpoints": true
-		},
-		{
-			"idx": 12,
-			"version": "6",
-			"when": 1774968268160,
-			"tag": "0012_nosy_gladiator",
-			"breakpoints": true
-		},
-		{
-			"idx": 13,
-			"version": "6",
-			"when": 1774975601646,
-			"tag": "0013_fantastic_shotgun",
+			"when": 1775215778791,
+			"tag": "0000_loose_ogun",
 			"breakpoints": true
 		}
 	]

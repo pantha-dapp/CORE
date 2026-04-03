@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "c21547db-dfce-4575-b56d-3c8061d62259",
+	"id": "14b6faca-2c05-4690-b6cb-dee4ccb8d489",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"learning_group_chats": {
@@ -257,8 +257,8 @@
 		"user_actions": {
 			"name": "user_actions",
 			"columns": {
-				"id": {
-					"name": "id",
+				"hash": {
+					"name": "hash",
 					"type": "text",
 					"primaryKey": true,
 					"notNull": true,
@@ -299,6 +299,14 @@
 					"notNull": true,
 					"autoincrement": false
 				},
+				"seq": {
+					"name": "seq",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
 				"created_at": {
 					"name": "created_at",
 					"type": "integer",
@@ -331,7 +339,7 @@
 				},
 				"user_action_user_wallet_idx": {
 					"name": "user_action_user_wallet_idx",
-					"columns": ["user_wallet", "id"],
+					"columns": ["user_wallet", "hash"],
 					"isUnique": true
 				}
 			},
@@ -377,6 +385,74 @@
 					"onUpdate": "no action"
 				}
 			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"user_certificates": {
+			"name": "user_certificates",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_wallet": {
+					"name": "user_wallet",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"txn_hash": {
+					"name": "txn_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"data_uri": {
+					"name": "data_uri",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"token_id": {
+					"name": "token_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(unixepoch())"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(unixepoch())"
+				},
+				"deleted_at": {
+					"name": "deleted_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {}

@@ -40,24 +40,36 @@ CREATE TABLE `vector_cache` (
 );
 --> statement-breakpoint
 CREATE TABLE `user_actions` (
-	`id` text PRIMARY KEY NOT NULL,
+	`hash` text PRIMARY KEY NOT NULL,
 	`previous_id` text NOT NULL,
 	`user_wallet` text NOT NULL,
 	`label` text NOT NULL,
 	`data` text NOT NULL,
 	`signature` text NOT NULL,
+	`seq` integer DEFAULT 0 NOT NULL,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_action_prev_hash_idx` ON `user_actions` (`previous_id`,`user_wallet`);--> statement-breakpoint
-CREATE UNIQUE INDEX `user_action_user_wallet_idx` ON `user_actions` (`user_wallet`,`id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `user_action_user_wallet_idx` ON `user_actions` (`user_wallet`,`hash`);--> statement-breakpoint
 CREATE TABLE `user_answer_logs` (
 	`id` text,
 	`page_id` text NOT NULL,
 	`correct` integer NOT NULL,
 	FOREIGN KEY (`page_id`) REFERENCES `chapter_pages`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `user_certificates` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_wallet` text NOT NULL,
+	`txn_hash` text NOT NULL,
+	`data_uri` text NOT NULL,
+	`token_id` text NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`deleted_at` integer
 );
 --> statement-breakpoint
 CREATE TABLE `user_courses` (
