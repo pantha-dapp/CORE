@@ -284,7 +284,7 @@ export function createAi(args: {
 		const hash = Bun.hash(prompt).toString(16).padStart(32, "0");
 		const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
 
-		if (imageProcessing[uuid]) {
+		if (uuid in imageProcessing) {
 			return await imageProcessing[uuid];
 		}
 
