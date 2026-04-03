@@ -1,4 +1,4 @@
-import { jsonStringify, tryCatch } from "@pantha/shared";
+import { jsonParse, jsonStringify, tryCatch } from "@pantha/shared";
 import type { ZodObject, z } from "zod";
 import { createVectorDb, type VectorDbClient } from "../db/vec/client";
 import type { ObjectStorageResourceKey } from "../objectStorage";
@@ -141,9 +141,7 @@ export function createAi(args: {
 						continue;
 					}
 
-					const healedJsonAttempt = tryCatch(async () =>
-						JSON.parse(healAttempt.data),
-					);
+					const healedJsonAttempt = tryCatch(jsonParse(healAttempt.data));
 					const healedJson = await healedJsonAttempt;
 					if (healedJson.error) {
 						console.log("Error parsing healed page JSON:", healAttempt.data);
