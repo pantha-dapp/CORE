@@ -541,29 +541,33 @@ export default function Dashboard() {
 								}`}
 							>
 								<div className="space-y-1.5 border-t border-dark-border pt-3 mt-3">
-									{enrolledCourses.data?.courses.map((course) => (
-										<CourseNameItem
-											key={course.courseId}
-											courseId={course.courseId}
-											isActive={selectedCourseId === course.courseId}
-											onClick={() => {
-												hapticFeedback.tap();
-												setSelectedCourseId(course.courseId);
-												setShowCourseDrawer(false);
-											}}
-										/>
-									))}
-									<button
-										type="button"
-										onClick={() => {
-											router.navigate({ to: "/onboarding" });
-											setShowCourseDrawer(false);
-										}}
-										className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-dark-border bg-dark-surface/50 py-3 text-sm font-medium text-dark-muted transition-colors hover:bg-dark-surface hover:text-dark-text"
-									>
-										<span className="text-lg">+</span>
-										Add course
-									</button>
+									{showCourseDrawer && (
+										<>
+											{enrolledCourses.data?.courses.map((course) => (
+												<CourseNameItem
+													key={course.courseId}
+													courseId={course.courseId}
+													isActive={selectedCourseId === course.courseId}
+													onClick={() => {
+														hapticFeedback.tap();
+														setSelectedCourseId(course.courseId);
+														setShowCourseDrawer(false);
+													}}
+												/>
+											))}
+											<button
+												type="button"
+												onClick={() => {
+													router.navigate({ to: "/onboarding" });
+													setShowCourseDrawer(false);
+												}}
+												className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-dark-border bg-dark-surface/50 py-3 text-sm font-medium text-dark-muted transition-colors hover:bg-dark-surface hover:text-dark-text"
+											>
+												<span className="text-lg">+</span>
+												Add course
+											</button>
+										</>
+									)}
 								</div>
 							</div>
 						</div>
